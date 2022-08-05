@@ -9,19 +9,67 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+juce::String M1MonitorAudioProcessor::paramYaw("yaw");
+juce::String M1MonitorAudioProcessor::paramPitch("pitch");
+juce::String M1MonitorAudioProcessor::paramRoll("roll");
+juce::String M1MonitorAudioProcessor::paramYawEnable("enableYaw");
+juce::String M1MonitorAudioProcessor::paramPitchEnable("enablePitch");
+juce::String M1MonitorAudioProcessor::paramRollEnable("enableRoll");
+juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
+juce::String M1MonitorAudioProcessor::paramDecodeMode("decodeMode");
+
 //==============================================================================
 M1MonitorAudioProcessor::M1MonitorAudioProcessor()
-#ifndef JucePlugin_PreferredChannelConfigurations
      : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
-#endif
+//                       #if (JucePlugin_Build_AAX || JucePlugin_Build_RTAS)
+//                       .withInput("Default Output", juce::AudioChannelSet::create7point1(), true)
+//                       #else
+                       .withInput ("Mach1 Output 1", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 2", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 3", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 4", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 5", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 6", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 7", juce::AudioChannelSet::mono(), true)
+                       .withInput ("Mach1 Output 8", juce::AudioChannelSet::mono(), true)
+//                       #endif
+                       .withOutput("Stereo Output", juce::AudioChannelSet::stereo(), true)
+                       ),
+    parameters(*this, &mUndoManager, juce::Identifier("M1-Monitor"),
+               {
+                    std::make_unique<juce::AudioParameterFloat>(paramYaw,
+                                                            TRANS("Yaw"),
+                                                            juce::NormalisableRange<float>(-180.0f, 180.0f, 0.01f), 0.0f, "", juce::AudioProcessorParameter::genericParameter,
+                                                            [](float v, int) { return juce::String (v, 1) + "°"; },
+                                                            [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                    std::make_unique<juce::AudioParameterFloat>(paramPitch,
+                                                            TRANS("Pitch"),
+                                                            juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), 0.0f, "", juce::AudioProcessorParameter::genericParameter,
+                                                            [](float v, int) { return juce::String (v, 1) + "°"; },
+                                                            [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                    std::make_unique<juce::AudioParameterFloat>(paramRoll,
+                                                            TRANS("Roll"),
+                                                            juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), 0.0f, "", juce::AudioProcessorParameter::genericParameter,
+                                                            [](float v, int) { return juce::String (v, 1) + "°"; },
+                                                            [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                    std::make_unique<juce::AudioParameterBool>(paramYawEnable, TRANS("Enable Yaw"), true),
+                    std::make_unique<juce::AudioParameterBool>(paramPitchEnable, TRANS("Enable Pitch"), true),
+                    std::make_unique<juce::AudioParameterBool>(paramRollEnable, TRANS("Enable Roll"), true),
+                    std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 3, 0),
+               })
 {
+    parameters.addParameterListener(paramYaw, this);
+    parameters.addParameterListener(paramPitch, this);
+    parameters.addParameterListener(paramRoll, this);
+    parameters.addParameterListener(paramYawEnable, this);
+    parameters.addParameterListener(paramPitchEnable, this);
+    parameters.addParameterListener(paramRollEnable, this);
+    parameters.addParameterListener(paramMonitorMode, this);
+    
+    // Setup for Mach1Decode API
+    m1decode.setPlatformType(Mach1PlatformDefault);
+    m1decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
+    m1decode.setFilterSpeed(0.99);
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
@@ -94,7 +142,12 @@ void M1MonitorAudioProcessor::changeProgramName (int index, const juce::String& 
 void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    smoothedChannelCoeffs.resize(m1decode.getFormatChannelCount() * 2);
+    spatialMixerCoeffs.resize(m1decode.getFormatChannelCount() * 2);
+    for (int input_channel = 0; input_channel < m1decode.getFormatChannelCount(); input_channel++) {
+        smoothedChannelCoeffs[input_channel * 2].reset(sampleRate, (double)0.01);
+        smoothedChannelCoeffs[input_channel * 2 + 1].reset(sampleRate, (double)0.01);
+    }
 }
 
 void M1MonitorAudioProcessor::releaseResources()
@@ -103,29 +156,48 @@ void M1MonitorAudioProcessor::releaseResources()
     // spare memory, etc.
 }
 
+void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, float newValue)
+{
+    if (parameterID == paramYaw) {
+        parameters.getParameter(paramYaw)->setValue(newValue);
+    } else if (parameterID == paramPitch) {
+        parameters.getParameter(paramPitch)->setValue(newValue);
+    } else if (parameterID == paramRoll) {
+        parameters.getParameter(paramRoll)->setValue(newValue);
+    } else if (parameterID == paramYawEnable) {
+        parameters.getParameter(paramYawEnable)->setValue(newValue);
+    } else if (parameterID == paramPitchEnable) {
+        parameters.getParameter(paramPitchEnable)->setValue(newValue);
+    } else if (parameterID == paramRollEnable) {
+        parameters.getParameter(paramRollEnable)->setValue(newValue);
+    } else if (parameterID == paramMonitorMode) {
+        parameters.getParameter(paramMonitorMode)->setValue(newValue);
+    }
+}
+
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-  #if JucePlugin_IsMidiEffect
-    juce::ignoreUnused (layouts);
-    return true;
-  #else
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    Mach1Decode configTester;
+    
+    // block plugin if input or output is disabled on construction
+    if (layouts.getMainInputChannelSet()  == juce::AudioChannelSet::disabled()
+     || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::disabled())
         return false;
-
-    // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-        return false;
-   #endif
-
-    return true;
-  #endif
+    
+    // manually maintained for-loop of first enum element to last enum element
+    // TODO: brainstorm a way to not require manual maintaining of listed enum elements
+    for (int inputEnum = Mach1DecodeAlgoSpatial_8; inputEnum != Mach1DecodeAlgoSpatial_32; inputEnum++ ) {
+        configTester.setDecodeAlgoType(static_cast<Mach1DecodeAlgoType>(inputEnum));
+        // test each input, if the input has the number of channels as the input testing layout has move on to output testing
+        if (layouts.getMainInputChannels() == configTester.getFormatChannelCount()) {
+            // test each output
+            if (layouts.getMainOutputChannels() == 2){
+                return true;
+            }
+        }
+    }
+    return false;
 }
 #endif
 
@@ -135,26 +207,36 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+    // if you've got more output channels than input clears extra outputs
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
+    
+    // Mach1Decode processing loop
+    Mach1Point3D currentOrientation;
+    (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
+    (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
+    (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
+    m1decode.setRotation(currentOrientation);
+    m1decode.beginBuffer();
+    spatialMixerCoeffs = m1decode.decodeCoeffs();
+    m1decode.endBuffer();
+    
+    for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
+        smoothedChannelCoeffs[input_channel * 2].setTargetValue(spatialMixerCoeffs[input_channel * 2]);
+        smoothedChannelCoeffs[input_channel * 2 + 1].setTargetValue(spatialMixerCoeffs[input_channel * 2 + 1]);
+    }
+    
+    if (totalNumInputChannels == (m1decode.getFormatChannelCount()-2)/2){ // dumb safety check, TODO: do better i/o error handling
+        for (auto sample = 0; sample < buffer.getNumSamples(); ++sample) {
+            for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
+                float inputChannelBuffer = buffer.getSample(input_channel, sample);
+                float outSampleL = *buffer.getWritePointer(input_channel, sample);
+                float outSampleR = *buffer.getWritePointer(input_channel, sample);
+                
+                outSampleL += inputChannelBuffer * smoothedChannelCoeffs[input_channel * 2].getNextValue();
+                outSampleR += inputChannelBuffer * smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue();
+            }
+        }
     }
 }
 
