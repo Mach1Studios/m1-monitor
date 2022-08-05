@@ -14,7 +14,7 @@
 //==============================================================================
 /**
 */
-class M1MonitorAudioProcessor  : public juce::AudioProcessor
+class M1MonitorAudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
@@ -24,6 +24,7 @@ public:
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
+    void parameterChanged(const juce::String &parameterID, float newValue) override;
 
    #ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
@@ -54,7 +55,26 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    // Parameter Setup
+    juce::AudioProcessorValueTreeState& getValueTreeState();
+    static juce::String paramYaw;
+    static juce::String paramPitch;
+    static juce::String paramRoll;
+    static juce::String paramYawEnable;
+    static juce::String paramPitchEnable;
+    static juce::String paramRollEnable;
+    static juce::String paramMonitorMode;
+    static juce::String paramDecodeMode;
+    
+    Mach1Decode m1decode;
+    juce::PluginHostType hostType;
+
 private:
+    juce::UndoManager mUndoManager;
+    juce::AudioProcessorValueTreeState parameters;
+
+    std::vector<float> spatialMixerCoeffs;
+    std::vector<juce::LinearSmoothedValue<float>> smoothedChannelCoeffs;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (M1MonitorAudioProcessor)
 };
