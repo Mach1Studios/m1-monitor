@@ -142,8 +142,8 @@ void M1MonitorAudioProcessor::changeProgramName (int index, const juce::String& 
 void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
-    smoothedChannelCoeffs.resize(m1decode.getFormatChannelCount() * 2);
-    spatialMixerCoeffs.resize(m1decode.getFormatChannelCount() * 2);
+    smoothedChannelCoeffs.resize(m1decode.getFormatCoeffCount());
+    spatialMixerCoeffs.resize(m1decode.getFormatCoeffCount());
     for (int input_channel = 0; input_channel < m1decode.getFormatChannelCount(); input_channel++) {
         smoothedChannelCoeffs[input_channel * 2].reset(sampleRate, (double)0.01);
         smoothedChannelCoeffs[input_channel * 2 + 1].reset(sampleRate, (double)0.01);
@@ -213,6 +213,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     
     // Mach1Decode processing loop
     Mach1Point3D currentOrientation;
+    // retrieve normalized values
     (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
     (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
     (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
@@ -226,15 +227,15 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         smoothedChannelCoeffs[input_channel * 2 + 1].setTargetValue(spatialMixerCoeffs[input_channel * 2 + 1]);
     }
     
-    if (totalNumInputChannels == (m1decode.getFormatChannelCount()-2)/2){ // dumb safety check, TODO: do better i/o error handling
+    if (totalNumInputChannels == m1decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
         for (auto sample = 0; sample < buffer.getNumSamples(); ++sample) {
             for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
-                float inputChannelBuffer = buffer.getSample(input_channel, sample);
-                float outSampleL = *buffer.getWritePointer(input_channel, sample);
-                float outSampleR = *buffer.getWritePointer(input_channel, sample);
+                auto inputChannelBuffer = buffer.getReadPointer(input_channel, sample);
+                auto outSampleL = buffer.getWritePointer(input_channel, sample);
+                auto outSampleR = buffer.getWritePointer(input_channel, sample);
                 
-                outSampleL += inputChannelBuffer * smoothedChannelCoeffs[input_channel * 2].getNextValue();
-                outSampleR += inputChannelBuffer * smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue();
+                *outSampleL = *inputChannelBuffer * smoothedChannelCoeffs[input_channel * 2].getNextValue();
+                *outSampleR = *inputChannelBuffer * smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue();
             }
         }
     }
@@ -257,12 +258,18 @@ void M1MonitorAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    juce::MemoryOutputStream stream(destData, false);
+    parameters.state.writeToStream(stream);
 }
 
 void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
+    if (tree.isValid()) {
+        parameters.state = tree;
+    }
 }
 
 //==============================================================================
