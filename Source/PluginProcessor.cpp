@@ -230,12 +230,13 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (totalNumInputChannels == m1decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
         for (auto sample = 0; sample < buffer.getNumSamples(); ++sample) {
             for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
-                auto outSampleL = buffer.getWritePointer(0, sample);
-                auto outSampleR = buffer.getWritePointer(1, sample);
+                float* outSampleL = buffer.getWritePointer(0, sample);
+                float* outSampleR = buffer.getWritePointer(1, sample);
                 
+                const float* input_channel_sample = buffer.getReadPointer(input_channel, sample);
                 // using write-pointers to the first two channels (L+R) we sum the rest of the channels into them
-                *outSampleL += *buffer.getReadPointer(input_channel, sample) * smoothedChannelCoeffs[input_channel * 2].getNextValue();
-                *outSampleR += *buffer.getReadPointer(input_channel, sample) * smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue();
+                juce::FloatVectorOperations::addWithMultiply(outSampleL, input_channel_sample, smoothedChannelCoeffs[input_channel * 2].getNextValue(), 1);
+                juce::FloatVectorOperations::addWithMultiply(outSampleR, input_channel_sample, smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue(), 1);
             }
         }
     }
