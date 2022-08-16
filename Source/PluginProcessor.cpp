@@ -227,18 +227,27 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         smoothedChannelCoeffs[input_channel * 2 + 1].setTargetValue(spatialMixerCoeffs[input_channel * 2 + 1]);
     }
     
+    float* outBufferL = buffer.getWritePointer(0);
+    float* outBufferR = buffer.getWritePointer(1);
+    std::vector<float> spatialCoeffsBufferL, spatialCoeffsBufferR;
+
     if (totalNumInputChannels == m1decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
         for (auto sample = 0; sample < buffer.getNumSamples(); ++sample) {
             for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
-                float* outSampleL = buffer.getWritePointer(0, sample);
-                float* outSampleR = buffer.getWritePointer(1, sample);
-                
-                const float* input_channel_sample = buffer.getReadPointer(input_channel, sample);
-                // using write-pointers to the first two channels (L+R) we sum the rest of the channels into them
-                juce::FloatVectorOperations::addWithMultiply(outSampleL, input_channel_sample, smoothedChannelCoeffs[input_channel * 2].getNextValue(), 1);
-                juce::FloatVectorOperations::addWithMultiply(outSampleR, input_channel_sample, smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue(), 1);
+                // collect the spatial coeffs per sample per output channel as a buffer
+                spatialCoeffsBufferL.push_back(smoothedChannelCoeffs[input_channel * 2].getNextValue());
+                spatialCoeffsBufferR.push_back(smoothedChannelCoeffs[input_channel * 2 + 1].getNextValue());
             }
         }
+    }
+    
+    for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
+        juce::FloatVectorOperations::addWithMultiply(outBufferL, buffer.getReadPointer(input_channel), spatialCoeffsBufferL[input_channel], buffer.getNumSamples());
+        juce::FloatVectorOperations::addWithMultiply(outBufferR, buffer.getReadPointer(input_channel), spatialCoeffsBufferR[input_channel], buffer.getNumSamples());
+//        // clear the outputs of
+//        if (input_channel > 1) {
+//            buffer.clear(input_channel, 0, buffer.getNumSamples());
+//        }
     }
     
     // clear remaining input channels
