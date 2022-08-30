@@ -14,9 +14,15 @@
               companyCopyright="Mach1" pluginFormats="buildAU,buildVST" buildVST="1"
               buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0" buildAAX="0"
               buildStandalone="0" enableIAA="0" companyEmail="dylan@mach1.tech"
-              jucerFormatVersion="1" pluginVSTCategory="kPlugCategSpacializer">
+              jucerFormatVersion="1" pluginVSTCategory="kPlugCategSpacializer"
+              cppLanguageStandard="17">
   <MAINGROUP id="kcbQk5" name="M1-Monitor">
     <FILE id="mL5YjJ" name="mach1logo.png" compile="0" resource="1" file="Resources/mach1logo.png"/>
+    <FILE id="iIHjto" name="bluetooth_icon.png" compile="0" resource="1"
+          file="../m1-player/Resources/bluetooth_icon.png"/>
+    <FILE id="CRBFXi" name="tech_support_icon.png" compile="0" resource="1"
+          file="../m1-player/Resources/tech_support_icon.png"/>
+    <FILE id="GYNdth" name="wi-fi_icon.png" compile="0" resource="1" file="../m1-player/Resources/wi-fi_icon.png"/>
     <FILE id="LZ4a2M" name="Proxima Nova Reg.ttf" compile="0" resource="1"
           file="Resources/Proxima Nova Reg.ttf"/>
     <GROUP id="{1A61DF24-6C83-F2B0-E219-82AEC738A757}" name="Source">
