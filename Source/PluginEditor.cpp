@@ -15,7 +15,7 @@ M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor (M1MonitorAudioProc
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (504, 266);
+    juce::OpenGLAppComponent::setSize(504, 266);
     // size when advanced settings open = 504, 469
 }
 
