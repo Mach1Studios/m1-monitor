@@ -66,7 +66,7 @@ public:
     static juce::String paramMonitorMode;
     static juce::String paramDecodeMode;
     
-    Mach1Decode m1decode;
+    Mach1Decode m1Decode;
     juce::PluginHostType hostType;
 
 private:
@@ -75,6 +75,7 @@ private:
 
     std::vector<float> spatialMixerCoeffs;
     std::vector<juce::LinearSmoothedValue<float>> smoothedChannelCoeffs;
+    juce::AudioBuffer<float> scratchBuffer;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (M1MonitorAudioProcessor)
 };

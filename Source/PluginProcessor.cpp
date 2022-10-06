@@ -67,9 +67,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     parameters.addParameterListener(paramMonitorMode, this);
     
     // Setup for Mach1Decode API
-    m1decode.setPlatformType(Mach1PlatformDefault);
-    m1decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
-    m1decode.setFilterSpeed(0.99);
+    m1Decode.setPlatformType(Mach1PlatformDefault);
+    m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
+    m1Decode.setFilterSpeed(0.99);
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
@@ -142,9 +142,9 @@ void M1MonitorAudioProcessor::changeProgramName (int index, const juce::String& 
 void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
-    smoothedChannelCoeffs.resize(m1decode.getFormatCoeffCount());
-    spatialMixerCoeffs.resize(m1decode.getFormatCoeffCount());
-    for (int input_channel = 0; input_channel < m1decode.getFormatChannelCount(); input_channel++) {
+    smoothedChannelCoeffs.resize(m1Decode.getFormatCoeffCount());
+    spatialMixerCoeffs.resize(m1Decode.getFormatCoeffCount());
+    for (int input_channel = 0; input_channel < m1Decode.getFormatChannelCount(); input_channel++) {
         smoothedChannelCoeffs[input_channel * 2].reset(sampleRate, (double)0.01);
         smoothedChannelCoeffs[input_channel * 2 + 1].reset(sampleRate, (double)0.01);
     }
@@ -207,6 +207,33 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
+    if (totalNumInputChannels == 4){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoHorizon_4);
+    } else if (totalNumInputChannels == 8){
+        bool useIsotropic = true;
+        if (useIsotropic) {
+            m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
+        } else {
+            m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatialAlt_8);
+        }
+    } else if (totalNumInputChannels == 12){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_12);
+    } else if (totalNumInputChannels == 14){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
+    } else if (totalNumInputChannels == 16){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_16);
+    } else if (totalNumInputChannels == 18){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_18);
+    } else if (totalNumInputChannels == 32){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
+    } else if (totalNumInputChannels == 36){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_36);
+    } else if (totalNumInputChannels == 48){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_48);
+    } else if (totalNumInputChannels == 60){
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_60);
+    }
+    
     // if you've got more output channels than input clears extra outputs
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
@@ -217,20 +244,71 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
     (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
     (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
-    m1decode.setRotation(currentOrientation);
-    m1decode.beginBuffer();
-    spatialMixerCoeffs = m1decode.decodeCoeffs();
-    m1decode.endBuffer();
+    m1Decode.setRotation(currentOrientation);
+    m1Decode.beginBuffer();
+    spatialMixerCoeffs = m1Decode.decodeCoeffs();
+    m1Decode.endBuffer();
     
+    // Update spatial mixer coeffs from Mach1Decode for a smoothed value
     for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
         smoothedChannelCoeffs[input_channel * 2].setTargetValue(spatialMixerCoeffs[input_channel * 2]);
         smoothedChannelCoeffs[input_channel * 2 + 1].setTargetValue(spatialMixerCoeffs[input_channel * 2 + 1]);
     }
     
+    scratchBuffer.setSize(totalNumInputChannels * 2, buffer.getNumSamples());
+    scratchBuffer.clear();
+    
     float* outBufferL = buffer.getWritePointer(0);
     float* outBufferR = buffer.getWritePointer(1);
     std::vector<float> spatialCoeffsBufferL, spatialCoeffsBufferR;
 
+    if (totalNumInputChannels == m1Decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
+        // Setup buffers for Left & Right outputs, correct for PT 7.1 buss
+        if (totalNumInputChannels == 8 && hostType.isProTools()){
+            AudioChannelSet inputChannelSet = getBus(true, 0)->getCurrentLayout();
+            scratchBuffer.copyFrom(0, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(1, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(2, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(3, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(4, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(5, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(6, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(7, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
+            
+            scratchBuffer.copyFrom(8, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(9, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(10, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(11, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(12, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(13, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(14, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
+            scratchBuffer.copyFrom(15, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
+        } else {
+            for (auto i = 0; i < totalNumInputChannels; ++i){
+                scratchBuffer.copyFrom(i * 2    , 0, buffer,  i, 0, buffer.getNumSamples());
+                scratchBuffer.copyFrom(i * 2 + 1, 0, buffer,  i, 0, buffer.getNumSamples());
+            }
+        }
+        
+        for (int i = 0; i < buffer.getNumSamples(); i++) {
+            for (int j = 0; j < buffer.getNumChannels(); j++) {
+                buffer.getWritePointer(j)[i] = 0;
+            }
+        }
+        
+        for (int i = 0; i < buffer.getNumSamples(); i++) {
+            for (int j = 0; j < totalNumInputChannels; j++) {
+                outBufferL[i] += scratchBuffer.getReadPointer(j * 2)[i] * smoothedChannelCoeffs[j * 2].getNextValue();
+                outBufferR[i] += scratchBuffer.getReadPointer(j * 2 + 1)[i] * smoothedChannelCoeffs[j * 2 + 1].getNextValue();
+            }
+        }
+    } else {
+        // Invalid Decode I/O; clear buffers
+        for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+            buffer.clear (i, 0, buffer.getNumSamples());
+    }
+
+/*
     if (totalNumInputChannels == m1decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
         for (auto sample = 0; sample < buffer.getNumSamples(); ++sample) {
             for (int input_channel = 0; input_channel < totalNumInputChannels; ++input_channel) {
@@ -249,6 +327,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 //            buffer.clear(input_channel, 0, buffer.getNumSamples());
 //        }
     }
+ */
     
     // clear remaining input channels
     for (auto i = 2; i < totalNumInputChannels; ++i)
