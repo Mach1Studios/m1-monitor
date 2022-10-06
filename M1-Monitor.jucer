@@ -44,14 +44,12 @@
                postbuildCommand="" extraLinkerFlags="$(MY_SPECIAL_LINKER_FLAG)"
                extraCompilerFlags="" xcodeValidArchs="x86_64" extraDefs="&#10;MURKA_JUCE JUCE_OPENGL3">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="M1-Monitor"
-                       headerPath="../../../../m1-sdk/mach1spatial-libs/xcode/include"
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" headerPath="../../../../m1-sdk/mach1spatial-libs/xcode/include"
                        libraryPath="../../../../m1-sdk/mach1spatial-libs/xcode/lib/"
                        osxCompatibility="10.9 SDK" cppLanguageStandard="c++11" cppLibType="libc++"
                        linkTimeOptimisation="0" enablePluginBinaryCopyStep="1" customXcodeFlags="MY_SPECIAL_LINKER_FLAG=-Xlinker -headerpad -Xlinker 800 ../../../../of_v0.9.8_osx_release/libs/poco/lib/osx/PocoFoundation.a ../../../../of_v0.9.8_osx_release/libs/poco/lib/osx/PocoNet.a"
                        macOSDeploymentTarget="10.9"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="M1-Monitor"
-                       headerPath="../../../../m1-sdk/mach1spatial-libs/xcode/include"
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" headerPath="../../../../m1-sdk/mach1spatial-libs/xcode/include"
                        libraryPath="../../../../m1-sdk/mach1spatial-libs/xcode/lib/"
                        osxCompatibility="10.9 SDK" cppLanguageStandard="c++11" cppLibType="libc++"
                        enablePluginBinaryCopyStep="1" customXcodeFlags="MY_SPECIAL_LINKER_FLAG=-Xlinker -headerpad -Xlinker 800 ../../../../of_v0.9.8_osx_release/libs/poco/lib/osx/PocoFoundation.a ../../../../of_v0.9.8_osx_release/libs/poco/lib/osx/PocoNet.a"
@@ -83,10 +81,10 @@
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../../../m1-sdk/mach1spatial-libs/windows-x86_64/include/"
                        libraryPath="..\..\..\..\m1-sdk\mach1spatial-libs\vs-15-2017-x86_64\lib\Static\MD\Debug\"
-                       defines="M1_STATIC" targetName="M1-Monitor"/>
+                       defines="M1_STATIC"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../../../m1-sdk/mach1spatial-libs/windows-x86_64/include/"
                        libraryPath="..\..\..\..\m1-sdk\mach1spatial-libs\vs-15-2017-x86_64\lib\Static\MD\Debug\"
-                       defines="M1_STATIC" targetName="M1-Monitor"/>
+                       defines="M1_STATIC"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_video"/>
