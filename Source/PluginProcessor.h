@@ -31,6 +31,7 @@ public:
    #endif
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processStereoDownmix (juce::AudioBuffer<float>&);
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -54,7 +55,7 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
+    
     // Parameter Setup
     juce::AudioProcessorValueTreeState& getValueTreeState();
     static juce::String paramYaw;
