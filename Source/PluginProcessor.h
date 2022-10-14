@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 #include <Mach1Decode.h>
+#include "Transport.h"
 
 //==============================================================================
 /**
@@ -70,13 +71,19 @@ public:
     Mach1Decode m1Decode;
     juce::PluginHostType hostType;
 
+    void setStatus(bool success, std::string message);
+    M1OrientationOSCClient m1OrientationOSCClient;
+    
+    // Transport
+    ScopedPointer<Transport> transport;
+    
 private:
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
 
     std::vector<float> spatialMixerCoeffs;
     std::vector<juce::LinearSmoothedValue<float>> smoothedChannelCoeffs;
-    juce::AudioBuffer<float> scratchBuffer;
+    juce::AudioBuffer<float> tempBuffer;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (M1MonitorAudioProcessor)
 };

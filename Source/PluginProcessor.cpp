@@ -70,10 +70,15 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1Decode.setPlatformType(Mach1PlatformDefault);
     m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     m1Decode.setFilterSpeed(0.99);
+    
+    transport = new Transport();
+    transport->setProcessor(this);
+    transport->setOrientationClient(&m1OrientationOSCClient);
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
 {
+    transport = nullptr;
 }
 
 //==============================================================================
@@ -203,6 +208,9 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
 
 void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    // transport
+    transport->update();
+    
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -222,8 +230,6 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
     } else if (totalNumInputChannels == 16){
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_16);
-    } else if (totalNumInputChannels == 18){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_18);
     } else if (totalNumInputChannels == 32){
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
     } else if (totalNumInputChannels == 36){
@@ -255,8 +261,8 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         smoothedChannelCoeffs[channel * 2 + 1].setTargetValue(spatialMixerCoeffs[channel * 2 + 1]);
     }
     
-    scratchBuffer.setSize(totalNumInputChannels * 2, buffer.getNumSamples());
-    scratchBuffer.clear();
+    tempBuffer.setSize(totalNumInputChannels * 2, buffer.getNumSamples());
+    tempBuffer.clear();
     
     float* outBufferL = buffer.getWritePointer(0);
     float* outBufferR = buffer.getWritePointer(1);
@@ -273,27 +279,27 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         // Setup buffers for Left & Right outputs, correct for PT 7.1 buss
         if (totalNumInputChannels == 8 && hostType.isProTools()){
             AudioChannelSet inputChannelSet = getBus(true, 0)->getCurrentLayout();
-            scratchBuffer.copyFrom(0, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(1, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(2, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(3, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(4, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(5, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(6, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(7, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(0, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(1, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(2, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(3, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(4, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(5, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(6, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(7, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
             
-            scratchBuffer.copyFrom(8, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(9, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(10, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(11, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(12, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(13, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(14, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
-            scratchBuffer.copyFrom(15, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(8, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(9, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(10, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(11, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(12, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(13, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(14, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(15, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
         } else {
             for (auto channel = 0; channel < totalNumInputChannels; ++channel){
-                scratchBuffer.copyFrom(channel * 2    , 0, buffer, channel, 0, buffer.getNumSamples());
-                scratchBuffer.copyFrom(channel * 2 + 1, 0, buffer, channel, 0, buffer.getNumSamples());
+                tempBuffer.copyFrom(channel * 2    , 0, buffer, channel, 0, buffer.getNumSamples());
+                tempBuffer.copyFrom(channel * 2 + 1, 0, buffer, channel, 0, buffer.getNumSamples());
             }
         }
         
@@ -305,8 +311,8 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         
         for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
             for (int channel = 0; channel < totalNumInputChannels; channel++) {
-                outBufferL[sample] += scratchBuffer.getReadPointer(channel * 2    )[sample] * smoothedChannelCoeffs[channel * 2    ].getNextValue();
-                outBufferR[sample] += scratchBuffer.getReadPointer(channel * 2 + 1)[sample] * smoothedChannelCoeffs[channel * 2 + 1].getNextValue();
+                outBufferL[sample] += tempBuffer.getReadPointer(channel * 2    )[sample] * smoothedChannelCoeffs[channel * 2    ].getNextValue();
+                outBufferR[sample] += tempBuffer.getReadPointer(channel * 2 + 1)[sample] * smoothedChannelCoeffs[channel * 2 + 1].getNextValue();
             }
         }
     } else {
@@ -331,14 +337,14 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
     
     // Stereo Downmix Logic
     for (auto i = 0; i < totalNumInputChannels; ++i){
-        scratchBuffer.copyFrom(i, 0, buffer, i, 0, buffer.getNumSamples());
+        tempBuffer.copyFrom(i, 0, buffer, i, 0, buffer.getNumSamples());
     }
     
     if (totalNumInputChannels == 4 || totalNumInputChannels == 8) {
         for (int channel = 0; channel < totalNumInputChannels; channel++) {
             for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-                outBufferL[sample] =+ scratchBuffer.getReadPointer(channel * 2    )[sample] / std::sqrt(2)/(totalNumInputChannels/2);
-                outBufferR[sample] =+ scratchBuffer.getReadPointer(channel * 2 + 1)[sample] / std::sqrt(2)/(totalNumInputChannels/2);
+                outBufferL[sample] =+ tempBuffer.getReadPointer(channel * 2    )[sample] / std::sqrt(2)/(totalNumInputChannels/2);
+                outBufferR[sample] =+ tempBuffer.getReadPointer(channel * 2 + 1)[sample] / std::sqrt(2)/(totalNumInputChannels/2);
             }
         }
     }
@@ -348,21 +354,21 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
         int mixMapR[] = { 1,3,5,7,8,9, 10 };
         
         for (int i = 0; i < buffer.getNumSamples(); i++) {
-            outBufferL[i] = (scratchBuffer.getReadPointer(mixMapL[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]/2
-                + scratchBuffer.getReadPointer(mixMapL[6])[i])/std::sqrt(2)/(totalNumInputChannels/2);
+            outBufferL[i] = (tempBuffer.getReadPointer(mixMapL[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]/2
+                + tempBuffer.getReadPointer(mixMapL[6])[i])/std::sqrt(2)/(totalNumInputChannels/2);
 
-            outBufferR[i] = (scratchBuffer.getReadPointer(mixMapR[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]/2)/std::sqrt(2)/(totalNumInputChannels/2);
+            outBufferR[i] = (tempBuffer.getReadPointer(mixMapR[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]
+                + tempBuffer.getReadPointer(mixMapL[6])[i]/2)/std::sqrt(2)/(totalNumInputChannels/2);
         }
     } else if (totalNumInputChannels == 14){
         //INDEX:          0,1,2,3,4,5, 6 ,7 ,8
@@ -370,25 +376,25 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
         int mixMapR[] = { 1,3,5,7,8,9, 10,12,13 };
         
         for (int i = 0; i < buffer.getNumSamples(); i++) {
-            outBufferL[i] = (scratchBuffer.getReadPointer(mixMapL[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]
-                + scratchBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+            outBufferL[i] = (tempBuffer.getReadPointer(mixMapL[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[6])[i]
+                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
 
-            outBufferR[i] = (scratchBuffer.getReadPointer(mixMapR[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+            outBufferR[i] = (tempBuffer.getReadPointer(mixMapR[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]
+                + tempBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
         }
     } else if (totalNumInputChannels == 16){
         //INDEX:          0,1,2,3,4,5, 6 ,7 ,8 ,9
@@ -397,28 +403,28 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
         
         for (int i = 0; i < buffer.getNumSamples(); i++) {
             outBufferL[i] = (
-                  scratchBuffer.getReadPointer(mixMapL[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]
-                + scratchBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[9])[i]               )/std::sqrt(2)/(totalNumInputChannels/2);
+                  tempBuffer.getReadPointer(mixMapL[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[6])[i]
+                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[9])[i]               )/std::sqrt(2)/(totalNumInputChannels/2);
 
             outBufferR[i] = (
-                  scratchBuffer.getReadPointer(mixMapR[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[8])[i]
-                + scratchBuffer.getReadPointer(mixMapL[9])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+                  tempBuffer.getReadPointer(mixMapR[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]
+                + tempBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[8])[i]
+                + tempBuffer.getReadPointer(mixMapL[9])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
         }
     } else if (totalNumInputChannels == 18){
         //INDEX:          0,1,2,3,4,5, 6 ,7 ,8 ,9 ,10,11
@@ -427,32 +433,32 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
         
         for (int i = 0; i < buffer.getNumSamples(); i++) {
             outBufferL[i] = (
-                  scratchBuffer.getReadPointer(mixMapL[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]
-                + scratchBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[9])[i]
-                + scratchBuffer.getReadPointer(mixMapL[10])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[11])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+                  tempBuffer.getReadPointer(mixMapL[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[6])[i]
+                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[9])[i]
+                + tempBuffer.getReadPointer(mixMapL[10])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[11])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
 
             outBufferR[i] = (
-                  scratchBuffer.getReadPointer(mixMapR[0])[i]
-                + scratchBuffer.getReadPointer(mixMapL[1])[i]
-                + scratchBuffer.getReadPointer(mixMapL[2])[i]
-                + scratchBuffer.getReadPointer(mixMapL[3])[i]
-                + scratchBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[5])[i]
-                + scratchBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[8])[i]
-                + scratchBuffer.getReadPointer(mixMapL[9])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[10])[i]/std::sqrt(2)/2
-                + scratchBuffer.getReadPointer(mixMapL[11])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+                  tempBuffer.getReadPointer(mixMapR[0])[i]
+                + tempBuffer.getReadPointer(mixMapL[1])[i]
+                + tempBuffer.getReadPointer(mixMapL[2])[i]
+                + tempBuffer.getReadPointer(mixMapL[3])[i]
+                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[5])[i]
+                + tempBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[8])[i]
+                + tempBuffer.getReadPointer(mixMapL[9])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[10])[i]/std::sqrt(2)/2
+                + tempBuffer.getReadPointer(mixMapL[11])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
         }
     }
 }
