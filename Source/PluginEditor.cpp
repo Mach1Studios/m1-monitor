@@ -38,7 +38,6 @@ void M1MonitorAudioProcessorEditor::initialise()
     m.setResourcesPath(resourcesPath);
     
     /// ORIENTATION CONTROL DEBUG
-    ///
     showedOrientationControlBefore = false;
 }
 
