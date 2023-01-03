@@ -1,12 +1,10 @@
 #pragma once
 
-#include "MurkaTypes.h"
-#include "MurkaContext.h"
 #include "MurkaView.h"
 #include "MurkaInputEventsRegister.h"
-#include "MurkaAssets.h"
-#include "MurkaLinearLayoutGenerator.h"
 #include "MurkaBasicWidgets.h"
+#include "TextField.h"
+#include "../Config.h"
 
 using namespace murka;
 
@@ -18,21 +16,28 @@ public:
         MurkaContext& context = m.currentContext;
         auto& c = context; // shorthand of above
         
-        bool inside = context.isHovered() * !areInteractiveChildrenHovered(context) * hasMouseFocus(m);
+        bool inside = c.isHovered() *
+//        Had to temporary remove the areInteractiveChildrenHovered because of the bug in Murka with the non-deleting children widgets. TODO: fix this
+//        !areInteractiveChildrenHovered(ctx) *
+            hasMouseFocus(m)
+            * (!editingTextNow);
         bool reticleHover = false + draggingNow;
         
         changed = false;
         hovered = inside + draggingNow; // for external views to be highlighted too if needed
-        bool hoveredLocal = hovered; // shouldn't propel hoveredLocal outside so it doesn't feedback
+        bool hoveredLocal = hovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
 
         if (!enabled) {
             hoveredLocal = false;
         }
         
-        float reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
-        float inputValueAngleInDegrees = reticlePositionNorm * 360;
         std::string displayString = float_to_string(*data, floatingPointPrecision);
         std::string valueText = prefix + displayString + postfix;
+        auto font = m.getCurrentFont();
+        auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
+        
+        float reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
+        float inputValueAngleInDegrees = reticlePositionNorm * 360;
         
         m.pushStyle();
         m.enableFill();
@@ -48,10 +53,6 @@ public:
             m.draw<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
                                     80, 20})
                                     .withAlignment(TEXT_CENTER).text(label).commit();
-            
-            m.draw<murka::Label>({  reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 4,
-                                    40, 20})
-                                    .withAlignment(TEXT_CENTER).text(valueText).commit();
 
             if (movingLabel) {
                 m.setColor(REF_LABEL_TEXT_COLOR);
@@ -95,6 +96,130 @@ public:
             m.drawCircle(shape.size.x/2 - ellipseSize/2, reticlePositionNorm * (shape.size.y - ellipseSize), (ellipseSize * A(reticleHover)));
         }
         m.popStyle();
+    
+        auto labelPositionY = shape.size.x * 0.8 + 10;
+        
+        std::function<void()> deleteTheTextField = [&]() {
+            // Temporary solution to delete the TextField:
+            // Searching for an id to delete the text field widget.
+            // To be redone after the UI library refactoring.
+            
+            imIdentifier idToDelete;
+            for (auto childTuple: imChildren) {
+                auto childIdTuple = childTuple.first;
+                if (std::get<1>(childIdTuple) == typeid(TextField).name()) {
+                    idToDelete = childIdTuple;
+                }
+            }
+            imChildren.erase(idToDelete);
+        };
+
+        MurkaShape valueTextShape = { shape.size.x / 2 - valueTextBbox.width / 2 - 5,
+                                     shape.size.x * 0.8 + 10,
+                                     valueTextBbox.width + 10,
+                                     valueTextBbox.height };
+        
+        if (editingTextNow) {
+            auto& textFieldObject =
+                m.draw<TextField>({ valueTextShape.x() - 5, valueTextShape.y() - 5,
+                    valueTextShape.width() + 10, valueTextShape.height() + 10 })
+                .controlling(data)
+                .withPrecision(2)
+                .forcingEditorToSelectAll(shouldForceEditorToSelectAll)
+                .onlyAllowNumbers(true)
+                .commit();
+            
+            auto textFieldResults = textFieldObject.results;
+            
+            if (shouldForceEditorToSelectAll) {
+                // We force selection by sending the value to text editor field
+                shouldForceEditorToSelectAll = false;
+            }
+            
+            if (!textFieldResults) {
+                textFieldObject.activated = true;
+                c.claimKeyboardFocus(&textFieldObject);
+            }
+            
+            if (textFieldResults) {
+                editingTextNow = false;
+
+                deleteTheTextField();
+            }
+        } else {
+            m.draw<murka::Label>({0, shape.size.x * 0.8 + 10,
+                shape.size.x, shape.size.y * 0.5})
+                .withAlignment(TEXT_CENTER).text(valueText)
+                .commit();
+        }
+        
+        bool hoveredValueText = false;
+        if (valueTextShape.inside(m.currentContext.mousePosition) && !editingTextNow && enabled) {
+            m.drawRectangle(valueTextShape.x() - 2,
+                             valueTextShape.y(),
+                             2,
+                             2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                             valueTextShape.y(),
+                             2,
+                             2);
+            m.drawRectangle(valueTextShape.x() - 2,
+                             valueTextShape.y() + valueTextShape.height(),
+                             2,
+                             2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                             valueTextShape.y() + valueTextShape.height(),
+                             2,
+                             2);
+            hoveredValueText = true;
+        }
+        
+        // Action
+        
+        if ((m.currentContext.mouseDownPressed[0]) && (inside) && (m.currentContext.mousePosition.y < labelPositionY) &&
+            (!draggingNow) && (enabled)) {
+            draggingNow = true;
+            cursorHide();
+        }
+
+        if ((draggingNow) && (!m.currentContext.mouseDown[0])) {
+            draggingNow = false;
+            cursorShow();
+        }
+        
+        // Setting knob value to default if pressed alt while clicking
+        bool shouldSetDefault = m.currentContext.isKeyHeld(murka::MurkaKey::MURKA_KEY_ALT) && m.currentContext.mouseDownPressed[0];
+        
+        // Don't set default by doubleclick if the mouse is in the Label/Text editor zone
+        if (m.currentContext.mousePosition.y >= labelPositionY) shouldSetDefault = false;
+
+        if (shouldSetDefault && inside) {
+            draggingNow = false;
+            *((float*)dataToControl) = defaultValue;
+            cursorShow();
+            changed = true;
+        }
+        
+        if (draggingNow) {
+            if (abs(m.currentContext.mouseDelta.y) >= 1) {
+                
+                // Shift key fine-tune mode
+                float s = speed;  // TODO: check if this speed constant should be dependent on UIScale
+                if (m.currentContext.isKeyHeld(murka::MurkaKey::MURKA_KEY_SHIFT)) {
+                    s *= 10;
+                }
+                *((float*)dataToControl) += ( m.currentContext.mouseDelta.y / s) * (rangeTo - rangeFrom);
+            }
+            
+            if (*((float*)dataToControl) > rangeTo) {
+                *((float*)dataToControl) = rangeTo;
+            }
+            
+            if (*((float*)dataToControl) < rangeFrom) {
+                *((float*)dataToControl) = rangeFrom;
+            }
+            changed = true;
+        }
     }
     
     // Text based declares
@@ -108,7 +233,11 @@ public:
     bool shouldForceEditorToSelectAll = false;
     
     float* dataToControl = nullptr;
+    float defaultValue = 0;
+    float speed = 250.;
+    
     bool hovered = false;
+    bool externalHover = false;
     bool changed = false;
     bool enabled = true;
     bool draggingNow = false;

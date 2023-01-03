@@ -16,6 +16,7 @@
 #include "../PluginProcessor.h"
 #include "../Config.h"
 
+#include "M1Radial.h"
 #include "M1Slider.h"
 #include "M1Checkbox.h"
 #include "M1DropdownMenu.h"
