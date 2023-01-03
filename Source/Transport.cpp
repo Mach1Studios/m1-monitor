@@ -30,9 +30,9 @@ void Transport::updateOffset(int hh, int mm, int ss, int fs) {
         MM = mm;
         SS = ss;
         FS = fs;
-        m1OrientationClient->isConnectedToServer() {
+        if (m1OrientationClient->isConnectedToServer()) {
             m1OrientationClient->command_setFrameRate(currentFrameRate);
-            m1OrientationClient->command_setPlayheadPositionInSeconds();
+            m1OrientationClient->command_setPlayheadPositionInSeconds((hh*60+mm)*60+ss+(fs/currentFrameRate));
         }
     }
 }

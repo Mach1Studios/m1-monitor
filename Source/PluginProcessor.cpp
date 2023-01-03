@@ -218,18 +218,11 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (totalNumInputChannels == 4){
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoHorizon_4);
     } else if (totalNumInputChannels == 8){
-        bool useIsotropic = true; // TODO: implement this switch
-        if (useIsotropic) {
-            m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
-        } else {
-            m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatialAlt_8);
-        }
+        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     } else if (totalNumInputChannels == 12){
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_12);
     } else if (totalNumInputChannels == 14){
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
-    } else if (totalNumInputChannels == 16){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_16);
     } else if (totalNumInputChannels == 32){
         m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
     } else if (totalNumInputChannels == 36){
