@@ -26,13 +26,27 @@
     <FILE id="LZ4a2M" name="Proxima Nova Reg.ttf" compile="0" resource="1"
           file="Resources/Proxima Nova Reg.ttf"/>
     <GROUP id="{1A61DF24-6C83-F2B0-E219-82AEC738A757}" name="Source">
+      <GROUP id="{65E6E8D1-0D3C-911A-6E1A-BA0D2285B921}" name="UI">
+        <FILE id="OPdUVe" name="M1Checkbox.h" compile="0" resource="0" file="Source/UI/M1Checkbox.h"/>
+        <FILE id="Dz0YhP" name="M1DropdownButton.h" compile="0" resource="0"
+              file="Source/UI/M1DropdownButton.h"/>
+        <FILE id="yAe5nz" name="M1DropdownMenu.h" compile="0" resource="0"
+              file="Source/UI/M1DropdownMenu.h"/>
+        <FILE id="VJoyZl" name="MonitorUIBaseComponent.cpp" compile="1" resource="0"
+              file="Source/UI/MonitorUIBaseComponent.cpp"/>
+        <FILE id="rryQwM" name="MonitorUIBaseComponent.h" compile="0" resource="0"
+              file="Source/UI/MonitorUIBaseComponent.h"/>
+      </GROUP>
+      <FILE id="Bm5q9U" name="Config.h" compile="0" resource="0" file="Source/Config.h"/>
+      <FILE id="sOr4L0" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="J0QgYS" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="sOr4L0" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
-      <FILE id="OjHb42" name="PluginProcessor.cpp" compile="1" resource="0"
-            file="Source/PluginProcessor.cpp"/>
       <FILE id="Z86tN9" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
+      <FILE id="OjHb42" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="jzd5rW" name="Transport.h" compile="0" resource="0" file="Source/Transport.h"/>
+      <FILE id="LeIQEy" name="Transport.cpp" compile="1" resource="0" file="Source/Transport.cpp"/>
       <FILE id="FNuqKH" name="Mach1Decode.cpp" compile="1" resource="0" file="../../m1-sdk/mach1spatial-libs/xcode/include/Mach1Decode.cpp"/>
       <FILE id="gO1Bio" name="Mach1Decode.h" compile="0" resource="0" file="../../m1-sdk/mach1spatial-libs/xcode/include/Mach1Decode.h"/>
       <FILE id="OY8VqJ" name="Mach1DecodeCAPI.h" compile="0" resource="0"
