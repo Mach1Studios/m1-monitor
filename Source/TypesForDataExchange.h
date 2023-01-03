@@ -1,0 +1,15 @@
+#ifndef TYPESFORDATAEXCHANGE_H
+#define TYPESFORDATAEXCHANGE_H
+
+#include "Mach1Decode.h"
+
+struct MixerSettings {
+	int monitor_input_channel_count;
+	int monitor_output_channel_count;
+	float yaw;
+	float pitch;
+	float roll;
+    int monitor_mode;
+};
+
+#endif

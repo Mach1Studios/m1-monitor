@@ -10,6 +10,7 @@ MonitorUIBaseComponent::MonitorUIBaseComponent(M1MonitorAudioProcessor* processo
 	setSize (getWidth(), getHeight());
 
 	processor = processor_;
+    monitorState = &processor->monitorState;
 }
 
 MonitorUIBaseComponent::~MonitorUIBaseComponent()
@@ -51,19 +52,38 @@ void MonitorUIBaseComponent::render()
 
 	m.setColor(BACKGROUND_GREY);
 	m.clear();
-    
-	// Changes the default knob reaction speed to mouse. The higher the slower.
-	float knobSpeed = 350;
-    
-	int xOffset = 0;
-	int yOffset = 499;
-	int knobWidth = 70;
-	int knobHeight = 87;
-	int M1LabelOffsetX = 0;
-    int M1LabelOffsetY = 25;
 
     /// YPR SLIDERS
-
+    auto& pitchSlider = m.draw<M1Slider>({  208, 8, 41, 224 })
+                                            .withLabel("PITCH")
+                                            .hasMovingLabel(true)
+                                            .drawHorizontal(false);
+    pitchSlider.cursorHide = cursorHide;
+    pitchSlider.cursorShow = cursorShow;
+    pitchSlider.rangeFrom = 90.;
+    pitchSlider.rangeTo = -90.;
+    pitchSlider.dataToControl = &monitorState->pitch;
+    pitchSlider.commit();
+    
+    if (pitchSlider.changed) {
+        processor->parameterChanged(processor->paramPitch, monitorState->pitch);
+    }
+        
+    auto& rollSlider = m.draw<M1Slider>({   8, 232, 200, 30 })
+                                            .withLabel("ROLL")
+                                            .hasMovingLabel(true)
+                                            .drawHorizontal(true);
+    rollSlider.cursorHide = cursorHide;
+    rollSlider.cursorShow = cursorShow;
+    rollSlider.rangeFrom = 90.;
+    rollSlider.rangeTo = -90.;
+    rollSlider.dataToControl = &monitorState->roll;
+    rollSlider.commit();
+    
+    if (rollSlider.changed) {
+        processor->parameterChanged(processor->paramRoll, monitorState->roll);
+    }
+    
 	/// CHECKBOXES
 	float checkboxSlotHeight = 28;
     

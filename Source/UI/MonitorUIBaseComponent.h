@@ -12,9 +12,11 @@
 
 #include "juce_murka/JuceMurkaBaseComponent.h"
 
+#include "../TypesForDataExchange.h"
 #include "../PluginProcessor.h"
 #include "../Config.h"
 
+#include "M1Slider.h"
 #include "M1Checkbox.h"
 #include "M1DropdownMenu.h"
 #include "M1DropdownButton.h"
@@ -30,6 +32,7 @@
 class MonitorUIBaseComponent : public JuceMurkaBaseComponent
 {
     M1MonitorAudioProcessor* processor = nullptr;
+    MixerSettings* monitorState = nullptr;
 
 public:
     //==============================================================================
@@ -67,8 +70,6 @@ private:
     M1OrientationClientWindow orientationControlWindow;
     bool showOrientationControlMenu = false;
     bool showedOrientationControlBefore = false;
-    int DEBUG_orientationDeviceSelected = -1;
-    bool DEBUG_trackYaw = true, DEBUG_trackPitch = true, DEBUG_trackRoll = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MonitorUIBaseComponent)
 };

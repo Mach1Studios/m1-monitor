@@ -10,6 +10,8 @@
 
 #include <JuceHeader.h>
 #include <Mach1Decode.h>
+#include "Config.h"
+#include "TypesForDataExchange.h"
 #include "Transport.h"
 
 //==============================================================================
@@ -68,6 +70,7 @@ public:
     static juce::String paramMonitorMode;
     static juce::String paramDecodeMode;
     
+    MixerSettings monitorState;
     Mach1Decode m1Decode;
     juce::PluginHostType hostType;
 

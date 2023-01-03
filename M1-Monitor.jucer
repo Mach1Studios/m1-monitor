@@ -27,6 +27,8 @@
           file="Resources/Proxima Nova Reg.ttf"/>
     <GROUP id="{1A61DF24-6C83-F2B0-E219-82AEC738A757}" name="Source">
       <GROUP id="{65E6E8D1-0D3C-911A-6E1A-BA0D2285B921}" name="UI">
+        <FILE id="SauLyZ" name="M1Radial.h" compile="0" resource="0" file="Source/UI/M1Radial.h"/>
+        <FILE id="D09Us0" name="M1Slider.h" compile="0" resource="0" file="Source/UI/M1Slider.h"/>
         <FILE id="OPdUVe" name="M1Checkbox.h" compile="0" resource="0" file="Source/UI/M1Checkbox.h"/>
         <FILE id="Dz0YhP" name="M1DropdownButton.h" compile="0" resource="0"
               file="Source/UI/M1DropdownButton.h"/>
@@ -38,6 +40,8 @@
               file="Source/UI/MonitorUIBaseComponent.h"/>
       </GROUP>
       <FILE id="Bm5q9U" name="Config.h" compile="0" resource="0" file="Source/Config.h"/>
+      <FILE id="kN0Sc9" name="TypesForDataExchange.h" compile="0" resource="0"
+            file="Source/TypesForDataExchange.h"/>
       <FILE id="sOr4L0" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="J0QgYS" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
