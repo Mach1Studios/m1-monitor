@@ -54,6 +54,18 @@ void MonitorUIBaseComponent::render()
 	m.clear();
 
     /// YPR SLIDERS
+    auto& yawRadial = m.draw<M1Radial>({ 32, 96, 150, 24 }).withLabel("YAW");
+    yawRadial.cursorHide = cursorHide;
+    yawRadial.cursorShow = cursorShow;
+    yawRadial.rangeFrom = 0.;
+    yawRadial.rangeTo = 360.;
+    yawRadial.dataToControl = &monitorState->yaw;
+    yawRadial.commit();
+    
+    if (yawRadial.changed) {
+        processor->parameterChanged(processor->paramYaw, monitorState->yaw);
+    }
+    
     auto& pitchSlider = m.draw<M1Slider>({  208, 8, 41, 224 })
                                             .withLabel("PITCH")
                                             .hasMovingLabel(true)
