@@ -16,13 +16,17 @@ public:
         MurkaContext& context = m.currentContext;
         bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
 
-        // outline border
-        m.setColor(ENABLED_PARAM);
-        m.drawRectangle(0, 0,
-                        shape.size.x, shape.size.y);
-        m.setColor(BACKGROUND_GREY);
-        m.drawRectangle(1, 1,
-                        shape.size.x - 2, shape.size.y - 2);
+        if (hideOutlineBorder) {
+            // skip drawing outline border
+        } else {
+            // outline border
+            m.setColor(ENABLED_PARAM);
+            m.drawRectangle(0, 0,
+                            shape.size.x, shape.size.y);
+            m.setColor(BACKGROUND_GREY);
+            m.drawRectangle(1, 1,
+                            shape.size.x - 2, shape.size.y - 2);
+        }
 
         m.setColor(LABEL_TEXT_COLOR);
         m.setFont("Proxima Nova Reg.ttf", fontSize);
@@ -39,6 +43,7 @@ public:
     
     std::string label = "";    
     bool pressed = false;
+    bool hideOutlineBorder = false;
     double fontSize = 10;
     
     operator bool() {

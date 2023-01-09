@@ -52,9 +52,43 @@ void MonitorUIBaseComponent::render()
 
 	m.setColor(BACKGROUND_GREY);
 	m.clear();
-
+    
+    /*
+    // TODO: window resize for settings view
+    if (showSettingsMenu) {
+        setSize(504, 469);
+        
+        // Settings rendering
+        
+        //Timecode rect
+        //g.setColour(Colour(52, 52, 51));
+        //g.fillRect(265, 327, 215, 27);
+        
+        //Broadcast rect
+        //g.setColour(Colour(52, 52, 51));
+        //g.fillRect(265, 272, 215, 27);
+        
+        //right side
+        //g.setColour(Colour(92, 92, 92)); //faded out
+        //g.drawText("BROADCAST MIX", 267, 252, 150, 20, Justification::left);
+        //g.setColour(Colour(140, 140, 140));
+        //g.setFont(getProximaNova(11));
+        //g.drawText("TIME CODE OFFSET", 267, 305, 150, 20, Justification::left);
+        //g.drawText("OSC PORT", 267, 365, 150, 20, Justification::left);
+        //g.drawText("INPUT", 267, 390, 150, 20, Justification::left);
+        
+        //left side
+        //g.setFont(getProximaNova(11));
+        //g.setColour(Colour(140, 140, 140));
+        //g.drawText("MONITOR MODE", 17, 252, 150, 20, Justification::left);
+        
+    } else {
+        setSize(504, 266);
+    }
+     */
+    
     /// YPR SLIDERS
-    auto& yawRadial = m.draw<M1Radial>({ 32, 96, 150, 24 }).withLabel("YAW");
+    auto& yawRadial = m.draw<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
     yawRadial.cursorHide = cursorHide;
     yawRadial.cursorShow = cursorShow;
     yawRadial.rangeFrom = 0.;
@@ -66,7 +100,7 @@ void MonitorUIBaseComponent::render()
         processor->parameterChanged(processor->paramYaw, monitorState->yaw);
     }
     
-    auto& pitchSlider = m.draw<M1Slider>({  208, 8, 41, 224 })
+    auto& pitchSlider = m.draw<M1Slider>({  327, 26, 108, 108 })
                                             .withLabel("PITCH")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(false);
@@ -81,7 +115,7 @@ void MonitorUIBaseComponent::render()
         processor->parameterChanged(processor->paramPitch, monitorState->pitch);
     }
         
-    auto& rollSlider = m.draw<M1Slider>({   8, 232, 200, 30 })
+    auto& rollSlider = m.draw<M1Slider>({   317, 148, 129, 68 })
                                             .withLabel("ROLL")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(true);
@@ -97,18 +131,53 @@ void MonitorUIBaseComponent::render()
     }
     
 	/// CHECKBOXES
-	float checkboxSlotHeight = 28;
     
-//    auto& autoOrbitCheckbox = m.draw<M1Checkbox>({ 557, 475 + checkboxSlotHeight * 3,
-//                                                200, 20 })
-//                                                .controlling(&pannerState->autoOrbit)
-//                                                .withLabel("AUTO ORBIT");
-//    autoOrbitCheckbox.enabled = (pannerState->m1Encode->getInputMode() != Mach1EncodeInputModeMono);
-//    autoOrbitCheckbox.commit();
-//
-//    if (autoOrbitCheckbox.changed) {
-//        processor->parameterChanged(processor->paramAutoOrbit, pannerState->autoOrbit);
-//    }
+	float checkboxSlotHeight = 30;
+    
+    auto& yawActive = m.draw<M1Checkbox>({ 267, 410 + checkboxSlotHeight * 3,
+                                                100, 30 })
+                                                .controlling(&monitorState->yawActive)
+                                                .withLabel("Y");
+    yawActive.enabled = true;
+    yawActive.commit();
+
+    if (yawActive.changed) {
+        processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
+    }
+    
+    auto& pitchActive = m.draw<M1Checkbox>({ 307, 410 + checkboxSlotHeight * 3,
+                                                100, 30 })
+                                                .controlling(&monitorState->pitchActive)
+                                                .withLabel("P");
+    pitchActive.enabled = true;
+    pitchActive.commit();
+
+    if (pitchActive.changed) {
+        processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
+    }
+    
+    auto& rollActive = m.draw<M1Checkbox>({ 347, 410 + checkboxSlotHeight * 3,
+                                                100, 30 })
+                                                .controlling(&monitorState->rollActive)
+                                                .withLabel("R");
+    rollActive.enabled = true;
+    rollActive.commit();
+
+    if (rollActive.changed) {
+        processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
+    }
+    
+    /// Monitor Settings button
+    auto& showSettingsButton = m.draw<M1DropdownButton>({ m.getSize().width()/2 - 40, m.getSize().height() - 20,
+                                                100, 20 })
+                                                .withLabel("SETTINGS      ");
+    showSettingsButton.hideOutlineBorder = true;
+
+    // TODO: draw arrow at end of "SETTINGS" string
+    
+    if (showSettingsButton.pressed) {
+        showSettingsMenu = !showSettingsMenu;
+    }
     
     /// Monitor label
     m.setColor(200, 255);

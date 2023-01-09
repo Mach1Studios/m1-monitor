@@ -51,6 +51,8 @@ private:
     MurkaPoint cachedMousePositionWhenMouseWasHidden = { 0, 0 };
     MurkaPoint currentMousePosition = { 0, 0 };
     
+    bool showSettingsMenu = false;
+    
 	MurImage m1logo;
 
 	std::function<void()> cursorHide = [&]() {
