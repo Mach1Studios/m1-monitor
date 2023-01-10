@@ -50,13 +50,15 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             //g.setColour(Colour(120, 120, 120));
             m.setFont("Proxima Nova Reg.ttf", fontSize);
-            m.draw<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
-                                    80, 20})
-                                    .withAlignment(TEXT_CENTER).text(label).commit();
 
             if (movingLabel) {
-                m.setColor(REF_LABEL_TEXT_COLOR);
                 m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28, 40, 60}).withAlignment(TEXT_CENTER).text(label).commit();
+                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 + 43, ellipseSize * 6, 20})
+                    .withAlignment(TEXT_CENTER).text(valueText).commit();
+            } else {
+                m.draw<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
+                                        80, 20})
+                                        .withAlignment(TEXT_CENTER).text(label).commit();
             }
             
             // Draw reticle circle
@@ -71,20 +73,22 @@ public:
             m.setColor(133 + 20 * A(reticleHover));
             m.drawLine(c.getSize().x / 2, ellipseSize / 2, shape.size.x / 2, shape.size.y - ellipseSize);
 
-            m.setColor(REF_LABEL_TEXT_COLOR);
             //g.setColour(Colour(120, 120, 120));
             m.setFont("Proxima Nova Reg.ttf", fontSize);
-            m.draw<murka::Label>({  0, shape.size.y / 2 - 10,
-                                    shape.size.x / 3, 20})
-                                    .withAlignment(TEXT_CENTER).text(label).commit();
-            
-            m.draw<murka::Label>({  shape.size.x / 2 - 5, reticlePositionNorm * (shape.size.y - ellipseSize) - 4,
-                                    ellipseSize * 6, 20})
-                                    .withAlignment(TEXT_CENTER).text(valueText).commit();
+            m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
-                m.setColor(REF_LABEL_TEXT_COLOR);
                 m.draw<murka::Label>({(shape.size.x/2) - 51, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).commit();
+                m.draw<murka::Label>({  shape.size.x / 2 - 5, reticlePositionNorm * (shape.size.y - ellipseSize) - 4,
+                                        ellipseSize * 6, 20})
+                    .withAlignment(TEXT_CENTER).text(valueText).commit();
+            } else {
+                m.draw<murka::Label>({  0, shape.size.y / 2 - 10,
+                                        shape.size.x / 3, 20})
+                                        .withAlignment(TEXT_CENTER).text(label).commit();
+                m.draw<murka::Label>({  shape.size.x / 2 - 5, shape.size.y - ellipseSize - 4,
+                                        ellipseSize * 6, 20})
+                    .withAlignment(TEXT_CENTER).text(valueText).commit();
             }
             
             // Draw reticle circle
@@ -118,40 +122,6 @@ public:
                                      shape.size.x * 0.8 + 10,
                                      valueTextBbox.width + 10,
                                      valueTextBbox.height };
-        
-        if (editingTextNow) {
-            auto& textFieldObject =
-                m.draw<TextField>({ valueTextShape.x() - 5, valueTextShape.y() - 5,
-                    valueTextShape.width() + 10, valueTextShape.height() + 10 })
-                .controlling(data)
-                .withPrecision(2)
-                .forcingEditorToSelectAll(shouldForceEditorToSelectAll)
-                .onlyAllowNumbers(true)
-                .commit();
-            
-            auto textFieldResults = textFieldObject.results;
-            
-            if (shouldForceEditorToSelectAll) {
-                // We force selection by sending the value to text editor field
-                shouldForceEditorToSelectAll = false;
-            }
-            
-            if (!textFieldResults) {
-                textFieldObject.activated = true;
-                c.claimKeyboardFocus(&textFieldObject);
-            }
-            
-            if (textFieldResults) {
-                editingTextNow = false;
-
-                deleteTheTextField();
-            }
-        } else {
-            m.draw<murka::Label>({0, shape.size.x * 0.8 + 10,
-                shape.size.x, shape.size.y * 0.5})
-                .withAlignment(TEXT_CENTER).text(valueText)
-                .commit();
-        }
         
         bool hoveredValueText = false;
         if (valueTextShape.inside(m.currentContext.mousePosition) && !editingTextNow && enabled) {
