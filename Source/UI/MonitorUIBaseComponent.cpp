@@ -39,7 +39,7 @@ void MonitorUIBaseComponent::render()
 
     currentMousePosition = m.currentContext.mousePosition * 0.7;
     
-    float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
+    float scale = (float)openGLContext.getRenderingScale() * 0.7;
 
     if (scale != m.getScreenScale()) {
         m.setScreenScale(scale);
@@ -48,48 +48,46 @@ void MonitorUIBaseComponent::render()
     }
 
 	m.begin();
-    m.setFont("Proxima Nova Reg.ttf", 10);
-
 	m.setColor(BACKGROUND_GREY);
 	m.clear();
     
-    /*
     // TODO: window resize for settings view
     if (showSettingsMenu) {
-        setSize(504, 469);
+        //setSize(504, 469);
         
         // Settings rendering
         
         //Timecode rect
-        //g.setColour(Colour(52, 52, 51));
-        //g.fillRect(265, 327, 215, 27);
+        m.setColor(GRID_LINES_1_RGBA);
+        m.enableFill();
+        m.drawRectangle(265, 327, 215, 27);
         
         //Broadcast rect
-        //g.setColour(Colour(52, 52, 51));
-        //g.fillRect(265, 272, 215, 27);
+        m.enableFill();
+        m.drawRectangle(265, 272, 215, 27);
         
         //right side
-        //g.setColour(Colour(92, 92, 92)); //faded out
-        //g.drawText("BROADCAST MIX", 267, 252, 150, 20, Justification::left);
-        //g.setColour(Colour(140, 140, 140));
-        //g.setFont(getProximaNova(11));
-        //g.drawText("TIME CODE OFFSET", 267, 305, 150, 20, Justification::left);
-        //g.drawText("OSC PORT", 267, 365, 150, 20, Justification::left);
-        //g.drawText("INPUT", 267, 390, 150, 20, Justification::left);
+        m.setColor(DISABLED_PARAM);
+        m.setFont("Proxima Nova Reg.ttf", 11);
+        m.draw<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").commit();
+        m.setColor(ENABLED_PARAM);
+        m.draw<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").commit();
+        m.draw<murka::Label>({267, 365, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").commit();
+        m.draw<murka::Label>({267, 390, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").commit();
         
         //left side
-        //g.setFont(getProximaNova(11));
-        //g.setColour(Colour(140, 140, 140));
-        //g.drawText("MONITOR MODE", 17, 252, 150, 20, Justification::left);
+        m.setColor(ENABLED_PARAM);
+        m.draw<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").commit();
         
     } else {
-        setSize(504, 266);
+        //setSize(504, 266);
     }
-     */
+    
+    m.setFont("Proxima Nova Reg.ttf", 10);
     
     /// YPR SLIDERS
     // TODO: why do i have to multiply by 1.44 ratio to make it the same value as the old monitor?
-    auto& yawRadial = m.draw<M1Radial>({ 35*1.44, 25*1.44, 189*1.44, 189*1.44 }).withLabel("YAW");
+    auto& yawRadial = m.draw<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
     yawRadial.cursorHide = cursorHide;
     yawRadial.cursorShow = cursorShow;
     yawRadial.rangeFrom = 0.;
@@ -102,7 +100,7 @@ void MonitorUIBaseComponent::render()
         processor->parameterChanged(processor->paramYaw, monitorState->yaw);
     }
     
-    auto& pitchSlider = m.draw<M1Slider>({  327*1.44, 26*1.44, 108*1.44, 108*1.44 })
+    auto& pitchSlider = m.draw<M1Slider>({  327, 26, 108, 108 })
                                             .withLabel("PITCH")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(false);
@@ -118,7 +116,7 @@ void MonitorUIBaseComponent::render()
         processor->parameterChanged(processor->paramPitch, monitorState->pitch);
     }
         
-    auto& rollSlider = m.draw<M1Slider>({   317*1.44, 148*1.44, 129*1.44, 68*1.44 })
+    auto& rollSlider = m.draw<M1Slider>({   317, 148, 129, 68 })
                                             .withLabel("ROLL")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(true);
