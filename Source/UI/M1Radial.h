@@ -35,7 +35,6 @@ public:
         auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
         
         float inputValueNormalised = ((*data - rangeFrom) / (rangeTo - rangeFrom));
-        float inputValueAngleInDegrees = inputValueNormalised * 360;
         
         m.pushStyle();
         

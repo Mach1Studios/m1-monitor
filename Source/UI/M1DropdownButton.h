@@ -14,18 +14,16 @@ class M1DropdownButton : public murka::View<M1DropdownButton> {
 public:
     void internalDraw(Murka & m) {
         MurkaContext& context = m.currentContext;
-        bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
+        //bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
 
         if (hideOutlineBorder) {
             // skip drawing outline border
         } else {
             // outline border
             m.setColor(ENABLED_PARAM);
-            m.drawRectangle(0, 0,
-                            shape.size.x, shape.size.y);
+            m.drawRectangle(0, 0, shape.size.x, shape.size.y);
             m.setColor(BACKGROUND_GREY);
-            m.drawRectangle(1, 1,
-                            shape.size.x - 2, shape.size.y - 2);
+            m.drawRectangle(1, 1, shape.size.x - 2, shape.size.y - 2);
         }
 
         m.setColor(LABEL_TEXT_COLOR);

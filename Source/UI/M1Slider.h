@@ -16,33 +16,34 @@ public:
         MurkaContext& context = m.currentContext;
         auto& c = context; // shorthand of above
         
-        bool inside = c.isHovered() *
-//        Had to temporary remove the areInteractiveChildrenHovered because of the bug in Murka with the non-deleting children widgets. TODO: fix this
-//        !areInteractiveChildrenHovered(ctx) *
-            hasMouseFocus(m)
-            * (!editingTextNow);
-        bool reticleHover = false + draggingNow;
+        bool inside = c.isHovered() * !areInteractiveChildrenHovered(c) * hasMouseFocus(m);
+        hovered = inside + draggingNow;
+        bool hoveredLocal = hovered/* + externalHovered*/; // this variable is not used outside the widget to avoid feedback loop
+        changed = false; // false unless the user changed a value using this knob
         
-        changed = false;
-        hovered = inside + draggingNow; // for external views to be highlighted too if needed
-        bool hoveredLocal = hovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
-
         if (!enabled) {
             hoveredLocal = false;
         }
         
+        int ellipseSize = 5;
+        
         std::string displayString = float_to_string(*data, floatingPointPrecision);
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
-        auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
         
         float reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
-        float inputValueAngleInDegrees = reticlePositionNorm * 360;
-        
+        MurkaShape reticlePosition = { c.getSize().x / 2 - 6,
+                                      (shape.size.y) * reticlePositionNorm - 6,
+                                      12,
+                                      12 };
+        bool reticleHover = false + draggingNow;
+        if (reticlePosition.inside(c.mousePosition)) {
+            reticleHover = true;
+        }
+                
         m.pushStyle();
         m.enableFill();
-        
-        float ellipseSize = 8;
+                
         if (isHorizontal) { // draw horizontally
             m.setColor(133 + 20 * A(reticleHover));
             m.drawLine(ellipseSize / 2, shape.size.y / 2, shape.size.x - ellipseSize, shape.size.y / 2);
@@ -52,10 +53,11 @@ public:
             m.setFont("Proxima Nova Reg.ttf", fontSize);
 
             if (movingLabel) {
-                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28, 40, 60}).withAlignment(TEXT_CENTER).text(label).commit();
-                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 + 43, ellipseSize * 6, 20})
+                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 - 10, 40, 60}).withAlignment(TEXT_CENTER).text(label).commit();
+                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 + 40, ellipseSize * 6, 20})
                     .withAlignment(TEXT_CENTER).text(valueText).commit();
             } else {
+                // TODO: add the value label
                 m.draw<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
                                         80, 20})
                                         .withAlignment(TEXT_CENTER).text(label).commit();
@@ -67,7 +69,7 @@ public:
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(reticlePositionNorm * (shape.size.x - ellipseSize), shape.size.y/2 - ellipseSize/2, (ellipseSize * A(reticleHover)));
+            m.drawCircle(reticlePositionNorm * (shape.size.x - ellipseSize), shape.size.y/2 - ellipseSize/2, ellipseSize);
             
         } else { // draw verically
             m.setColor(133 + 20 * A(reticleHover));
@@ -78,8 +80,8 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
-                m.draw<murka::Label>({(shape.size.x/2) - 51, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).commit();
-                m.draw<murka::Label>({  shape.size.x / 2 - 5, reticlePositionNorm * (shape.size.y - ellipseSize) - 4,
+                m.draw<murka::Label>({ shape.size.x / 2 - 70, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).commit();
+                m.draw<murka::Label>({ shape.size.x / 2 + 10, reticlePositionNorm * (shape.size.y - ellipseSize) - 14,
                                         ellipseSize * 6, 20})
                     .withAlignment(TEXT_CENTER).text(valueText).commit();
             } else {
@@ -97,52 +99,11 @@ public:
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(shape.size.x/2 - ellipseSize/2, reticlePositionNorm * (shape.size.y - ellipseSize), (ellipseSize * A(reticleHover)));
+            m.drawCircle(shape.size.x/2 - ellipseSize/2, reticlePositionNorm * (shape.size.y - ellipseSize), ellipseSize);
         }
         m.popStyle();
     
         auto labelPositionY = shape.size.x * 0.8 + 10;
-        
-        std::function<void()> deleteTheTextField = [&]() {
-            // Temporary solution to delete the TextField:
-            // Searching for an id to delete the text field widget.
-            // To be redone after the UI library refactoring.
-            
-            imIdentifier idToDelete;
-            for (auto childTuple: imChildren) {
-                auto childIdTuple = childTuple.first;
-                if (std::get<1>(childIdTuple) == typeid(TextField).name()) {
-                    idToDelete = childIdTuple;
-                }
-            }
-            imChildren.erase(idToDelete);
-        };
-
-        MurkaShape valueTextShape = { shape.size.x / 2 - valueTextBbox.width / 2 - 5,
-                                     shape.size.x * 0.8 + 10,
-                                     valueTextBbox.width + 10,
-                                     valueTextBbox.height };
-        
-        bool hoveredValueText = false;
-        if (valueTextShape.inside(m.currentContext.mousePosition) && !editingTextNow && enabled) {
-            m.drawRectangle(valueTextShape.x() - 2,
-                             valueTextShape.y(),
-                             2,
-                             2);
-            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
-                             valueTextShape.y(),
-                             2,
-                             2);
-            m.drawRectangle(valueTextShape.x() - 2,
-                             valueTextShape.y() + valueTextShape.height(),
-                             2,
-                             2);
-            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
-                             valueTextShape.y() + valueTextShape.height(),
-                             2,
-                             2);
-            hoveredValueText = true;
-        }
         
         // Action
         
