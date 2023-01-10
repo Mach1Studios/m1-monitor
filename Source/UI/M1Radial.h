@@ -42,12 +42,15 @@ public:
         // Increase circle resolution
         m.setCircleResolution(64);
         
+        m.setLineWidth(8);
+        m.enableFill();
+        
         //g.setColour(Colour(51, 51, 51));
-        m.setColor(BACKGROUND_GREY);
-        m.drawCircle(0, 0, shape.size.x);
+        m.setColor(GRID_LINES_1_RGBA);
+        m.drawCircle(shape.size.x/2, shape.size.y/2, shape.size.x/2);
         
         //g.setColour(Colour(120, 120, 120));
-        m.setColor(GRID_LINES_4_RGB);
+        m.setColor(REF_LABEL_TEXT_COLOR);
         m.setFont("Proxima Nova Reg.ttf", fontSize);
         m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 4, 40, 30}).withAlignment(TEXT_CENTER).text(label).commit();
         
@@ -68,7 +71,6 @@ public:
             juce::Point<float> end = center +
             juce::Point<float>(cos(angle) * endL, sin(angle) * endL);
             
-            m.setLineWidth(2);
             m.drawLine(start.x, start.y, end.x, end.y);
         }
 
@@ -83,7 +85,6 @@ public:
             juce::Point<float> end = center +
                                  juce::Point<float>(cos(angle) * endL, sin(angle) * endL);
             
-            m.setLineWidth(2);
             m.drawLine(start.x, start.y, end.x, end.y);
         }
         
@@ -110,20 +111,19 @@ public:
             juce::Point<float> lineEnd = center +
                                     juce::Point<float>(cos(angle1 + 0.01) * (shape.size.x / 2 - 1), sin(angle1 + 0.01) * (shape.size.y / 2 - 1));
             //draw arc
-            m.setLineWidth(2);
             m.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
         }
         
-        juce::Point<float> centralLineStart = center  + juce::Point<float>(cos(angle) * 15,
+        // TODO: have start point drawn a little further from center to make more room for value label
+        juce::Point<float> centralLineStart = center + juce::Point<float>(cos(angle) * 15,
                                                               sin(angle) * 15) ;
         juce::Point<float> centralLineEnd = center + juce::Point<float>(cos(angle) * (shape.size.x / 2 - 7), sin(angle) * (shape.size.x / 2 - 7));
-        //draw mainline
-        m.setLineWidth(2);
+        // draw main line
         m.drawLine(centralLineStart.x, centralLineStart.y, centralLineEnd.x, centralLineEnd.y);
         
-        // How many angles
+        // value label
         m.setFont("Proxima Nova Reg.ttf", fontSize);
-        m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 2 - 20, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).commit();
+        m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 2 - 10, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).commit();
         
         m.popStyle();
         
@@ -149,40 +149,6 @@ public:
                                      shape.size.x * 0.8 + 10,
                                      valueTextBbox.width + 10,
                                      valueTextBbox.height };
-        
-        if (editingTextNow) {
-            auto& textFieldObject =
-                m.draw<TextField>({ valueTextShape.x() - 5, valueTextShape.y() - 5,
-                    valueTextShape.width() + 10, valueTextShape.height() + 10 })
-                .controlling(data)
-                .withPrecision(2)
-                .forcingEditorToSelectAll(shouldForceEditorToSelectAll)
-                .onlyAllowNumbers(true)
-                .commit();
-            
-            auto textFieldResults = textFieldObject.results;
-            
-            if (shouldForceEditorToSelectAll) {
-                // We force selection by sending the value to text editor field
-                shouldForceEditorToSelectAll = false;
-            }
-            
-            if (!textFieldResults) {
-                textFieldObject.activated = true;
-                c.claimKeyboardFocus(&textFieldObject);
-            }
-            
-            if (textFieldResults) {
-                editingTextNow = false;
-
-                deleteTheTextField();
-            }
-        } else {
-            m.draw<murka::Label>({0, shape.size.x * 0.8 + 10,
-                shape.size.x, shape.size.y * 0.5})
-                .withAlignment(TEXT_CENTER).text(valueText)
-                .commit();
-        }
         
         bool hoveredValueText = false;
         if (valueTextShape.inside(m.currentContext.mousePosition) && !editingTextNow && enabled) {

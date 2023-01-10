@@ -88,19 +88,21 @@ void MonitorUIBaseComponent::render()
      */
     
     /// YPR SLIDERS
-    auto& yawRadial = m.draw<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
+    // TODO: why do i have to multiply by 1.44 ratio to make it the same value as the old monitor?
+    auto& yawRadial = m.draw<M1Radial>({ 35*1.44, 25*1.44, 189*1.44, 189*1.44 }).withLabel("YAW");
     yawRadial.cursorHide = cursorHide;
     yawRadial.cursorShow = cursorShow;
     yawRadial.rangeFrom = 0.;
     yawRadial.rangeTo = 360.;
     yawRadial.dataToControl = &monitorState->yaw;
+    yawRadial.enabled = true;
     yawRadial.commit();
     
     if (yawRadial.changed) {
         processor->parameterChanged(processor->paramYaw, monitorState->yaw);
     }
     
-    auto& pitchSlider = m.draw<M1Slider>({  327, 26, 108, 108 })
+    auto& pitchSlider = m.draw<M1Slider>({  327*1.44, 26*1.44, 108*1.44, 108*1.44 })
                                             .withLabel("PITCH")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(false);
@@ -109,13 +111,14 @@ void MonitorUIBaseComponent::render()
     pitchSlider.rangeFrom = 90.;
     pitchSlider.rangeTo = -90.;
     pitchSlider.dataToControl = &monitorState->pitch;
+    pitchSlider.enabled = true;
     pitchSlider.commit();
     
     if (pitchSlider.changed) {
         processor->parameterChanged(processor->paramPitch, monitorState->pitch);
     }
         
-    auto& rollSlider = m.draw<M1Slider>({   317, 148, 129, 68 })
+    auto& rollSlider = m.draw<M1Slider>({   317*1.44, 148*1.44, 129*1.44, 68*1.44 })
                                             .withLabel("ROLL")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(true);
@@ -124,6 +127,7 @@ void MonitorUIBaseComponent::render()
     rollSlider.rangeFrom = 90.;
     rollSlider.rangeTo = -90.;
     rollSlider.dataToControl = &monitorState->roll;
+    rollSlider.enabled = true;
     rollSlider.commit();
     
     if (rollSlider.changed) {
