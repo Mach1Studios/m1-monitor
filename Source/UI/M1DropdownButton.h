@@ -16,9 +16,7 @@ public:
         MurkaContext& context = m.currentContext;
         //bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
 
-        if (hideOutlineBorder) {
-            // skip drawing outline border
-        } else {
+        if (drawBorder) {
             // outline border
             m.setColor(ENABLED_PARAM);
             m.drawRectangle(0, 0, shape.size.x, shape.size.y);
@@ -39,7 +37,7 @@ public:
     
     std::string label = "";    
     bool pressed = false;
-    bool hideOutlineBorder = false;
+    bool drawBorder = true;
     double fontSize = 10;
     
     operator bool() {
