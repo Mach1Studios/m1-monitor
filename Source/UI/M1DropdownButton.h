@@ -28,15 +28,13 @@ public:
 
         m.setColor(LABEL_TEXT_COLOR);
         m.setFont("Proxima Nova Reg.ttf", fontSize);
-//        // centered interior text
+        // centered interior text
         m.draw<murka::Label>({(shape.size.x/2)-(shape.size.x/4), (shape.size.y/2)-(shape.size.y/4), shape.size.x, shape.size.y}).text(label).commit();
-
+        
         pressed = false;
         if ((context.isHovered()) && (context.mouseDownPressed[0])) {
             pressed = true; // Only sets to true the frame the "pressed" happened
         }
-
-//        m.popStyle(); // TODO: THIS THING MAKES EVERYTHING HANG, issue with Murka - have to show assert!
     };
     
     std::string label = "";    
