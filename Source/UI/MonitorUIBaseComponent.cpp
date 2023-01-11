@@ -172,7 +172,7 @@ void MonitorUIBaseComponent::render()
     auto& showSettingsButton = m.draw<M1DropdownButton>({ m.getSize().width()/2 - 40, m.getSize().height() - 20,
                                                 100, 20 })
                                                 .withLabel("SETTINGS      ");
-    showSettingsButton.hideOutlineBorder = true;
+    showSettingsButton.drawBorder = false;
     
     if (showSettingsButton.pressed) {
         showSettingsMenu = !showSettingsMenu;
