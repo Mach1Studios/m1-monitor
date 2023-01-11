@@ -78,7 +78,6 @@ void MonitorUIBaseComponent::render()
         //left side
         m.setColor(ENABLED_PARAM);
         m.draw<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").commit();
-        
     } else {
         //setSize(504, 266);
     }
@@ -174,11 +173,33 @@ void MonitorUIBaseComponent::render()
                                                 100, 20 })
                                                 .withLabel("SETTINGS      ");
     showSettingsButton.hideOutlineBorder = true;
-
-    // TODO: draw arrow at end of "SETTINGS" string
     
     if (showSettingsButton.pressed) {
         showSettingsMenu = !showSettingsMenu;
+    }
+    
+    // draw Settings button arrow
+    // TODO: fix and fill arrow
+    if (showSettingsMenu) {
+        // draw settings arrow indicator pointing up
+        m.enableFill();
+        m.setColor(LABEL_TEXT_COLOR);
+        std::vector<MurkaPoint3D> triangle;
+        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 10, 0});
+        triangle.push_back({(m.getSize().width()/2 - 40) + 95, m.getSize().height() - 15, 0}); // top middle
+        triangle.push_back({(m.getSize().width()/2 - 40) + 95, m.getSize().height() - 10, 0});
+        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 10, 0});
+        m.drawPath(triangle);
+    } else {
+        // draw settings arrow indicator pointing down
+        m.enableFill();
+        m.setColor(LABEL_TEXT_COLOR);
+        std::vector<MurkaPoint3D> triangle;
+        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 15, 0});
+        triangle.push_back({(m.getSize().width()/2 - 40) + 90, m.getSize().height() - 10, 0}); // bottom middle
+        triangle.push_back({(m.getSize().width()/2 - 40) + 95, m.getSize().height() - 15, 0});
+        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 15, 0});
+        m.drawPath(triangle);
     }
     
     /// Monitor label
