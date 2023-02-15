@@ -1,0 +1,1 @@
+juce_add_binary_data(Resources NAMESPACE BinaryData SOURCES mach1logo.png bluetooth_icon.png tech_support_icon.png wi-fi_icon.png)
