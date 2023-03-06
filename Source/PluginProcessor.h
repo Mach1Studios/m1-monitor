@@ -17,19 +17,53 @@
 //==============================================================================
 /**
 */
-class M1MonitorAudioProcessor  : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener
+class M1MonitorAudioProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
     M1MonitorAudioProcessor();
     ~M1MonitorAudioProcessor() override;
 
+    static AudioProcessor::BusesProperties getHostSpecificLayout() {
+        // This determines the initial bus i/o for plugin on construction and depends on the `isBusesLayoutSupported()`
+        juce::PluginHostType hostType;
+        
+        // Multichannel Pro Tools
+        // TODO: Check if Ultimate/HD
+        if (hostType.isProTools()) {
+            return BusesProperties()
+                .withInput("Mach1Spatial Input", juce::AudioChannelSet::create7point1(), true)
+                .withOutput("Default Output", juce::AudioChannelSet::stereo(), true);
+        }
+        
+        // Multichannel DAWs
+        if (hostType.isReaper() || hostType.isNuendo() || hostType.isDaVinciResolve() || hostType.isArdour()) {
+            if (hostType.getPluginLoadedAs() == AudioProcessor::wrapperType_VST3) {
+                return BusesProperties()
+                // VST3 requires named plugin configurations only
+                .withInput("Mach1Spatial In", juce::AudioChannelSet::ambisonic(5), true) // 36 named channel
+                .withOutput("Stereo Out", juce::AudioChannelSet::stereo(), true);
+            } else {
+                return BusesProperties()
+                .withInput("Mach1Spatial In", juce::AudioChannelSet::discreteChannels(60), true)
+                .withOutput("Stereo Out", juce::AudioChannelSet::stereo(), true);
+            }
+        }
+        
+        // STREAMING Monitor instance
+        return BusesProperties()
+            .withInput("Input", juce::AudioChannelSet::stereo(), true)
+            .withOutput("Output", juce::AudioChannelSet::stereo(), true);
+    }
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
     void parameterChanged(const juce::String &parameterID, float newValue) override;
-
-   #ifndef JucePlugin_PreferredChannelConfigurations
+    std::vector<juce::AudioChannelSet::ChannelType> orderOfChans; // For Mach1Spatial 8 only (to deal with ProTools 7.1 channel order)
+    std::vector<int> input_channel_indices;
+    void fillChannelOrderArray(int numInputChannels);
+    
+   #ifndef CUSTOM_CHANNEL_LAYOUT
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
    #endif
 
@@ -69,9 +103,10 @@ public:
     static juce::String paramRollEnable;
     static juce::String paramMonitorMode;
     static juce::String paramDecodeMode;
-    
-    MixerSettings monitorState;
-    Mach1Decode m1Decode;
+
+    double processorSampleRate = 44100; // only has to be something for the initilizer to work
+    void m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode);
+    MixerSettings monitorSettings;
     juce::PluginHostType hostType;
 
     void setStatus(bool success, std::string message);
@@ -85,8 +120,7 @@ private:
     juce::AudioProcessorValueTreeState parameters;
 
     std::vector<float> spatialMixerCoeffs;
-    std::vector<juce::LinearSmoothedValue<float>> smoothedChannelCoeffs;
-    juce::AudioBuffer<float> tempBuffer;
+    std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (M1MonitorAudioProcessor)
 };

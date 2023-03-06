@@ -20,21 +20,7 @@ juce::String M1MonitorAudioProcessor::paramDecodeMode("decodeMode");
 
 //==============================================================================
 M1MonitorAudioProcessor::M1MonitorAudioProcessor()
-     : AudioProcessor (BusesProperties()
-//                       #if (JucePlugin_Build_AAX || JucePlugin_Build_RTAS)
-//                       .withInput("Default Output", juce::AudioChannelSet::create7point1(), true)
-//                       #else
-                       .withInput ("Mach1 Output 1", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 2", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 3", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 4", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 5", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 6", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 7", juce::AudioChannelSet::mono(), true)
-                       .withInput ("Mach1 Output 8", juce::AudioChannelSet::mono(), true)
-//                       #endif
-                       .withOutput("Stereo Output", juce::AudioChannelSet::stereo(), true)
-                       ),
+     : AudioProcessor (getHostSpecificLayout()),
     parameters(*this, &mUndoManager, juce::Identifier("M1-Monitor"),
                {
                     std::make_unique<juce::AudioParameterFloat>(paramYaw,
@@ -67,9 +53,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     parameters.addParameterListener(paramMonitorMode, this);
     
     // Setup for Mach1Decode API
-    m1Decode.setPlatformType(Mach1PlatformDefault);
-    m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
-    m1Decode.setFilterSpeed(0.99);
+    monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
+    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
+    monitorSettings.m1Decode.setFilterSpeed(0.99);
     
     transport = new Transport();
     transport->setProcessor(this);
@@ -147,12 +133,20 @@ void M1MonitorAudioProcessor::changeProgramName (int index, const juce::String& 
 void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
-    smoothedChannelCoeffs.resize(m1Decode.getFormatCoeffCount());
-    spatialMixerCoeffs.resize(m1Decode.getFormatCoeffCount());
-    for (int input_channel = 0; input_channel < m1Decode.getFormatChannelCount(); input_channel++) {
-        smoothedChannelCoeffs[input_channel * 2].reset(sampleRate, (double)0.01);
-        smoothedChannelCoeffs[input_channel * 2 + 1].reset(sampleRate, (double)0.01);
+    if (!layoutCreated) {
+        createLayout();
     }
+    
+    // can still be used to calculate coeffs even in STREAMING_PANNER_PLUGIN mode
+    processorSampleRate = sampleRate;
+    
+    if (monitorSettings.m1Decode.getFormatChannelCount() != getMainBusNumInputChannels()){
+        bool channel_io_error = -1;
+        // error handling here?
+    }
+    
+    // Checks if output bus is non DISCRETE layout and fixes host specific channel ordering issues
+    //fillChannelOrderArray(pannerSettings.m1Encode.getOutputChannelsCount());
 }
 
 void M1MonitorAudioProcessor::releaseResources()
@@ -183,6 +177,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
+    juce::PluginHostType hostType;
     Mach1Decode configTester;
     
     // block plugin if input or output is disabled on construction
@@ -190,21 +185,99 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
      || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::disabled())
         return false;
     
-    // manually maintained for-loop of first enum element to last enum element
-    // TODO: brainstorm a way to not require manual maintaining of listed enum elements
-    for (int inputEnum = Mach1DecodeAlgoSpatial_8; inputEnum != Mach1DecodeAlgoSpatial_32; inputEnum++ ) {
-        configTester.setDecodeAlgoType(static_cast<Mach1DecodeAlgoType>(inputEnum));
-        // test each input, if the input has the number of channels as the input testing layout has move on to output testing
-        if (layouts.getMainInputChannels() == configTester.getFormatChannelCount()) {
-            // test each output
-            if (layouts.getMainOutputChannels() == 2){
+    if (hostType.isReaper()) {
+        return true;
+    }
+        
+    if (hostType.isProTools()) {
+        if ((   layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
+             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic())
+            &&
+            (   layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size() )) {
                 return true;
+        } else {
+            return false;
+        }
+    } else if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo() && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo()) {
+        // RETURN TRUE FOR EXTERNAL STREAMING MODE
+        // hard set {2,2} for streaming use case
+        return true;
+    } else {
+        // Test for all available Mach1Encode configs
+        // manually maintained for-loop of first enum element to last enum element
+        // TODO: brainstorm a way to not require manual maintaining of listed enum elements
+        for (int inputEnum = 0; inputEnum != Mach1DecodeAlgoSpatial_60; inputEnum++ ) {
+            configTester.setDecodeAlgoType(static_cast<Mach1DecodeAlgoType>(inputEnum));
+            // test each input, if the input has the number of channels as the input testing layout has move on to output testing
+            if (layouts.getMainInputChannelSet().size() == configTester.getFormatChannelCount()) {
+                // test each output
+                if (layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size()){
+                    return true;
+                }
             }
         }
+        return false;
     }
-    return false;
 }
 #endif
+
+void M1MonitorAudioProcessor::fillChannelOrderArray(int numInputChannels) {
+    orderOfChans.resize(numInputChannels);
+    input_channel_indices.resize(numInputChannels);
+    
+    juce::AudioChannelSet chanset = getBus(true, 0)->getCurrentLayout();
+    
+    if(!chanset.isDiscreteLayout() && numInputChannels == 8) {
+        // Layout for Pro Tools
+        if (hostType.isProTools()){
+            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+            orderOfChans[1] = juce::AudioChannelSet::ChannelType::centre;
+            orderOfChans[2] = juce::AudioChannelSet::ChannelType::right;
+            orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
+            orderOfChans[4] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
+            orderOfChans[5] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
+            orderOfChans[6] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
+            orderOfChans[7] = juce::AudioChannelSet::ChannelType::LFE;
+        } else {
+            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+            orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
+            orderOfChans[2] = juce::AudioChannelSet::ChannelType::centre;
+            orderOfChans[3] = juce::AudioChannelSet::ChannelType::LFE;
+            orderOfChans[4] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
+            orderOfChans[5] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
+            orderOfChans[6] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
+            orderOfChans[7] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
+        }
+        if (chanset.size() >= 8) {
+            for (int i = 0; i < numInputChannels; i ++) {
+                input_channel_indices[i] = chanset.getChannelIndexForType(orderOfChans[i]);
+            }
+        }
+    } else if (!chanset.isDiscreteLayout() && numInputChannels == 4){
+        // Layout for Pro Tools
+        if (hostType.isProTools()) {
+            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+            orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
+            orderOfChans[2] = juce::AudioChannelSet::ChannelType::rightSurround;
+            orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurround;
+        } else {
+            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+            orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
+            orderOfChans[2] = juce::AudioChannelSet::ChannelType::leftSurround;
+            orderOfChans[3] = juce::AudioChannelSet::ChannelType::rightSurround;
+        }
+        if (chanset.size() >= 4) {
+            for (int i = 0; i < numInputChannels; i ++) {
+                input_channel_indices[i] = chanset.getChannelIndexForType(orderOfChans[i]);
+            }
+        }
+    } else {
+        for (int i = 0; i < numInputChannels; ++i){
+            orderOfChans[i] = juce::AudioChannelSet::ChannelType::discreteChannel0;
+            input_channel_indices[i] = i;
+        }
+    }
+}
 
 void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
@@ -216,21 +289,21 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     if (totalNumInputChannels == 4){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoHorizon_4);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoHorizon_4);
     } else if (totalNumInputChannels == 8){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     } else if (totalNumInputChannels == 12){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_12);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_12);
     } else if (totalNumInputChannels == 14){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
     } else if (totalNumInputChannels == 32){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
     } else if (totalNumInputChannels == 36){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_36);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_36);
     } else if (totalNumInputChannels == 48){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_48);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_48);
     } else if (totalNumInputChannels == 60){
-        m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_60);
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_60);
     }
     
     // if you've got more output channels than input clears extra outputs
@@ -243,10 +316,10 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
     (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
     (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
-    m1Decode.setRotation(currentOrientation);
-    m1Decode.beginBuffer();
-    spatialMixerCoeffs = m1Decode.decodeCoeffs();
-    m1Decode.endBuffer();
+    monitorSettings.m1Decode.setRotation(currentOrientation);
+    monitorSettings.m1Decode.beginBuffer();
+    spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
+    monitorSettings.m1Decode.endBuffer();
     
     // Update spatial mixer coeffs from Mach1Decode for a smoothed value
     for (int channel = 0; channel < totalNumInputChannels; ++channel) {
@@ -261,7 +334,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     float* outBufferR = buffer.getWritePointer(1);
     std::vector<float> spatialCoeffsBufferL, spatialCoeffsBufferR;
 
-    if (totalNumInputChannels == m1Decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
+    if (totalNumInputChannels == monitorSettings.m1Decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
   
 //        TODO: Setup monitor modes
 //        if (stereoDownmix) {
@@ -389,70 +462,7 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
                 + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
         }
-    } else if (totalNumInputChannels == 16){
-        //INDEX:          0,1,2,3,4,5, 6 ,7 ,8 ,9
-        int mixMapL[] = { 0,2,4,6,8,10,11,12,14,15 };
-        int mixMapR[] = { 1,3,5,7,8,9, 10,12,13,14 };
-        
-        for (int i = 0; i < buffer.getNumSamples(); i++) {
-            outBufferL[i] = (
-                  tempBuffer.getReadPointer(mixMapL[0])[i]
-                + tempBuffer.getReadPointer(mixMapL[1])[i]
-                + tempBuffer.getReadPointer(mixMapL[2])[i]
-                + tempBuffer.getReadPointer(mixMapL[3])[i]
-                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[6])[i]
-                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[9])[i]               )/std::sqrt(2)/(totalNumInputChannels/2);
-
-            outBufferR[i] = (
-                  tempBuffer.getReadPointer(mixMapR[0])[i]
-                + tempBuffer.getReadPointer(mixMapL[1])[i]
-                + tempBuffer.getReadPointer(mixMapL[2])[i]
-                + tempBuffer.getReadPointer(mixMapL[3])[i]
-                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[5])[i]
-                + tempBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[8])[i]
-                + tempBuffer.getReadPointer(mixMapL[9])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
-        }
-    } else if (totalNumInputChannels == 18){
-        //INDEX:          0,1,2,3,4,5, 6 ,7 ,8 ,9 ,10,11
-        int mixMapL[] = { 0,2,4,6,8,10,11,12,14,15,16,17 };
-        int mixMapR[] = { 1,3,5,7,8,9, 10,12,13,14,16,17 };
-        
-        for (int i = 0; i < buffer.getNumSamples(); i++) {
-            outBufferL[i] = (
-                  tempBuffer.getReadPointer(mixMapL[0])[i]
-                + tempBuffer.getReadPointer(mixMapL[1])[i]
-                + tempBuffer.getReadPointer(mixMapL[2])[i]
-                + tempBuffer.getReadPointer(mixMapL[3])[i]
-                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[6])[i]
-                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[9])[i]
-                + tempBuffer.getReadPointer(mixMapL[10])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[11])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
-
-            outBufferR[i] = (
-                  tempBuffer.getReadPointer(mixMapR[0])[i]
-                + tempBuffer.getReadPointer(mixMapL[1])[i]
-                + tempBuffer.getReadPointer(mixMapL[2])[i]
-                + tempBuffer.getReadPointer(mixMapL[3])[i]
-                + tempBuffer.getReadPointer(mixMapL[4])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[5])[i]
-                + tempBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[8])[i]
-                + tempBuffer.getReadPointer(mixMapL[9])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[10])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[11])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
-        }
+    // TODO: implement stereo downmix for 32,36,48,60
     }
 }
 
@@ -465,6 +475,24 @@ bool M1MonitorAudioProcessor::hasEditor() const
 juce::AudioProcessorEditor* M1MonitorAudioProcessor::createEditor()
 {
     return new M1MonitorAudioProcessorEditor (*this);
+}
+
+//==============================================================================
+void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode) {
+
+    monitorSettings.m1Decode.setDecodeAlgoType(inputMode);
+    auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
+    smoothedChannelCoeffs.resize(inputChannelsCount);
+
+    // Checks if input bus is non DISCRETE layout and fixes host specific channel ordering issues
+    fillChannelOrderArray(inputChannelsCount);
+
+    for (int input_channel = 0; input_channel < inputChannelsCount; input_channel++) {
+        smoothedChannelCoeffs[input_channel].resize(2);
+        for (int output_channel = 0; output_channel < 2; output_channel++) {
+            smoothedChannelCoeffs[input_channel][output_channel].reset(processorSampleRate, (double)0.01);
+        }
+    }
 }
 
 //==============================================================================
