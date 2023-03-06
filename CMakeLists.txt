@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.15.0)
 file(STRINGS VERSION CURRENT_VERSION)
 project(M1-Monitor VERSION ${CURRENT_VERSION})
 
+# Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
+include(FetchContent)
+
 ### IDE Generator pre-config ###
 # Xcode: Disable automatic build scheme generation globally.
 #        Instead, we explicitely specify which targets require schemes.
@@ -159,25 +166,9 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE Resources PUBLIC juce::juce_recomme
 set(JucePlugin_Name ${PLUGIN_NAME})
 set(JucePlugin_Desc ${PLUGIN_NAME})
 
-# add M1-SDK
-set(MACH1SPATIAL_LIBS_PATH "Modules/m1-sdk/mach1spatial-libs")
-if(APPLE)
-    set(MACH1SPATIAL_LIBS_UNIX_PATH ${MACH1SPATIAL_LIBS_PATH}/xcode)
-else()
-    set(MACH1SPATIAL_LIBS_UNIX_PATH ${MACH1SPATIAL_LIBS_PATH}/linux)
-endif()
-# link libraries
-find_library(MACH1DECODE_LIBRARY 
-    NAMES Mach1DecodeCAPI
-    PATHS ${MACH1SPATIAL_LIBS_UNIX_PATH}/lib ${MACH1SPATIAL_LIBS_PATH}/windows-x86_64
-)
-set(MACH1SPATIAL_INCLUDES ${MACH1SPATIAL_LIBS_PATH}/linux/include ${MACH1SPATIAL_LIBS_PATH}/linux/include/M1DSP ${MACH1SPATIAL_LIBS_PATH}/xcode/include ${MACH1SPATIAL_LIBS_PATH}/xcode/include/M1DSP ${MACH1SPATIAL_LIBS_PATH}/windows-x86_64/include ${MACH1SPATIAL_LIBS_PATH}/windows-x86_64/include/M1DSP)
-include_directories(${MACH1SPATIAL_INCLUDES})
-target_link_libraries(${PLUGIN_NAME} PRIVATE ${MACH1ENCODE_LIBRARY})
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_compile_definitions(M1_STATIC)
-    message(STATUS "Adding windows OS flags")
-endif()
+# download and link m1-sdk
+include(cmake/fetchM1SDK.cmake)
+target_link_libraries(${PLUGIN_NAME} PRIVATE ${MACH1DECODE_LIBRARY})
 target_sources(${PLUGIN_NAME} PRIVATE ${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp)
 
 ### IDE Generator post-config ###
