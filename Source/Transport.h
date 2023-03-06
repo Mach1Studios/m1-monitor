@@ -40,7 +40,7 @@ private:
 
     juce::AudioPlayHead::CurrentPositionInfo lastPosInfo;
     double currentTimeInSeconds;
-    float currentFrameRate;;
+    float currentFrameRate;
 
     juce::AudioProcessor* processor = nullptr;
     M1OrientationOSCClient* m1OrientationClient = nullptr;
