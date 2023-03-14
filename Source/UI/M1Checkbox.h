@@ -16,12 +16,7 @@ public:
         bool* data = dataToControl;
         
         MurkaContext& context = m.currentContext;
-
-//        auto params = (Parameters*)parametersObject;
-//        auto results = (Results*)resultObject;
         bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
-        
-//        auto r = context.renderer;
         auto& c = context;
         
         if (didntInitialiseYet) {
@@ -31,9 +26,7 @@ public:
         
         float animation = A(inside * enabled);
         
-        //TODO: setup default `checked` behavior in UI
-        //TODO: if disabled no animation
-		m.pushStyle();
+        m.pushStyle();
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
         m.drawCircle(c.getSize().y / 2, c.getSize().y / 2, c.getSize().y / 2);
         m.setColor(40 + 20 * !enabled, 255);
@@ -46,7 +39,7 @@ public:
                           4 * animatedData);
 
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
-        m.setFont("Proxima Nova Reg.ttf", 10);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
         m.draw<murka::Label>({shape.size.y + 2, 2, 150, shape.size.y + 5}).text(label).commit();
         m.popStyle();
 
@@ -54,11 +47,11 @@ public:
         if ((context.mouseDownPressed[0]) && (inside) && enabled) {
             *((bool*)dataToControl) = !*((bool*)dataToControl);
             changed = true;
-		}
-		else {
+        }
+        else {
             changed = false;
-		}
-	};
+        }
+    }
     
     float animatedData = 0;
     bool didntInitialiseYet = true;

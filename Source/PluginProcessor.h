@@ -50,6 +50,13 @@ public:
             }
         }
         
+        if (hostType.getPluginLoadedAs() == AudioProcessor::wrapperType_Standalone ||
+            hostType.getPluginLoadedAs() == AudioProcessor::wrapperType_Unity) {
+            return BusesProperties()
+                .withInput("Mach1Spatial In", juce::AudioChannelSet::discreteChannels(8), true)
+                .withOutput("Stereo Out", juce::AudioChannelSet::stereo(), true);
+        }
+        
         // STREAMING Monitor instance
         return BusesProperties()
             .withInput("Input", juce::AudioChannelSet::stereo(), true)
@@ -63,9 +70,9 @@ public:
     std::vector<int> input_channel_indices;
     void fillChannelOrderArray(int numInputChannels);
     
-   #ifndef CUSTOM_CHANNEL_LAYOUT
+#ifndef CUSTOM_CHANNEL_LAYOUT
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
+#endif
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     void processStereoDownmix (juce::AudioBuffer<float>&);
@@ -108,17 +115,24 @@ public:
     void m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode);
     MixerSettings monitorSettings;
     juce::PluginHostType hostType;
+    bool layoutCreated = false;
 
-    void setStatus(bool success, std::string message);
-    M1OrientationOSCClient m1OrientationOSCClient;
-    
     // Transport
     ScopedPointer<Transport> transport;
     
+    void setStatus(bool success, std::string message);
+    M1OrientationOSCClient m1OrientationOSCClient;
+    
+    // TODO: change this
+    bool external_spatialmixer_active = false; // global detect spatialmixer
+    
 private:
+    void createLayout();
+
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
 
+    std::vector<std::vector<float>> audioDataIn;
     std::vector<float> spatialMixerCoeffs;
     std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
     //==============================================================================

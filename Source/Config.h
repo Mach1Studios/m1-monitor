@@ -103,3 +103,15 @@
 #define METER_RED 178, 24, 23
 #define METER_YELLOW 220, 174, 37
 #define METER_GREEN 67, 174, 56
+
+#ifdef PLUGIN_FONT
+    #pragma message XSTR(LOCAL_FONT) "." XSTR(LOCAL_FONT_TYPE)
+#else
+    // default CC0 font
+    #define PLUGIN_FONT "AileronSemiBold.ttf"
+    #define BINARYDATA_FONT "BinaryData::AileronSemiBold_ttf"
+    #define BINARYDATA_FONT_SIZE "BinaryData::AileronSemiBold_ttfSize"
+#endif
+#pragma message XSTR(PLUGIN_FONT)
+#pragma message XSTR(BINARYDATA_FONT)
+#pragma message XSTR(BINARYDATA_FONT_SIZE)

@@ -8,8 +8,6 @@ struct MixerSettings {
     /// - `Mach1DecodeAlgoType`
     Mach1Decode m1Decode;
     
-	int monitor_input_channel_count;
-	int monitor_output_channel_count;
 	float yaw;
 	float pitch;
 	float roll;

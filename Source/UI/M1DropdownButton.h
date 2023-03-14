@@ -14,30 +14,31 @@ class M1DropdownButton : public murka::View<M1DropdownButton> {
 public:
     void internalDraw(Murka & m) {
         MurkaContext& context = m.currentContext;
-        //bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
+        bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
 
-        if (drawBorder) {
-            // outline border
-            m.setColor(ENABLED_PARAM);
-            m.drawRectangle(0, 0, shape.size.x, shape.size.y);
-            m.setColor(BACKGROUND_GREY);
-            m.drawRectangle(1, 1, shape.size.x - 2, shape.size.y - 2);
-        }
+        // outline border
+        m.setColor(ENABLED_PARAM);
+        m.drawRectangle(0, 0,
+                        shape.size.x, shape.size.y);
+        m.setColor(BACKGROUND_GREY);
+        m.drawRectangle(1, 1,
+                        shape.size.x - 2, shape.size.y - 2);
 
         m.setColor(LABEL_TEXT_COLOR);
-        m.setFont("Proxima Nova Reg.ttf", fontSize);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         // centered interior text
-        m.draw<murka::Label>({(shape.size.x/2)-(shape.size.x/4), (shape.size.y/2)-(shape.size.y/4), shape.size.x, shape.size.y}).text(label).commit();
-        
+        m.draw<murka::Label>({0, 8, shape.size.x, shape.size.y}).withAlignment(TEXT_CENTER).text(label).commit();
+
         pressed = false;
         if ((context.isHovered()) && (context.mouseDownPressed[0])) {
             pressed = true; // Only sets to true the frame the "pressed" happened
         }
+
+//        m.popStyle(); // TODO: THIS THING MAKES EVERYTHING HANG, issue with Murka - have to show assert!
     };
     
-    std::string label = "";    
+    std::string label = "";
     bool pressed = false;
-    bool drawBorder = true;
     double fontSize = 10;
     
     operator bool() {

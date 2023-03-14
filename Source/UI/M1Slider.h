@@ -50,7 +50,7 @@ public:
 
             m.setColor(REF_LABEL_TEXT_COLOR);
             //g.setColour(Colour(120, 120, 120));
-            m.setFont("Proxima Nova Reg.ttf", fontSize);
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
 
             if (movingLabel) {
                 m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 - 10, 40, 60}).withAlignment(TEXT_CENTER).text(label).commit();
@@ -76,7 +76,7 @@ public:
             m.drawLine(c.getSize().x / 2, ellipseSize / 2, shape.size.x / 2, shape.size.y - ellipseSize);
 
             //g.setColour(Colour(120, 120, 120));
-            m.setFont("Proxima Nova Reg.ttf", fontSize);
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
             m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
