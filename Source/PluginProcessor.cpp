@@ -25,23 +25,23 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                {
                     std::make_unique<juce::AudioParameterFloat>(paramYaw,
                                                             TRANS("Yaw"),
-                                                            juce::NormalisableRange<float>(-180.0f, 180.0f, 0.01f), 0.0f, "", juce::AudioProcessorParameter::genericParameter,
+                                                            juce::NormalisableRange<float>(-180.0f, 180.0f, 0.01f), monitorSettings.yaw, "", juce::AudioProcessorParameter::genericParameter,
                                                             [](float v, int) { return juce::String (v, 1) + "°"; },
                                                             [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                     std::make_unique<juce::AudioParameterFloat>(paramPitch,
                                                             TRANS("Pitch"),
-                                                            juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), 0.0f, "", juce::AudioProcessorParameter::genericParameter,
+                                                            juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.pitch, "", juce::AudioProcessorParameter::genericParameter,
                                                             [](float v, int) { return juce::String (v, 1) + "°"; },
                                                             [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                     std::make_unique<juce::AudioParameterFloat>(paramRoll,
                                                             TRANS("Roll"),
-                                                            juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), 0.0f, "", juce::AudioProcessorParameter::genericParameter,
+                                                            juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter,
                                                             [](float v, int) { return juce::String (v, 1) + "°"; },
                                                             [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
-                    std::make_unique<juce::AudioParameterBool>(paramYawEnable, TRANS("Enable Yaw"), true),
-                    std::make_unique<juce::AudioParameterBool>(paramPitchEnable, TRANS("Enable Pitch"), true),
-                    std::make_unique<juce::AudioParameterBool>(paramRollEnable, TRANS("Enable Roll"), true),
-                    std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 3, 0),
+                    std::make_unique<juce::AudioParameterBool>(paramYawEnable, TRANS("Enable Yaw"), monitorSettings.yawActive),
+                    std::make_unique<juce::AudioParameterBool>(paramPitchEnable, TRANS("Enable Pitch"), monitorSettings.pitchActive),
+                    std::make_unique<juce::AudioParameterBool>(paramRollEnable, TRANS("Enable Roll"), monitorSettings.rollActive),
+                    std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 3, monitorSettings.monitor_mode),
                })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -57,6 +57,11 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
     
+    smoothedChannelCoeffs.resize(monitorSettings.m1Decode.getFormatChannelCount());
+    for (int input_channel = 0; input_channel < monitorSettings.m1Decode.getFormatChannelCount(); input_channel++) {
+        smoothedChannelCoeffs[input_channel].resize(monitorSettings.m1Decode.getFormatChannelCount());
+    }
+
     transport = new Transport();
     transport->setProcessor(this);
     transport->setOrientationClient(&m1OrientationOSCClient);
@@ -130,6 +135,28 @@ void M1MonitorAudioProcessor::changeProgramName (int index, const juce::String& 
 }
 
 //==============================================================================
+void M1MonitorAudioProcessor::createLayout(){
+    int numInChans = monitorSettings.m1Decode.getFormatChannelCount();
+    
+    if (external_spatialmixer_active) {
+        // INPUT
+        if (monitorSettings.m1Decode.getFormatChannelCount() == 1){
+            getBus(true, 0)->setCurrentLayout(juce::AudioChannelSet::mono());
+        }
+        else if (monitorSettings.m1Decode.getFormatChannelCount() == 2){
+            getBus(true, 0)->setCurrentLayout(juce::AudioChannelSet::stereo());
+        }
+        // OUTPUT
+        getBus(false, 0)->setCurrentLayout(juce::AudioChannelSet::stereo());
+    } else {
+        // internal processing
+        
+    }
+    layoutCreated = true; // flow control for static i/o
+    updateHostDisplay();
+}
+
+//==============================================================================
 void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
@@ -146,7 +173,7 @@ void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     }
     
     // Checks if output bus is non DISCRETE layout and fixes host specific channel ordering issues
-    //fillChannelOrderArray(pannerSettings.m1Encode.getOutputChannelsCount());
+    fillChannelOrderArray(monitorSettings.m1Decode.getFormatChannelCount());
 }
 
 void M1MonitorAudioProcessor::releaseResources()
@@ -285,29 +312,29 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     transport->update();
     
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    auto numInputChannels  = getMainBusNumInputChannels();
+    auto numOutputChannels = getMainBusNumOutputChannels();
 
-    if (totalNumInputChannels == 4){
+    if (numInputChannels == 4){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoHorizon_4);
-    } else if (totalNumInputChannels == 8){
+    } else if (numInputChannels == 8){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
-    } else if (totalNumInputChannels == 12){
+    } else if (numInputChannels == 12){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_12);
-    } else if (totalNumInputChannels == 14){
+    } else if (numInputChannels == 14){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
-    } else if (totalNumInputChannels == 32){
+    } else if (numInputChannels == 32){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
-    } else if (totalNumInputChannels == 36){
+    } else if (numInputChannels == 36){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_36);
-    } else if (totalNumInputChannels == 48){
+    } else if (numInputChannels == 48){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_48);
-    } else if (totalNumInputChannels == 60){
+    } else if (numInputChannels == 60){
         monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_60);
     }
     
     // if you've got more output channels than input clears extra outputs
-    for (auto channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
+    for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
         buffer.clear(channel, 0, buffer.getNumSamples());
     
     // Mach1Decode processing loop
@@ -322,19 +349,19 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     monitorSettings.m1Decode.endBuffer();
     
     // Update spatial mixer coeffs from Mach1Decode for a smoothed value
-    for (int channel = 0; channel < totalNumInputChannels; ++channel) {
-        smoothedChannelCoeffs[channel * 2    ].setTargetValue(spatialMixerCoeffs[channel * 2    ]);
-        smoothedChannelCoeffs[channel * 2 + 1].setTargetValue(spatialMixerCoeffs[channel * 2 + 1]);
+    for (int channel = 0; channel < monitorSettings.m1Decode.getFormatChannelCount(); ++channel) {
+        smoothedChannelCoeffs[channel][0].setTargetValue(spatialMixerCoeffs[channel * 2    ]); // Left output coeffs
+        smoothedChannelCoeffs[channel][1].setTargetValue(spatialMixerCoeffs[channel * 2 + 1]); // Right output coeffs
     }
     
-    tempBuffer.setSize(totalNumInputChannels * 2, buffer.getNumSamples());
+    juce::AudioBuffer<float> tempBuffer(monitorSettings.m1Decode.getFormatCoeffCount(), buffer.getNumSamples());
     tempBuffer.clear();
     
     float* outBufferL = buffer.getWritePointer(0);
     float* outBufferR = buffer.getWritePointer(1);
-    std::vector<float> spatialCoeffsBufferL, spatialCoeffsBufferR;
 
-    if (totalNumInputChannels == monitorSettings.m1Decode.getFormatChannelCount()){ // dumb safety check, TODO: do better i/o error handling
+    if (getMainBusNumInputChannels() == monitorSettings.m1Decode.getFormatChannelCount()){
+        // TODO: Setup an else case for streaming input or error message
   
 //        TODO: Setup monitor modes
 //        if (stereoDownmix) {
@@ -343,7 +370,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 //        }
         
         // Setup buffers for Left & Right outputs, correct for PT 7.1 buss
-        if (totalNumInputChannels == 8 && hostType.isProTools()){
+        if (getMainBusNumInputChannels() == 8 && hostType.isProTools()){
             AudioChannelSet inputChannelSet = getBus(true, 0)->getCurrentLayout();
             tempBuffer.copyFrom(0, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
             tempBuffer.copyFrom(1, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
@@ -363,58 +390,62 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
             tempBuffer.copyFrom(14, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
             tempBuffer.copyFrom(15, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
         } else {
-            for (auto channel = 0; channel < totalNumInputChannels; ++channel){
+            for (auto channel = 0; channel < numInputChannels; ++channel){
                 tempBuffer.copyFrom(channel * 2    , 0, buffer, channel, 0, buffer.getNumSamples());
                 tempBuffer.copyFrom(channel * 2 + 1, 0, buffer, channel, 0, buffer.getNumSamples());
             }
         }
         
         for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-            for (int channel = 0; channel < buffer.getNumChannels(); channel++) {
-                buffer.getWritePointer(channel)[sample] = 0;
+            for (int input_channel = 0; input_channel < buffer.getNumChannels(); input_channel++) {
+                buffer.getWritePointer(input_channel)[sample] = 0;
             }
         }
         
         for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-            for (int channel = 0; channel < totalNumInputChannels; channel++) {
-                outBufferL[sample] += tempBuffer.getReadPointer(channel * 2    )[sample] * smoothedChannelCoeffs[channel * 2    ].getNextValue();
-                outBufferR[sample] += tempBuffer.getReadPointer(channel * 2 + 1)[sample] * smoothedChannelCoeffs[channel * 2 + 1].getNextValue();
+            for (int input_channel = 0; input_channel < buffer.getNumChannels(); input_channel++) {
+                outBufferL[sample] += tempBuffer.getReadPointer(input_channel * 2    )[sample] * smoothedChannelCoeffs[input_channel][0].getNextValue();
+                outBufferR[sample] += tempBuffer.getReadPointer(input_channel * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel][1].getNextValue();
             }
         }
     } else {
         // Invalid Decode I/O; clear buffers
-        for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
+        // TODO: Prepare for input streamed case when needed here
+        for (int channel = getTotalNumInputChannels(); channel <= getTotalNumOutputChannels(); ++channel)
             buffer.clear(channel, 0, buffer.getNumSamples());
     }
     
     // clear remaining input channels
-    for (auto channel = 2; channel < totalNumInputChannels; ++channel)
+    for (auto channel = 2; channel < getTotalNumInputChannels(); ++channel)
         buffer.clear(channel, 0, buffer.getNumSamples());
 }
 
 //==============================================================================
 void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buffer)
 {
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    auto numInputChannels  = getMainBusNumInputChannels();
+    auto numOutputChannels = getMainBusNumOutputChannels();
 
+    juce::AudioBuffer<float> tempBuffer(monitorSettings.m1Decode.getFormatCoeffCount(), buffer.getNumSamples());
+    tempBuffer.clear();
+    
     float* outBufferL = buffer.getWritePointer(0);
     float* outBufferR = buffer.getWritePointer(1);
     
     // Stereo Downmix Logic
-    for (auto i = 0; i < totalNumInputChannels; ++i){
+    for (auto i = 0; i < numInputChannels; ++i){
         tempBuffer.copyFrom(i, 0, buffer, i, 0, buffer.getNumSamples());
     }
     
-    if (totalNumInputChannels == 4 || totalNumInputChannels == 8) {
-        for (int channel = 0; channel < totalNumInputChannels; channel++) {
+    if (numInputChannels == 4 || numInputChannels == 8) {
+        for (int channel = 0; channel < numInputChannels; channel++) {
             for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-                outBufferL[sample] =+ tempBuffer.getReadPointer(channel * 2    )[sample] / std::sqrt(2)/(totalNumInputChannels/2);
-                outBufferR[sample] =+ tempBuffer.getReadPointer(channel * 2 + 1)[sample] / std::sqrt(2)/(totalNumInputChannels/2);
+                outBufferL[sample] =+ tempBuffer.getReadPointer(channel * 2    )[sample] / std::sqrt(2)/(numInputChannels/2);
+                outBufferR[sample] =+ tempBuffer.getReadPointer(channel * 2 + 1)[sample] / std::sqrt(2)/(numInputChannels/2);
             }
         }
     }
-    else if (totalNumInputChannels == 12){
+    else if (numInputChannels == 12){
         //INDEX:          0,1,2,3,4,5, 6
         int mixMapL[] = { 0,2,4,6,8,10,11 };
         int mixMapR[] = { 1,3,5,7,8,9, 10 };
@@ -426,7 +457,7 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[3])[i]
                 + tempBuffer.getReadPointer(mixMapL[4])[i]/2
                 + tempBuffer.getReadPointer(mixMapL[5])[i]/2
-                + tempBuffer.getReadPointer(mixMapL[6])[i])/std::sqrt(2)/(totalNumInputChannels/2);
+                + tempBuffer.getReadPointer(mixMapL[6])[i])/std::sqrt(2)/(numInputChannels/2);
 
             outBufferR[i] = (tempBuffer.getReadPointer(mixMapR[0])[i]
                 + tempBuffer.getReadPointer(mixMapL[1])[i]
@@ -434,9 +465,9 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[3])[i]
                 + tempBuffer.getReadPointer(mixMapL[4])[i]/2
                 + tempBuffer.getReadPointer(mixMapL[5])[i]
-                + tempBuffer.getReadPointer(mixMapL[6])[i]/2)/std::sqrt(2)/(totalNumInputChannels/2);
+                + tempBuffer.getReadPointer(mixMapL[6])[i]/2)/std::sqrt(2)/(numInputChannels/2);
         }
-    } else if (totalNumInputChannels == 14){
+    } else if (numInputChannels == 14){
         //INDEX:          0,1,2,3,4,5, 6 ,7 ,8
         int mixMapL[] = { 0,2,4,6,8,10,11,12,13 };
         int mixMapR[] = { 1,3,5,7,8,9, 10,12,13 };
@@ -450,7 +481,7 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[5])[i]/std::sqrt(2)/2
                 + tempBuffer.getReadPointer(mixMapL[6])[i]
                 + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(numInputChannels/2);
 
             outBufferR[i] = (tempBuffer.getReadPointer(mixMapR[0])[i]
                 + tempBuffer.getReadPointer(mixMapL[1])[i]
@@ -460,7 +491,7 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[5])[i]
                 + tempBuffer.getReadPointer(mixMapL[6])[i]/std::sqrt(2)/2
                 + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
-                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(totalNumInputChannels/2);
+                + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(numInputChannels/2);
         }
     // TODO: implement stereo downmix for 32,36,48,60
     }

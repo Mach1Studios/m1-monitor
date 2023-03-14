@@ -10,7 +10,7 @@ MonitorUIBaseComponent::MonitorUIBaseComponent(M1MonitorAudioProcessor* processo
 	setSize (getWidth(), getHeight());
 
 	processor = processor_;
-    monitorState = &processor->monitorState;
+    monitorState = &processor->monitorSettings;
 }
 
 MonitorUIBaseComponent::~MonitorUIBaseComponent()
@@ -39,7 +39,7 @@ void MonitorUIBaseComponent::render()
 
     currentMousePosition = m.currentContext.mousePosition * 0.7;
     
-    float scale = (float)openGLContext.getRenderingScale() * 0.7;
+    float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
 
     if (scale != m.getScreenScale()) {
         m.setScreenScale(scale);
@@ -68,7 +68,7 @@ void MonitorUIBaseComponent::render()
         
         //right side
         m.setColor(DISABLED_PARAM);
-        m.setFont("Proxima Nova Reg.ttf", 11);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 11);
         m.draw<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").commit();
         m.setColor(ENABLED_PARAM);
         m.draw<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").commit();
@@ -79,13 +79,13 @@ void MonitorUIBaseComponent::render()
         m.setColor(ENABLED_PARAM);
         m.draw<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").commit();
     } else {
+        // TODO: fix this
         //setSize(504, 266);
     }
     
-    m.setFont("Proxima Nova Reg.ttf", 10);
-    
+    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
+
     /// YPR SLIDERS
-    // TODO: why do i have to multiply by 1.44 ratio to make it the same value as the old monitor?
     auto& yawRadial = m.draw<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
     yawRadial.cursorHide = cursorHide;
     yawRadial.cursorShow = cursorShow;
@@ -172,7 +172,6 @@ void MonitorUIBaseComponent::render()
     auto& showSettingsButton = m.draw<M1DropdownButton>({ m.getSize().width()/2 - 40, m.getSize().height() - 20,
                                                 100, 20 })
                                                 .withLabel("SETTINGS      ");
-    showSettingsButton.drawBorder = false;
     
     if (showSettingsButton.pressed) {
         showSettingsMenu = !showSettingsMenu;
@@ -204,7 +203,7 @@ void MonitorUIBaseComponent::render()
     
     /// Monitor label
     m.setColor(200, 255);
-    m.setFont("Proxima Nova Reg.ttf", 10);
+    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
     auto& pannerLabel = m.draw<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
     pannerLabel.label = "MONITOR";
     pannerLabel.alignment = TEXT_CENTER;

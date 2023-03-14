@@ -12,10 +12,9 @@ class M1Radial : public murka::View<M1Radial> {
 public:
     void internalDraw(Murka & m) {
         float* data = dataToControl;
-        MurkaContext& context = m.currentContext;
-        auto& c = context; // shorthand of above
+        MurkaContext& ctx = m.currentContext;
         
-        bool inside = c.isHovered() *
+        bool inside = ctx.isHovered() *
 //        Had to temporary remove the areInteractiveChildrenHovered because of the bug in Murka with the non-deleting children widgets. TODO: fix this
 //        !areInteractiveChildrenHovered(ctx) *
             hasMouseFocus(m)
@@ -50,7 +49,7 @@ public:
         
         //g.setColour(Colour(120, 120, 120));
         m.setColor(REF_LABEL_TEXT_COLOR);
-        m.setFont("Proxima Nova Reg.ttf", fontSize);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 4, 40, 30}).withAlignment(TEXT_CENTER).text(label).commit();
         
         //g.setColour(Colour(204, 204, 204));
@@ -61,29 +60,23 @@ public:
 
         for (int i = 0; i < 8 * 4; i++) {
             float angle = ((3.14 * 2.) / (8. * 4)) * i;
-            
             float startL = shape.size.x / 2 - 12;
             float endL = shape.size.x / 2 - 5;
-            
             juce::Point<float> start = center +
             juce::Point<float>(cos(angle) * startL, sin(angle) * startL);
             juce::Point<float> end = center +
             juce::Point<float>(cos(angle) * endL, sin(angle) * endL);
-            
             m.drawLine(start.x, start.y, end.x, end.y);
         }
 
         for (int i = 0; i < 8; i++) {
             float angle = ((3.14 * 2.) / 8.) * i;
-            
             float startL = shape.size.x / 2 - 24;
             float endL = shape.size.x / 2 - 5;
-            
             juce::Point<float> start = center +
                                  juce::Point<float>(cos(angle) * startL, sin(angle) * startL);
             juce::Point<float> end = center +
                                  juce::Point<float>(cos(angle) * endL, sin(angle) * endL);
-            
             m.drawLine(start.x, start.y, end.x, end.y);
         }
         
@@ -121,7 +114,7 @@ public:
         m.drawLine(centralLineStart.x, centralLineStart.y, centralLineEnd.x, centralLineEnd.y);
         
         // value label
-        m.setFont("Proxima Nova Reg.ttf", fontSize);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 2 - 10, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).commit();
         
         m.popStyle();
