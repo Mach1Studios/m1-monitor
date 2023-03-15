@@ -28,14 +28,27 @@ else()
 endif()
 
 # link libraries
-find_library(MACH1DECODE_LIBRARY 
-             NAMES Mach1DecodeCAPI libMach1DecodeCAPI libMach1DecodeCAPI.a libMach1DecodeCAPI.so libMach1DecodeCAPI.lib
-             PATHS ${MACH1SPATIAL_LIBS_UNIX_PATH}/lib ${MACH1SPATIAL_LIBS_PATH}/windows-x86 ${MACH1SPATIAL_LIBS_PATH}/windows-x86_64
-)
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if(WIN32 OR MSVC OR MINGW)
     add_compile_definitions(M1_STATIC)
     message(STATUS "Adding windows OS flags")
+
+    find_library(MACH1DECODE_LIBRARY_RELEASE
+        NAMES Mach1DecodeCAPI
+        PATHS ${MACH1SPATIAL_LIBS_PATH}/vs-15-2017-x86_64/lib/Static/MD/Release
+    )
+    find_library(MACH1DECODE_LIBRARY_DEBUG
+        NAMES Mach1DecodeCAPId
+        PATHS ${MACH1SPATIAL_LIBS_PATH}/vs-15-2017-x86_64/lib/Static/MD/Debug
+    )
+    SET(MACH1DECODE_LIBRARY
+        debug ${MACH1DECODE_LIBRARY_DEBUG}
+        optimized ${MACH1DECODE_LIBRARY_RELEASE}
+    )
+else()
+    find_library(MACH1DECODE_LIBRARY 
+        NAMES Mach1DecodeCAPI
+        PATHS ${MACH1SPATIAL_LIBS_UNIX_PATH}/lib
+    )
 endif()
 
 # include headers
