@@ -105,8 +105,8 @@ void MonitorUIBaseComponent::render()
                                             .drawHorizontal(false);
     pitchSlider.cursorHide = cursorHide;
     pitchSlider.cursorShow = cursorShow;
-    pitchSlider.rangeFrom = 90.;
-    pitchSlider.rangeTo = -90.;
+    pitchSlider.rangeFrom = -90.;
+    pitchSlider.rangeTo = 90.;
     pitchSlider.dataToControl = &monitorState->pitch;
     pitchSlider.enabled = true;
     pitchSlider.commit();
@@ -121,8 +121,8 @@ void MonitorUIBaseComponent::render()
                                             .drawHorizontal(true);
     rollSlider.cursorHide = cursorHide;
     rollSlider.cursorShow = cursorShow;
-    rollSlider.rangeFrom = 90.;
-    rollSlider.rangeTo = -90.;
+    rollSlider.rangeFrom = -90.;
+    rollSlider.rangeTo = 90.;
     rollSlider.dataToControl = &monitorState->roll;
     rollSlider.enabled = true;
     rollSlider.commit();
