@@ -13,31 +13,48 @@ public:
 
     void internalDraw(Murka & m) {
         float* data = dataToControl;
-        MurkaContext& context = m.currentContext;
-        auto& c = context; // shorthand of above
+        MurkaContext& ctx = m.currentContext;
         
-        bool inside = c.isHovered() * !areInteractiveChildrenHovered(c) * hasMouseFocus(m);
-        hovered = inside + draggingNow;
-        bool hoveredLocal = hovered/* + externalHovered*/; // this variable is not used outside the widget to avoid feedback loop
+        bool inside = ctx.isHovered() *
+        //!areInteractiveChildrenHovered(c) *
+        //hasMouseFocus(m);
+        (!editingTextNow);
+
         changed = false; // false unless the user changed a value using this knob
-        
+        hovered = inside + draggingNow; // for external views to be highlighted too if needed
+        bool hoveredLocal = hovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
+
         if (!enabled) {
             hoveredLocal = false;
         }
-        
-        int ellipseSize = 5;
+
+        std::function<void()> deleteTheTextField = [&]() {
+            // Temporary solution to delete the TextField:
+            // Searching for an id to delete the text field widget.
+            // To be redone after the UI library refactoring.
+            
+            imIdentifier idToDelete;
+            for (auto childTuple: imChildren) {
+                auto childIdTuple = childTuple.first;
+                if (std::get<1>(childIdTuple) == typeid(TextField).name()) {
+                    idToDelete = childIdTuple;
+                }
+            }
+            imChildren.erase(idToDelete);
+        };
         
         std::string displayString = float_to_string(*data, floatingPointPrecision);
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
         
+        int ellipseSize = 5;
         float reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
-        MurkaShape reticlePosition = { c.getSize().x / 2 - 6,
+        MurkaShape reticlePosition = { ctx.getSize().x / 2 - 6,
                                       (shape.size.y) * reticlePositionNorm - 6,
                                       12,
                                       12 };
         bool reticleHover = false + draggingNow;
-        if (reticlePosition.inside(c.mousePosition)) {
+        if (reticlePosition.inside(ctx.mousePosition)) {
             reticleHover = true;
         }
                 
@@ -49,7 +66,6 @@ public:
             m.drawLine(ellipseSize / 2, shape.size.y / 2, shape.size.x - ellipseSize, shape.size.y / 2);
 
             m.setColor(REF_LABEL_TEXT_COLOR);
-            //g.setColour(Colour(120, 120, 120));
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
 
             if (movingLabel) {
@@ -73,9 +89,8 @@ public:
             
         } else { // draw verically
             m.setColor(133 + 20 * A(reticleHover));
-            m.drawLine(c.getSize().x / 2, ellipseSize / 2, shape.size.x / 2, shape.size.y - ellipseSize);
+            m.drawLine(ctx.getSize().x / 2, ellipseSize / 2, shape.size.x / 2, shape.size.y - ellipseSize);
 
-            //g.setColour(Colour(120, 120, 120));
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
             m.setColor(REF_LABEL_TEXT_COLOR);
             
@@ -160,26 +175,28 @@ public:
         converterStringStream << std::fixed << std::setprecision(precision) << input;
         return (converterStringStream.str());
     }
+    
+    bool draggingNow = false;
     bool editingTextNow = false;
     bool shouldForceEditorToSelectAll = false;
     
+    float rangeFrom = 0;
+    float rangeTo = 1;
+
+    std::string postfix = "º";
+    std::string prefix = "";
+
     float* dataToControl = nullptr;
     float defaultValue = 0;
     float speed = 250.;
-    
     bool hovered = false;
     bool externalHover = false;
     bool changed = false;
     bool enabled = true;
-    bool draggingNow = false;
     bool movingLabel = false;
     bool isHorizontal = false;
     std::string label = "";
-    std::string postfix = "º";
-    std::string prefix = "";
     double fontSize = 10;
-    float rangeFrom = 0;
-    float rangeTo = 1;
     int floatingPointPrecision = 1;
 
     std::function<void()> cursorHide, cursorShow;
