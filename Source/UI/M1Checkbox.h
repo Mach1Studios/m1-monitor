@@ -15,36 +15,32 @@ public:
     void internalDraw(Murka & m) {
         bool* data = dataToControl;
         
-        MurkaContext& context = m.currentContext;
-        bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
-        auto& c = context;
-        
         if (didntInitialiseYet) {
             animatedData = *((bool*)dataToControl) ? 1.0 : 0.0;
             didntInitialiseYet = false;
         }
         
-        float animation = A(inside * enabled);
+        float animation = A(inside() * enabled);
         
         m.pushStyle();
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
-        m.drawCircle(c.getSize().y / 2, c.getSize().y / 2, c.getSize().y / 2);
+        m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2);
         m.setColor(40 + 20 * !enabled, 255);
-        m.drawCircle(c.getSize().y / 2, c.getSize().y / 2, c.getSize().y / 2 - 2);
+        m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2 - 2);
         
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
         
         animatedData = A(*((bool*)dataToControl));
-        m.drawCircle(c.getSize().y / 2, c.getSize().y / 2,
+        m.drawCircle(getSize().y / 2, getSize().y / 2,
                           4 * animatedData);
 
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
-        m.draw<murka::Label>({shape.size.y + 2, 2, 150, shape.size.y + 5}).text(label).commit();
+        m.prepare<murka::Label>({shape.size.y + 2, 2, 150, shape.size.y + 5}).text(label).draw();
         m.popStyle();
 
         // Action
-        if ((context.mouseDownPressed[0]) && (inside) && enabled) {
+        if ((mouseDownPressed(0)) && (inside()) && enabled) {
             *((bool*)dataToControl) = !*((bool*)dataToControl);
             changed = true;
         }

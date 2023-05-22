@@ -12,17 +12,14 @@ class M1Radial : public murka::View<M1Radial> {
 public:
     void internalDraw(Murka & m) {
         float* data = dataToControl;
-        MurkaContext& ctx = m.currentContext;
+//        MurkaContext& ctx = m.currentContext;
         
-        bool inside = ctx.isHovered() *
-//        Had to temporary remove the areInteractiveChildrenHovered because of the bug in Murka with the non-deleting children widgets. TODO: fix this
-//        !areInteractiveChildrenHovered(ctx) *
-            hasMouseFocus(m)
+        bool isInside = inside()
             * (!editingTextNow);
         
         changed = false;
-        hovered = inside + draggingNow; // for external views to be highlighted too if needed
-        bool hoveredLocal = hovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
+        isHovered = isInside + draggingNow; // for external views to be highlighted too if needed
+        bool hoveredLocal = isHovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
 
         if (!enabled) {
             hoveredLocal = false;
@@ -50,7 +47,7 @@ public:
         //g.setColour(Colour(120, 120, 120));
         m.setColor(REF_LABEL_TEXT_COLOR);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-        m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 4, 40, 30}).withAlignment(TEXT_CENTER).text(label).commit();
+        m.prepare<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 4, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
         
         //g.setColour(Colour(204, 204, 204));
         m.setColor(ENABLED_PARAM);
@@ -115,7 +112,7 @@ public:
         
         // value label
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-        m.draw<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 2 - 10, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).commit();
+        m.prepare<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 2 - 10, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).draw();
         
         m.popStyle();
         
@@ -143,7 +140,7 @@ public:
                                      valueTextBbox.height };
         
         bool hoveredValueText = false;
-        if (valueTextShape.inside(m.currentContext.mousePosition) && !editingTextNow && enabled) {
+        if (valueTextShape.inside(mousePosition()) && !editingTextNow && enabled) {
             m.drawRectangle(valueTextShape.x() - 2,
                              valueTextShape.y(),
                              2,
@@ -165,24 +162,24 @@ public:
         
         // Action
         
-        if ((m.currentContext.mouseDownPressed[0]) && (inside) && (m.currentContext.mousePosition.y < labelPositionY) &&
+        if ((mouseDownPressed(0)) && (inside()) && (mousePosition().y < labelPositionY) &&
             (!draggingNow) && (enabled)) {
             draggingNow = true;
             cursorHide();
         }
 
-        if ((draggingNow) && (!m.currentContext.mouseDown[0])) {
+        if ((draggingNow) && (!mouseDown(0))) {
             draggingNow = false;
             cursorShow();
         }
         
         // Setting knob value to default if pressed alt while clicking
-        bool shouldSetDefault = m.currentContext.isKeyHeld(murka::MurkaKey::MURKA_KEY_ALT) && m.currentContext.mouseDownPressed[0];
+        bool shouldSetDefault = isKeyHeld(murka::MurkaKey::MURKA_KEY_ALT) && mouseDownPressed(0);
         
         // Don't set default by doubleclick if the mouse is in the Label/Text editor zone
-        if (m.currentContext.mousePosition.y >= labelPositionY) shouldSetDefault = false;
+        if (mousePosition().y >= labelPositionY) shouldSetDefault = false;
 
-        if (shouldSetDefault && inside) {
+        if (shouldSetDefault && isInside) {
             draggingNow = false;
             *((float*)dataToControl) = defaultValue;
             cursorShow();
@@ -190,14 +187,14 @@ public:
         }
         
         if (draggingNow) {
-            if (abs(m.currentContext.mouseDelta.y) >= 1) {
+            if (abs(mouseDelta().y) >= 1) {
                 
                 // Shift key fine-tune mode
                 float s = speed;  // TODO: check if this speed constant should be dependent on UIScale
-                if (m.currentContext.isKeyHeld(murka::MurkaKey::MURKA_KEY_SHIFT)) {
+                if (isKeyHeld(murka::MurkaKey::MURKA_KEY_SHIFT)) {
                     s *= 10;
                 }
-                *((float*)dataToControl) += ( m.currentContext.mouseDelta.y / s) * (rangeTo - rangeFrom);
+                *((float*)dataToControl) += ( mouseDelta().y / s) * (rangeTo - rangeFrom);
             }
             
             // endless behavior
@@ -255,7 +252,7 @@ public:
     float defaultValue = 0;
     float speed = 250.;
 
-    bool hovered = false;
+    bool isHovered = false;
     bool externalHover = false; 
     bool changed = false;
     bool enabled = true;

@@ -37,7 +37,7 @@ void MonitorUIBaseComponent::render()
     // This clears the context with our background.
     //juce::OpenGLHelpers::clear(juce::Colour(255.0, 198.0, 30.0));
 
-    currentMousePosition = m.currentContext.mousePosition * 0.7;
+    currentMousePosition = m.mousePosition() * 0.7;
     
     float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
 
@@ -69,15 +69,15 @@ void MonitorUIBaseComponent::render()
         //right side
         m.setColor(DISABLED_PARAM);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 11);
-        m.draw<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").commit();
+        m.prepare<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
         m.setColor(ENABLED_PARAM);
-        m.draw<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").commit();
-        m.draw<murka::Label>({267, 365, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").commit();
-        m.draw<murka::Label>({267, 390, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").commit();
+        m.prepare<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
+        m.prepare<murka::Label>({267, 365, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").draw();
+        m.prepare<murka::Label>({267, 390, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
         
         //left side
         m.setColor(ENABLED_PARAM);
-        m.draw<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").commit();
+        m.prepare<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
     } else {
         // TODO: fix this
         //setSize(504, 266);
@@ -86,20 +86,20 @@ void MonitorUIBaseComponent::render()
     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
 
     /// YPR SLIDERS
-    auto& yawRadial = m.draw<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
+    auto& yawRadial = m.prepare<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
     yawRadial.cursorHide = cursorHide;
     yawRadial.cursorShow = cursorShow;
     yawRadial.rangeFrom = 0.;
     yawRadial.rangeTo = 360.;
     yawRadial.dataToControl = &monitorState->yaw;
     yawRadial.enabled = true;
-    yawRadial.commit();
+    yawRadial.draw();
     
     if (yawRadial.changed) {
         processor->parameterChanged(processor->paramYaw, monitorState->yaw);
     }
     
-    auto& pitchSlider = m.draw<M1Slider>({  327, 26, 108, 108 })
+    auto& pitchSlider = m.prepare<M1Slider>({  327, 26, 108, 108 })
                                             .withLabel("PITCH")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(false);
@@ -109,13 +109,13 @@ void MonitorUIBaseComponent::render()
     pitchSlider.rangeTo = 90.;
     pitchSlider.dataToControl = &monitorState->pitch;
     pitchSlider.enabled = true;
-    pitchSlider.commit();
+    pitchSlider.draw();
     
     if (pitchSlider.changed) {
         processor->parameterChanged(processor->paramPitch, monitorState->pitch);
     }
         
-    auto& rollSlider = m.draw<M1Slider>({   317, 148, 129, 68 })
+    auto& rollSlider = m.prepare<M1Slider>({   317, 148, 129, 68 })
                                             .withLabel("ROLL")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(true);
@@ -125,7 +125,7 @@ void MonitorUIBaseComponent::render()
     rollSlider.rangeTo = 90.;
     rollSlider.dataToControl = &monitorState->roll;
     rollSlider.enabled = true;
-    rollSlider.commit();
+    rollSlider.draw();
     
     if (rollSlider.changed) {
         processor->parameterChanged(processor->paramRoll, monitorState->roll);
@@ -135,43 +135,43 @@ void MonitorUIBaseComponent::render()
     
 	float checkboxSlotHeight = 30;
     
-    auto& yawActive = m.draw<M1Checkbox>({ 267, 410 + checkboxSlotHeight * 3,
+    auto& yawActive = m.prepare<M1Checkbox>({ 267, 410 + checkboxSlotHeight * 3,
                                                 100, 30 })
                                                 .controlling(&monitorState->yawActive)
                                                 .withLabel("Y");
     yawActive.enabled = true;
-    yawActive.commit();
+    yawActive.draw();
 
     if (yawActive.changed) {
         processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
     }
     
-    auto& pitchActive = m.draw<M1Checkbox>({ 307, 410 + checkboxSlotHeight * 3,
+    auto& pitchActive = m.prepare<M1Checkbox>({ 307, 410 + checkboxSlotHeight * 3,
                                                 100, 30 })
                                                 .controlling(&monitorState->pitchActive)
                                                 .withLabel("P");
     pitchActive.enabled = true;
-    pitchActive.commit();
+    pitchActive.draw();
 
     if (pitchActive.changed) {
         processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
     }
     
-    auto& rollActive = m.draw<M1Checkbox>({ 347, 410 + checkboxSlotHeight * 3,
+    auto& rollActive = m.prepare<M1Checkbox>({ 347, 410 + checkboxSlotHeight * 3,
                                                 100, 30 })
                                                 .controlling(&monitorState->rollActive)
                                                 .withLabel("R");
     rollActive.enabled = true;
-    rollActive.commit();
+    rollActive.draw();
 
     if (rollActive.changed) {
         processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
     }
     
     /// Monitor Settings button
-    auto& showSettingsButton = m.draw<M1DropdownButton>({ m.getSize().width()/2 - 40, m.getSize().height() - 20,
+    auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, m.getSize().height() - 20,
                                                 100, 20 })
-                                                .withLabel("SETTINGS      ");
+                                                .withLabel("SETTINGS      ").draw();
     
     if (showSettingsButton.pressed) {
         showSettingsMenu = !showSettingsMenu;
@@ -204,12 +204,12 @@ void MonitorUIBaseComponent::render()
     /// Monitor label
     m.setColor(200, 255);
     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
-    auto& pannerLabel = m.draw<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
+    auto& pannerLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
     pannerLabel.label = "MONITOR";
     pannerLabel.alignment = TEXT_CENTER;
     pannerLabel.enabled = false;
     pannerLabel.highlighted = false;
-    pannerLabel.commit();
+    pannerLabel.draw();
     
     m.setColor(200, 255);
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
