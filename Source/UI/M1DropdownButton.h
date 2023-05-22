@@ -13,9 +13,6 @@ using namespace murka;
 class M1DropdownButton : public murka::View<M1DropdownButton> {
 public:
     void internalDraw(Murka & m) {
-        MurkaContext& context = m.currentContext;
-        bool inside = context.isHovered() * !areInteractiveChildrenHovered(m) * hasMouseFocus(m);
-
         // outline border
         m.setColor(ENABLED_PARAM);
         m.drawRectangle(0, 0,
@@ -27,10 +24,10 @@ public:
         m.setColor(LABEL_TEXT_COLOR);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         // centered interior text
-        m.draw<murka::Label>({0, 8, shape.size.x, shape.size.y}).withAlignment(TEXT_CENTER).text(label).commit();
+        m.prepare<murka::Label>({0, 8, shape.size.x, shape.size.y}).withAlignment(TEXT_CENTER).text(label).draw();
 
         pressed = false;
-        if ((context.isHovered()) && (context.mouseDownPressed[0])) {
+        if ((isHovered()) && (mouseDownPressed(0))) {
             pressed = true; // Only sets to true the frame the "pressed" happened
         }
 

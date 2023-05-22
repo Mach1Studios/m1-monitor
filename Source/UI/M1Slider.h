@@ -13,16 +13,15 @@ public:
 
     void internalDraw(Murka & m) {
         float* data = dataToControl;
-        MurkaContext& ctx = m.currentContext;
         
-        bool inside = ctx.isHovered() *
+        bool isInside = inside() *
         //!areInteractiveChildrenHovered(c) *
         //hasMouseFocus(m);
         (!editingTextNow);
 
         changed = false; // false unless the user changed a value using this knob
-        hovered = inside + draggingNow; // for external views to be highlighted too if needed
-        bool hoveredLocal = hovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
+        isHovered = isInside + draggingNow; // for external views to be highlighted too if needed
+        bool hoveredLocal = isHovered + externalHover; // shouldn't propel hoveredLocal outside so it doesn't feedback
 
         if (!enabled) {
             hoveredLocal = false;
@@ -49,12 +48,12 @@ public:
         
         int ellipseSize = 5;
         float reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
-        MurkaShape reticlePosition = { ctx.getSize().x / 2 - 6,
+        MurkaShape reticlePosition = { getSize().x / 2 - 6,
                                       (shape.size.y) * reticlePositionNorm - 6,
                                       12,
                                       12 };
         bool reticleHover = false + draggingNow;
-        if (reticlePosition.inside(ctx.mousePosition)) {
+        if (reticlePosition.inside(mousePosition())) {
             reticleHover = true;
         }
                 
@@ -69,14 +68,14 @@ public:
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
 
             if (movingLabel) {
-                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 - 10, 40, 60}).withAlignment(TEXT_CENTER).text(label).commit();
-                m.draw<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 + 40, ellipseSize * 6, 20})
-                    .withAlignment(TEXT_CENTER).text(valueText).commit();
+                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 - 10, 40, 60}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 + 40, ellipseSize * 6, 20})
+                    .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
                 // TODO: add the value label
-                m.draw<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
+                m.prepare<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
                                         80, 20})
-                                        .withAlignment(TEXT_CENTER).text(label).commit();
+                                        .withAlignment(TEXT_CENTER).text(label).draw();
             }
             
             // Draw reticle circle
@@ -89,23 +88,23 @@ public:
             
         } else { // draw verically
             m.setColor(133 + 20 * A(reticleHover));
-            m.drawLine(ctx.getSize().x / 2, ellipseSize / 2, shape.size.x / 2, shape.size.y - ellipseSize);
+            m.drawLine(getSize().x / 2, ellipseSize / 2, shape.size.x / 2, shape.size.y - ellipseSize);
 
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
             m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
-                m.draw<murka::Label>({ shape.size.x / 2 - 70, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).commit();
-                m.draw<murka::Label>({ shape.size.x / 2 + 10, reticlePositionNorm * (shape.size.y - ellipseSize) - 14,
+                m.prepare<murka::Label>({ shape.size.x / 2 - 70, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 + 10, reticlePositionNorm * (shape.size.y - ellipseSize) - 14,
                                         ellipseSize * 6, 20})
-                    .withAlignment(TEXT_CENTER).text(valueText).commit();
+                    .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
-                m.draw<murka::Label>({  0, shape.size.y / 2 - 10,
+                m.prepare<murka::Label>({  0, shape.size.y / 2 - 10,
                                         shape.size.x / 3, 20})
-                                        .withAlignment(TEXT_CENTER).text(label).commit();
-                m.draw<murka::Label>({  shape.size.x / 2 - 5, shape.size.y - ellipseSize - 4,
+                                        .withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({  shape.size.x / 2 - 5, shape.size.y - ellipseSize - 4,
                                         ellipseSize * 6, 20})
-                    .withAlignment(TEXT_CENTER).text(valueText).commit();
+                    .withAlignment(TEXT_CENTER).text(valueText).draw();
             }
             
             // Draw reticle circle
@@ -122,24 +121,24 @@ public:
         
         // Action
         
-        if ((m.currentContext.mouseDownPressed[0]) && (inside) && (m.currentContext.mousePosition.y < labelPositionY) &&
+        if ((mouseDownPressed(0)) && (inside()) && (mousePosition().y < labelPositionY) &&
             (!draggingNow) && (enabled)) {
             draggingNow = true;
             cursorHide();
         }
 
-        if ((draggingNow) && (!m.currentContext.mouseDown[0])) {
+        if ((draggingNow) && (!mouseDown(0))) {
             draggingNow = false;
             cursorShow();
         }
         
         // Setting knob value to default if pressed alt while clicking
-        bool shouldSetDefault = m.currentContext.isKeyHeld(murka::MurkaKey::MURKA_KEY_ALT) && m.currentContext.mouseDownPressed[0];
+        bool shouldSetDefault = isKeyHeld(murka::MurkaKey::MURKA_KEY_ALT) && mouseDownPressed(0);
         
         // Don't set default by doubleclick if the mouse is in the Label/Text editor zone
-        if (m.currentContext.mousePosition.y >= labelPositionY) shouldSetDefault = false;
+        if (mousePosition().y >= labelPositionY) shouldSetDefault = false;
 
-        if (shouldSetDefault && inside) {
+        if (shouldSetDefault && inside()) {
             draggingNow = false;
             *((float*)dataToControl) = defaultValue;
             cursorShow();
@@ -147,14 +146,14 @@ public:
         }
         
         if (draggingNow) {
-            if (abs(m.currentContext.mouseDelta.y) >= 1) {
+            if (abs(mouseDelta().y) >= 1) {
                 
                 // Shift key fine-tune mode
                 float s = speed;  // TODO: check if this speed constant should be dependent on UIScale
-                if (m.currentContext.isKeyHeld(murka::MurkaKey::MURKA_KEY_SHIFT)) {
+                if (isKeyHeld(murka::MurkaKey::MURKA_KEY_SHIFT)) {
                     s *= 10;
                 }
-                *((float*)dataToControl) += ( m.currentContext.mouseDelta.y / s) * (rangeTo - rangeFrom);
+                *((float*)dataToControl) += ( mouseDelta().y / s) * (rangeTo - rangeFrom);
             }
             
             if (*((float*)dataToControl) > rangeTo) {
@@ -189,7 +188,7 @@ public:
     float* dataToControl = nullptr;
     float defaultValue = 0;
     float speed = 250.;
-    bool hovered = false;
+    bool isHovered = false;
     bool externalHover = false;
     bool changed = false;
     bool enabled = true;
