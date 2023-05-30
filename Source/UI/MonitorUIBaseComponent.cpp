@@ -93,13 +93,12 @@ void MonitorUIBaseComponent::draw()
     yawRadial.draw();
     
     if (yawRadial.changed) {
-//        processor->parameterChanged(processor->paramYaw, monitorState->yaw);
         double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw - 180);
         processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
     }
     
     auto& pitchSlider = m.prepare<M1Slider>({  327, 26, 108, 108 })
-                                            .withLabel("PITCH")
+//                                            .withLabel("PITCH")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(false);
     pitchSlider.cursorHide = cursorHide;
@@ -116,7 +115,7 @@ void MonitorUIBaseComponent::draw()
     }
         
     auto& rollSlider = m.prepare<M1Slider>({   317, 148, 129, 68 })
-                                            .withLabel("ROLL")
+//                                            .withLabel("ROLL")
                                             .hasMovingLabel(true)
                                             .drawHorizontal(true);
     rollSlider.cursorHide = cursorHide;
