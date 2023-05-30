@@ -169,12 +169,18 @@ void MonitorUIBaseComponent::render()
     }
     
     /// Monitor Settings button
-    auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, m.getSize().height() - 20,
+    auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 200,
                                                 100, 20 })
                                                 .withLabel("SETTINGS      ").draw();
     
     if (showSettingsButton.pressed) {
         showSettingsMenu = !showSettingsMenu;
+        if (showSettingsMenu) {
+            windowResize(504, 266);
+        } else {
+            windowResize(504, 200);
+
+        }
     }
     
     // draw Settings button arrow
