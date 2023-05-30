@@ -47,6 +47,11 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
+    std::function<void(int, int)> windowResize = [&](int w, int h) {
+        
+    };
+    
+
 private:
     MurkaPoint cachedMousePositionWhenMouseWasHidden = { 0, 0 };
     MurkaPoint currentMousePosition = { 0, 0 };
@@ -69,7 +74,6 @@ private:
 	std::function<void(int, int)> teleportCursor = [&](int x, int y) {
 		//
 	};
-    
     M1OrientationClientWindow orientationControlWindow;
     bool showOrientationControlMenu = false;
     bool showedOrientationControlBefore = false;
