@@ -84,7 +84,7 @@ public:
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(reticlePositionNorm * (shape.size.x - ellipseSize), shape.size.y/2 - ellipseSize/2, ellipseSize);
+            m.drawCircle(reticlePositionNorm * (shape.size.x - ellipseSize), shape.size.y/2 , ellipseSize);
             
         } else { // draw verically
             m.setColor(133 + 20 * A(reticleHover));
@@ -95,7 +95,8 @@ public:
             
             if (movingLabel){
                 m.prepare<murka::Label>({ shape.size.x / 2 - 70, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({ shape.size.x / 2 + 10, reticlePositionNorm * (shape.size.y - ellipseSize) - 14,
+                m.prepare<murka::Label>({ shape.size.x / 2 + 10,
+                    reticlePositionNorm * (shape.size.y - ellipseSize) - 9,
                                         ellipseSize * 6, 20})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
@@ -113,7 +114,7 @@ public:
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(shape.size.x/2 - ellipseSize/2, reticlePositionNorm * (shape.size.y - ellipseSize), ellipseSize);
+            m.drawCircle(shape.size.x/2, reticlePositionNorm * (shape.size.y - ellipseSize), ellipseSize);
         }
         m.popStyle();
     
@@ -146,15 +147,18 @@ public:
         }
         
         if (draggingNow) {
-            if (abs(mouseDelta().y) >= 1) {
                 
                 // Shift key fine-tune mode
                 float s = speed;  // TODO: check if this speed constant should be dependent on UIScale
                 if (isKeyHeld(murka::MurkaKey::MURKA_KEY_SHIFT)) {
                     s *= 10;
                 }
-                *((float*)dataToControl) += ( mouseDelta().y / s) * (rangeTo - rangeFrom);
-            }
+                
+                if (isHorizontal) {
+                        *((float*)dataToControl) -= ( mouseDelta().x / s) * (rangeTo - rangeFrom);
+                } else {
+                        *((float*)dataToControl) -= ( mouseDelta().y / s) * (rangeTo - rangeFrom);
+                }
             
             if (*((float*)dataToControl) > rangeTo) {
                 *((float*)dataToControl) = rangeTo;
