@@ -1,47 +1,45 @@
-/*
-  ==============================================================================
-
-    Transport.h
-    Created: 11 Oct 2022 3:25:40pm
-    Author:  Dylan Marcus
-
-  ==============================================================================
-*/
-
-#pragma once
+#ifndef TRANSPORT_H_INCLUDED
+#define TRANSPORT_H_INCLUDED
 
 #include <JuceHeader.h>
 
 class Transport : public juce::Timer
 {
 public:
-    Transport();
+	Transport();
 
-    // Offset timecode
-    int HH = 0, MM = 0, SS = 0, FS = 0;
+	// Offset timecode
+	int HH = 0, MM = 0, SS = 0, FS = 0;
 
-    void update();
-    void setProcessor(AudioProcessor* processor);
-    void setOrientationClient(M1OrientationOSCClient* m1OrientationOSCClient);
-    void updateOffset(int hh, int mm, int ss, int fs);
+	void update();
+	void setProcessor(AudioProcessor* processor);
+
+	void updateOffset(int hh, int mm, int ss, int fs);
+    
     double getTimeInSeconds() {
-        return currentTimeInSeconds;
+        return correctTimeInSeconds;
     }
 
 private:
-    void updateCurrentTimeInfoFromHost();
-    void sendDataViaOrientationClient();
-    void showConnectionErrorMessage(String msg);
 
-    double lastSentPositionValue;
-    bool lastSentIsPlaying;
+	void updateCurrentTimeInfoFromHost();
+	void sendDataViaOsc();
+	void showConnectionErrorMessage(String msg);
 
-    void timerCallback() override;
+	double lastSentPositionValue;
+	bool lastSentIsPlaying;
 
-    juce::AudioPlayHead::CurrentPositionInfo lastPosInfo;
-    double currentTimeInSeconds;
-    float currentFrameRate;
+	void timerCallback() override;
+
+	juce::AudioPlayHead::CurrentPositionInfo lastPosInfo;
+	double correctTimeInSeconds;
+
+    juce::String reqResult;
+
+    juce::OSCSender sender;
+	int packetsSent = 0;
 
     juce::AudioProcessor* processor = nullptr;
-    M1OrientationOSCClient* m1OrientationClient = nullptr;
 };
+
+#endif  // TRANSPORT_H_INCLUDED
