@@ -32,22 +32,19 @@ void MonitorUIBaseComponent::initialise()
     m.setResourcesPath(resourcesPath);
 }
 
-void MonitorUIBaseComponent::render()
+void MonitorUIBaseComponent::draw()
 {
     // This clears the context with our background.
     //juce::OpenGLHelpers::clear(juce::Colour(255.0, 198.0, 30.0));
-
-    currentMousePosition = m.mousePosition() * 0.7;
-    
-    float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
+	
+	float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
 
     if (scale != m.getScreenScale()) {
         m.setScreenScale(scale);
         m.updateFontsTextures(&m);
         m.clearFontsTextures();
     }
-
-	m.begin();
+   
 	m.setColor(BACKGROUND_GREY);
 	m.clear();
     
@@ -215,7 +212,6 @@ void MonitorUIBaseComponent::render()
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
     m.drawImage(m1logo, 20, m.getSize().height() - 30, 161 / 3, 39 / 3);
 
-	m.end();
 } 
 
 //==============================================================================

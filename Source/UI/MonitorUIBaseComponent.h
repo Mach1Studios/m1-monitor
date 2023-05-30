@@ -42,7 +42,7 @@ public:
 
     //==============================================================================
     void initialise() override;
-    void render() override;
+    void draw() override;
     //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
