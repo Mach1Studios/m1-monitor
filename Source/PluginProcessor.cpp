@@ -340,9 +340,9 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // Mach1Decode processing loop
     Mach1Point3D currentOrientation;
     // retrieve normalized values
-    currentOrientation.x = parameters.getParameter(paramYaw)->getValue();
-    currentOrientation.y = parameters.getParameter(paramPitch)->getValue();
-    currentOrientation.z = parameters.getParameter(paramRoll)->getValue();
+    (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
+    (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
+    (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
     monitorSettings.m1Decode.setRotation(currentOrientation);
     monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();

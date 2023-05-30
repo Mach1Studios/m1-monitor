@@ -90,12 +90,12 @@ void MonitorUIBaseComponent::draw()
     yawRadial.rangeTo = 360.;
     yawRadial.dataToControl = &monitorState->yaw;
     yawRadial.enabled = true;
-    yawRadial.draw();
+    yawRadial.draw(); 
     
     if (yawRadial.changed) {
 //        processor->parameterChanged(processor->paramYaw, monitorState->yaw);
         double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw - 180);
-        processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
+  		processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
     }
     
     auto& pitchSlider = m.prepare<M1Slider>({  327, 26, 108, 108 })
@@ -111,8 +111,8 @@ void MonitorUIBaseComponent::draw()
     pitchSlider.draw();
     
     if (pitchSlider.changed) {
-        double normalisedValue = processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch);
-        processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
+        double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch) - 0.5 ) / 2; 
+		processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
     }
         
     auto& rollSlider = m.prepare<M1Slider>({   317, 148, 129, 68 })
@@ -128,8 +128,8 @@ void MonitorUIBaseComponent::draw()
     rollSlider.draw();
     
     if (rollSlider.changed) {
-        double normalisedValue = processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll);
-        processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
+        double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll) - 0.5 ) / 2;
+		processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
     }
     
 	/// CHECKBOXES
