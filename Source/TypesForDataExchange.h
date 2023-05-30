@@ -8,12 +8,12 @@ struct MixerSettings {
     /// - `Mach1DecodeAlgoType`
     Mach1Decode m1Decode;
     
-	float yaw;
-	float pitch;
-	float roll;
-    int monitor_mode;
+	float yaw = 0;
+	float pitch = 0;
+	float roll = 0;
+    int monitor_mode = 0;
     
-    bool yawActive, pitchActive, rollActive = true;
+    bool yawActive = true, pitchActive = true, rollActive = true;
 };
 
 #endif
