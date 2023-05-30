@@ -54,13 +54,13 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
-    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
+	monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
     
     // TODO: ensure we call the changedecode function when we introduce a dropdown menu changer
     smoothedChannelCoeffs.resize(monitorSettings.m1Decode.getFormatChannelCount());
     for (int input_channel = 0; input_channel < monitorSettings.m1Decode.getFormatChannelCount(); input_channel++) {
-        smoothedChannelCoeffs[input_channel].resize(monitorSettings.m1Decode.getFormatChannelCount());
+        smoothedChannelCoeffs[input_channel].resize(2);
     }
 
     transport = new Transport();
@@ -440,8 +440,8 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
     if (numInputChannels == 4 || numInputChannels == 8) {
         for (int channel = 0; channel < numInputChannels; channel++) {
             for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-                outBufferL[sample] =+ tempBuffer.getReadPointer(channel * 2    )[sample] / std::sqrt(2)/(numInputChannels/2);
-                outBufferR[sample] =+ tempBuffer.getReadPointer(channel * 2 + 1)[sample] / std::sqrt(2)/(numInputChannels/2);
+                outBufferL[sample] += tempBuffer.getReadPointer(channel * 2    )[sample] / std::sqrt(2)/(numInputChannels/2);
+                outBufferR[sample] += tempBuffer.getReadPointer(channel * 2 + 1)[sample] / std::sqrt(2)/(numInputChannels/2);
             }
         }
     }
