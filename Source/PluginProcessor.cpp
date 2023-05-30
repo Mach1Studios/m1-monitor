@@ -65,7 +65,6 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
 
     transport = new Transport();
     transport->setProcessor(this);
-    transport->setOrientationClient(&m1OrientationOSCClient);
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
