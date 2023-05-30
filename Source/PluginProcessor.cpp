@@ -340,9 +340,9 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // Mach1Decode processing loop
     Mach1Point3D currentOrientation;
     // retrieve normalized values
-    (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
-    (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
-    (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
+    currentOrientation.x = parameters.getParameter(paramYaw)->getValue();
+    currentOrientation.y = parameters.getParameter(paramPitch)->getValue();
+    currentOrientation.z = parameters.getParameter(paramRoll)->getValue();
     monitorSettings.m1Decode.setRotation(currentOrientation);
     monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
@@ -409,10 +409,10 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
             }
         }
     } else {
-        // Invalid Decode I/O; clear buffers
-        // TODO: Prepare for input streamed case when needed here
-        for (int channel = getTotalNumInputChannels(); channel <= getTotalNumOutputChannels(); ++channel)
-            buffer.clear(channel, 0, buffer.getNumSamples());
+//        // Invalid Decode I/O; clear buffers
+//        // TODO: Prepare for input streamed case when needed here
+//        for (int channel = getTotalNumInputChannels(); channel <= getTotalNumOutputChannels(); ++channel)
+//            buffer.clear(channel, 0, buffer.getNumSamples());
     }
     
     // clear remaining input channels
