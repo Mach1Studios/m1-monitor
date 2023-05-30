@@ -109,6 +109,8 @@ void MonitorUIBaseComponent::draw()
     pitchSlider.enabled = true;
     pitchSlider.draw();
     
+    m.prepare<M1Label>({310, 70, 320, 90}).text("PITCH").draw();
+    
     if (pitchSlider.changed) {
         double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch) - 0.5 ) / 2; 
 		processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
@@ -130,6 +132,8 @@ void MonitorUIBaseComponent::draw()
         double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll) - 0.5 ) / 2;
 		processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
     }
+    
+    m.prepare<M1Label>({355, 150, 70, 50}).text("ROLL").draw();
     
 	/// CHECKBOXES
     
@@ -171,7 +175,8 @@ void MonitorUIBaseComponent::draw()
     /// Monitor Settings button
     auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 200,
                                                 100, 20 })
-                                                .withLabel("SETTINGS      ").draw();
+                                                .withLabel("SETTINGS      ")
+                                                .withOutline(false).draw();
     
     if (showSettingsButton.pressed) {
         showSettingsMenu = !showSettingsMenu;
