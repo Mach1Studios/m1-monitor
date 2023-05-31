@@ -71,10 +71,6 @@
     #pragma message "CUSTOM_CHANNEL_LAYOUT Active"
 #endif
 
-#ifdef ITD_PARAMETERS
-    #pragma message "ITD_PARAMETERS Active"
-#endif
-
 // ---
 
 #ifndef PI
@@ -115,3 +111,4 @@
 #pragma message XSTR(PLUGIN_FONT)
 #pragma message XSTR(BINARYDATA_FONT)
 #pragma message XSTR(BINARYDATA_FONT_SIZE)
+#pragma message XSTR(DEFAULT_FONT_SIZE)
