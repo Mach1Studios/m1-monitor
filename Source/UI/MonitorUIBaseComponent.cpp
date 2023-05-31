@@ -65,7 +65,7 @@ void MonitorUIBaseComponent::draw()
         
         //right side
         m.setColor(DISABLED_PARAM);
-        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 11);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
         m.prepare<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
         m.setColor(ENABLED_PARAM);
         m.prepare<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
@@ -80,7 +80,7 @@ void MonitorUIBaseComponent::draw()
         //setSize(504, 266);
     }
     
-    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
+    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
 
     /// YPR SLIDERS
     auto& yawRadial = m.prepare<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
@@ -90,6 +90,7 @@ void MonitorUIBaseComponent::draw()
     yawRadial.rangeTo = 360.;
     yawRadial.dataToControl = &monitorState->yaw;
     yawRadial.enabled = true;
+    yawRadial.withFontSize(DEFAULT_FONT_SIZE);
     yawRadial.draw(); 
     
     if (yawRadial.changed) {
@@ -107,6 +108,7 @@ void MonitorUIBaseComponent::draw()
     pitchSlider.rangeTo = 90.;
     pitchSlider.dataToControl = &monitorState->pitch;
     pitchSlider.enabled = true;
+    pitchSlider.withFontSize(DEFAULT_FONT_SIZE);
     pitchSlider.draw();
     
     m.prepare<M1Label>({310, 70, 320, 90}).text("PITCH").draw();
@@ -126,6 +128,7 @@ void MonitorUIBaseComponent::draw()
     rollSlider.rangeTo = 90.;
     rollSlider.dataToControl = &monitorState->roll;
     rollSlider.enabled = true;
+    rollSlider.withFontSize(DEFAULT_FONT_SIZE);
     rollSlider.draw();
     
     if (rollSlider.changed) {
@@ -172,6 +175,93 @@ void MonitorUIBaseComponent::draw()
         processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
     }
     
+    /// Bottom bar
+#ifdef CUSTOM_CHANNEL_LAYOUT
+    // Remove bottom bar for CUSTOM_CHANNEL_LAYOUT macro
+#else
+
+    int dropdownItemHeight = 25;
+
+    if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() <= 2 || processor->getMainBusNumOutputChannels() <= 2))) {
+
+        // Show bottom bar
+        m.setColor(GRID_LINES_3_RGBA);
+        m.drawLine(0, m.getSize().height()-36, m.getSize().width(), m.getSize().height()-36); // Divider line
+        m.setColor(BACKGROUND_GREY);
+        m.drawRectangle(0, m.getSize().height(), m.getSize().width(), 35); // bottom bar
+        
+        m.setColor(APP_LABEL_TEXT_COLOR);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+
+        // OUTPUT DROPDOWN & LABELS
+        /// -> label
+        m.setColor(200, 255);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+        auto& arrowLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 20, m.getSize().height() - 26, 40, 20));
+        arrowLabel.label = "-->";
+        arrowLabel.alignment = TEXT_CENTER;
+        arrowLabel.enabled = false;
+        arrowLabel.highlighted = false;
+        arrowLabel.draw();
+        
+        // OUTPUT DROPDOWN or LABEL
+        m.setColor(200, 255);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+        auto& outputLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 + 110, m.getSize().height() - 26, 60, 20));
+        outputLabel.label = "OUTPUT";
+        outputLabel.alignment = TEXT_CENTER;
+        outputLabel.enabled = false;
+        outputLabel.highlighted = false;
+        outputLabel.draw();
+        
+        auto& outputDropdownButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 + 20, m.getSize().height()-33,
+                                                    80, 30 })
+                                                    .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount())).draw();
+        std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
+        if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 12) output_options.push_back("M1Spatial-12");
+        if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 14) output_options.push_back("M1Spatial-14");
+        if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 32) output_options.push_back("M1Spatial-32");
+        if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 36) output_options.push_back("M1Spatial-36");
+        if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 48) output_options.push_back("M1Spatial-48");
+        if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 60) output_options.push_back("M1Spatial-60");
+
+        auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({  m.getSize().width()/2 + 20,
+                                                            m.getSize().height() - 33 - output_options.size() * dropdownItemHeight,
+                                                            120, output_options.size() * dropdownItemHeight })
+                                                    .withOptions(output_options);
+        if (outputDropdownButton.pressed) {
+            outputDropdownMenu.open();
+        }
+        
+        outputDropdownMenu.optionHeight = dropdownItemHeight;
+        outputDropdownMenu.fontSize = 9;
+        outputDropdownMenu.draw();
+
+        if (outputDropdownMenu.changed) {
+            if (outputDropdownMenu.selectedOption == 0) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoHorizon_4);
+            } else if (outputDropdownMenu.selectedOption == 1) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_8);
+            } else if (outputDropdownMenu.selectedOption == 2) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_12);
+            } else if (outputDropdownMenu.selectedOption == 3) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_14);
+            } else if (outputDropdownMenu.selectedOption == 4) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_32);
+            } else if (outputDropdownMenu.selectedOption == 5) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_36);
+            } else if (outputDropdownMenu.selectedOption == 6) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_48);
+            } else if (outputDropdownMenu.selectedOption == 7) {
+                processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_60);
+            }
+        }
+    } else {
+        // multichannel PT
+        // hide bottom bar
+    }
+#endif // end of bottom bar macro check
+    
     /// Monitor Settings button
     auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 200,
                                                 100, 20 })
@@ -184,7 +274,6 @@ void MonitorUIBaseComponent::draw()
             windowResize(504, 266);
         } else {
             windowResize(504, 200);
-
         }
     }
     
@@ -214,18 +303,36 @@ void MonitorUIBaseComponent::draw()
     
     /// Monitor label
     m.setColor(200, 255);
-    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
-    auto& pannerLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
-    pannerLabel.label = "MONITOR";
-    pannerLabel.alignment = TEXT_CENTER;
-    pannerLabel.enabled = false;
-    pannerLabel.highlighted = false;
-    pannerLabel.draw();
+    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+#ifdef CUSTOM_CHANNEL_LAYOUT
+    auto& monitorLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
+#else
+    int labelYOffset;
+    if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() > 2 || processor->getMainBusNumOutputChannels() > 2))) {
+        labelYOffset = 26;
+    } else {
+        labelYOffset = 30;
+    }
+    auto& monitorLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - labelYOffset, 80, 20));
+#endif
+    monitorLabel.label = "MONITOR";
+    monitorLabel.alignment = TEXT_CENTER;
+    monitorLabel.enabled = false;
+    monitorLabel.highlighted = false;
+    monitorLabel.draw();
     
     m.setColor(200, 255);
-    m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
+#ifdef CUSTOM_CHANNEL_LAYOUT
     m.drawImage(m1logo, 20, m.getSize().height() - 30, 161 / 3, 39 / 3);
+#else
+    if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() > 2 || processor->getMainBusNumOutputChannels() > 2))) {
+        m.drawImage(m1logo, 20, m.getSize().height() - 26, 161 / 3, 39 / 3);
+    } else {
+        m.drawImage(m1logo, 20, m.getSize().height() - 30, 161 / 3, 39 / 3);
+    }
+#endif
 
+    m.end();
 } 
 
 //==============================================================================
