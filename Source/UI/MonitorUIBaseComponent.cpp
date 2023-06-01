@@ -167,7 +167,7 @@ void MonitorUIBaseComponent::draw()
         //setSize(504, 266);
     }
     
-    if (external_spatialmixer_active) {
+    if (processor->external_spatialmixer_active) {
         // External Mixer detected!
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE+2);
 
@@ -176,7 +176,6 @@ void MonitorUIBaseComponent::draw()
         monitorStateLabel.alignment = TEXT_CENTER;
         monitorStateLabel.enabled = false;
         monitorStateLabel.highlighted = false;
-        monitorStateLabel.
         monitorStateLabel.draw();
         
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
@@ -187,7 +186,6 @@ void MonitorUIBaseComponent::draw()
         monitorStateDescLabel.alignment = TEXT_CENTER;
         monitorStateDescLabel.enabled = false;
         monitorStateDescLabel.highlighted = false;
-        monitorStateDescLabel.font = DEFAULT_FONT_SIZE-2;
         monitorStateDescLabel.draw();
         
     } else {
