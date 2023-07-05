@@ -23,13 +23,7 @@ M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor (M1MonitorAudioProc
     monitorUIBaseComponent->setSize(getWidth(), getHeight());
 
     addAndMakeVisible(monitorUIBaseComponent);
-    
-    monitorUIBaseComponent->windowResize = [&](int w, int h) {
-        MessageManager::callAsync([&]() {
-            setSize(w, h);
-            monitorUIBaseComponent->setSize(getWidth(), getHeight());
-        });
-    };
+    monitorUIBaseComponent->editor = this;
 }
 
 M1MonitorAudioProcessorEditor::~M1MonitorAudioProcessorEditor()
@@ -45,12 +39,6 @@ void M1MonitorAudioProcessorEditor::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colour (40, 40, 40));
     g.setColour (juce::Colour (40, 40, 40));
-    
-    monitorUIBaseComponent->windowResize = [&](int w, int h) {
-        MessageManager::callAsync([&]() {
-            setBounds(getBounds().getX(), getBounds().getY(), w, h);
-        });
-    };
 }
 
 void M1MonitorAudioProcessorEditor::resized()

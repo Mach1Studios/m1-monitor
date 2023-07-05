@@ -5,12 +5,14 @@ using namespace murka;
 //==============================================================================
 MonitorUIBaseComponent::MonitorUIBaseComponent(M1MonitorAudioProcessor* processor_)
 {
-	// Make sure you set the size of the component after
+    // Make sure you set the size of the component after
     // you add any child components.
-	setSize (getWidth(), getHeight());
-
-	processor = processor_;
+    setSize (getWidth(), getHeight());
+    
+    processor = processor_;
     monitorState = &processor->monitorSettings;
+    
+    startTimerHz(60); // Starts the timer to call the timerCallback method at 60 Hz.
 }
 
 MonitorUIBaseComponent::~MonitorUIBaseComponent()
@@ -32,6 +34,15 @@ void MonitorUIBaseComponent::initialise()
     m.setResourcesPath(resourcesPath);
 }
 
+void MonitorUIBaseComponent::timerCallback() {
+    if (shouldResizeComponent) {
+        repaint();
+        setSize(targetSize.x, targetSize.y);
+        editor->setSize(targetSize.x, targetSize.y);
+        shouldResizeComponent = false;
+    }
+}
+
 void MonitorUIBaseComponent::draw()
 {
     // This clears the context with our background.
@@ -50,10 +61,9 @@ void MonitorUIBaseComponent::draw()
     
     // TODO: window resize for settings view
     if (showSettingsMenu) {
-        //setSize(504, 469);
-        
         // Settings rendering
-        
+        setShouldResizeTo(MurkaPoint(504, 330));
+
         //Timecode rect
         m.setColor(GRID_LINES_1_RGBA);
         m.enableFill();
@@ -69,6 +79,31 @@ void MonitorUIBaseComponent::draw()
         m.prepare<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
         m.setColor(ENABLED_PARAM);
         m.prepare<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
+        auto& hhfield = m.prepare<murka::TextField>({270, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->HH);
+        hhfield.widgetBgColor.a = 0;
+        hhfield.draw();
+        if (processor->transport->HH < 0) processor->transport->HH = 0;
+        if (processor->transport->HH > 100) processor->transport->HH = 99;
+        
+        auto& mmfield = m.prepare<murka::TextField>({315, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->MM);
+        if (processor->transport->MM < 0) processor->transport->MM = 0;
+        if (processor->transport->MM > 100) processor->transport->MM = 99;
+        mmfield.widgetBgColor.a = 0;
+        mmfield.draw();
+        
+        auto& ssfield = m.prepare<murka::TextField>({350, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
+        if (processor->transport->SS < 0) processor->transport->SS = 0;
+        if (processor->transport->SS > 100) processor->transport->SS = 99;
+        ssfield.widgetBgColor.a = 0;
+        ssfield.draw();
+        
+        auto& fsfield = m.prepare<murka::TextField>({385, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
+        if (processor->transport->FS < 0) processor->transport->FS = 0;
+        if (processor->transport->FS > 100) processor->transport->FS = 99;
+        fsfield.widgetBgColor.a = 0;
+        fsfield.draw();
+        
+        
         m.prepare<murka::Label>({267, 365, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").draw();
         m.prepare<murka::Label>({267, 390, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
         
@@ -76,8 +111,7 @@ void MonitorUIBaseComponent::draw()
         m.setColor(ENABLED_PARAM);
         m.prepare<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
     } else {
-        // TODO: fix this
-        //setSize(504, 266);
+        setShouldResizeTo(MurkaPoint(504, 180));
     }
     
     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
@@ -172,21 +206,43 @@ void MonitorUIBaseComponent::draw()
         processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
     }
     
-    /// Monitor Settings button
-    auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 200,
-                                                100, 20 })
-                                                .withLabel("SETTINGS      ")
-                                                .withOutline(false).draw();
-    
-    if (showSettingsButton.pressed) {
-        showSettingsMenu = !showSettingsMenu;
-        if (showSettingsMenu) {
-            windowResize(504, 266);
-        } else {
-            windowResize(504, 200);
+    std::function<void()> deleteTheSettingsButton = [&]() {
+        // Temporary solution to delete the TextField:
+        // Searching for an id to delete the text field widget.
+        // To be redone after the UI library refactoring.
+        
+        imIdentifier idToDelete;
+        for (auto childTuple: m.imChildren) {
+            auto childIdTuple = childTuple.first;
+            if (std::get<1>(childIdTuple) == typeid(M1DropdownButton).name()) {
+                idToDelete = childIdTuple;
+            }
+        }
+        m.imChildren.erase(idToDelete);
+    };
 
+    
+    /// Monitor Settings button
+    if (showSettingsMenu) {
+        auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 440,
+            100, 20 })
+        .withLabel("SETTINGS")
+        .withOutline(false).draw();
+        if (showSettingsButton.pressed) {
+            showSettingsMenu = false;
+            deleteTheSettingsButton();
+        }
+    } else {
+        auto& showSettingsButton2 = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 225,
+            100, 20 })
+        .withLabel("SETTINGS")
+        .withOutline(false).draw();
+        if (showSettingsButton2.pressed) {
+            showSettingsMenu = true;
+            deleteTheSettingsButton();
         }
     }
+    
     
     // draw Settings button arrow
     // TODO: fix and fill arrow
@@ -194,21 +250,23 @@ void MonitorUIBaseComponent::draw()
         // draw settings arrow indicator pointing up
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 12};
         std::vector<MurkaPoint3D> triangle;
-        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 10, 0});
-        triangle.push_back({(m.getSize().width()/2 - 40) + 95, m.getSize().height() - 15, 0}); // top middle
-        triangle.push_back({(m.getSize().width()/2 - 40) + 95, m.getSize().height() - 10, 0});
-        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 10, 0});
+        triangle.push_back({triangleCenter.x - 10, triangleCenter.y, 0});
+        triangle.push_back({triangleCenter.x + 10, triangleCenter.y, 0}); // top middle
+        triangle.push_back({triangleCenter.x , triangleCenter.y - 10, 0});
+        triangle.push_back({triangleCenter.x - 10, triangleCenter.y, 0});
         m.drawPath(triangle);
     } else {
         // draw settings arrow indicator pointing down
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 12};
         std::vector<MurkaPoint3D> triangle;
-        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 15, 0});
-        triangle.push_back({(m.getSize().width()/2 - 40) + 90, m.getSize().height() - 10, 0}); // bottom middle
-        triangle.push_back({(m.getSize().width()/2 - 40) + 95, m.getSize().height() - 15, 0});
-        triangle.push_back({(m.getSize().width()/2 - 40) + 85, m.getSize().height() - 15, 0});
+        triangle.push_back({triangleCenter.x - 10, triangleCenter.y, 0});
+        triangle.push_back({triangleCenter.x + 10, triangleCenter.y, 0}); // top middle
+        triangle.push_back({triangleCenter.x , triangleCenter.y - 10, 0});
+        triangle.push_back({triangleCenter.x - 10, triangleCenter.y, 0});
         m.drawPath(triangle);
     }
     
