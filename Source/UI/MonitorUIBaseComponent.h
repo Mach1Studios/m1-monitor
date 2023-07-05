@@ -31,6 +31,7 @@
     your controls and content.
 */
 class MonitorUIBaseComponent : public JuceMurkaBaseComponent
+, public juce::Timer
 {
     M1MonitorAudioProcessor* processor = nullptr;
     MixerSettings* monitorState = nullptr;
@@ -39,6 +40,9 @@ public:
     //==============================================================================
     MonitorUIBaseComponent(M1MonitorAudioProcessor* processor);
 	~MonitorUIBaseComponent();
+    
+    juce::AudioProcessorEditor* editor;
+
 
     //==============================================================================
     void initialise() override;
@@ -47,11 +51,20 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
-    std::function<void(int, int)> windowResize = [&](int w, int h) {
-        
-    };
+    bool shouldResizeComponent = false;
+    MurkaPoint targetSize;
     
+    void setShouldResizeTo(MurkaPoint size) {
+        if ((getWidth() != size.x) || (getHeight() != size.y)) {
+            targetSize = size;
+            shouldResizeComponent = true;
+        }
+    }
+    
+    // Timer callback for resizing
+    void timerCallback() override;
 
+    
 private:
     MurkaPoint cachedMousePositionWhenMouseWasHidden = { 0, 0 };
     MurkaPoint currentMousePosition = { 0, 0 };
