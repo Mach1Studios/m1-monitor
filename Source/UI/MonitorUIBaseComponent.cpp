@@ -91,13 +91,13 @@ void MonitorUIBaseComponent::draw()
         mmfield.widgetBgColor.a = 0;
         mmfield.draw();
         
-        auto& ssfield = m.prepare<murka::TextField>({350, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
+        auto& ssfield = m.prepare<murka::TextField>({360, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
         if (processor->transport->SS < 0) processor->transport->SS = 0;
         if (processor->transport->SS > 100) processor->transport->SS = 99;
         ssfield.widgetBgColor.a = 0;
         ssfield.draw();
         
-        auto& fsfield = m.prepare<murka::TextField>({385, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
+        auto& fsfield = m.prepare<murka::TextField>({405, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
         if (processor->transport->FS < 0) processor->transport->FS = 0;
         if (processor->transport->FS > 100) processor->transport->FS = 99;
         fsfield.widgetBgColor.a = 0;
