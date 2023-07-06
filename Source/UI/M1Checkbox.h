@@ -35,7 +35,7 @@ public:
                           4 * animatedData);
 
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
-        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, 10);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         m.prepare<murka::Label>({shape.size.y + 2, 2, 150, shape.size.y + 5}).text(label).draw();
         m.popStyle();
 
@@ -54,6 +54,7 @@ public:
     bool changed = false;
     bool checked = true;
     std::string label;
+    double fontSize = 10;
     bool* dataToControl = nullptr;
     
     M1Checkbox & controlling(bool* dataPointer) {
@@ -63,6 +64,11 @@ public:
     
     M1Checkbox & withLabel(std::string label_) {
         label = label_;
+        return *this;
+    }
+    
+    M1Checkbox & withFontSize(double fontSize_) {
+        fontSize = fontSize_;
         return *this;
     }
 

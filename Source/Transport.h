@@ -27,7 +27,6 @@ private:
 	void showConnectionErrorMessage(String msg);
 
 	double lastSentPositionValue;
-	bool lastSentIsPlaying;
 
 	void timerCallback() override;
 
