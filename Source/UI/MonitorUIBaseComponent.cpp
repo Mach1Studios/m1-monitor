@@ -22,7 +22,7 @@ MonitorUIBaseComponent::~MonitorUIBaseComponent()
 //==============================================================================
 void MonitorUIBaseComponent::initialise()
 {
-	JuceMurkaBaseComponent::initialise();
+    JuceMurkaBaseComponent::initialise();
 
     std::string resourcesPath;
     if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
@@ -32,6 +32,8 @@ void MonitorUIBaseComponent::initialise()
     }
     printf("Resources Loaded From: %s \n" , resourcesPath.c_str());
     m.setResourcesPath(resourcesPath);
+    
+    m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
 }
 
 void MonitorUIBaseComponent::timerCallback() {
@@ -47,8 +49,8 @@ void MonitorUIBaseComponent::draw()
 {
     // This clears the context with our background.
     //juce::OpenGLHelpers::clear(juce::Colour(255.0, 198.0, 30.0));
-	
-	float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
+    
+    float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
 
     if (scale != m.getScreenScale()) {
         m.setScreenScale(scale);
@@ -56,8 +58,8 @@ void MonitorUIBaseComponent::draw()
         m.clearFontsTextures();
     }
    
-	m.setColor(BACKGROUND_GREY);
-	m.clear();
+    m.setColor(BACKGROUND_GREY);
+    m.clear();
     
     // TODO: window resize for settings view
     if (showSettingsMenu) {
@@ -212,60 +214,6 @@ void MonitorUIBaseComponent::draw()
         monitorStateLabel.highlighted = false;
         monitorStateLabel.draw();
         
-    auto& rollSlider = m.prepare<M1Slider>({   317, 148, 129, 68 })
-//                                            .withLabel("ROLL")
-                                            .hasMovingLabel(true)
-                                            .drawHorizontal(true);
-    rollSlider.cursorHide = cursorHide;
-    rollSlider.cursorShow = cursorShow;
-    rollSlider.rangeFrom = -90.;
-    rollSlider.rangeTo = 90.;
-    rollSlider.dataToControl = &monitorState->roll;
-    rollSlider.enabled = true;
-    rollSlider.draw();
-    
-    if (rollSlider.changed) {
-        double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll) - 0.5 ) / 2;
-		processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
-    }
-    
-    m.prepare<M1Label>({355, 150, 70, 50}).text("ROLL").draw();
-    
-	/// CHECKBOXES
-    
-	float checkboxSlotHeight = 30;
-    
-    auto& yawActive = m.prepare<M1Checkbox>({ 270, 420,
-                                                100, 20 })
-                                                .controlling(&monitorState->yawActive)
-                                                .withLabel("Y");
-    yawActive.enabled = true;
-    yawActive.draw();
-
-    if (yawActive.changed) {
-        processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
-    }
-    
-    auto& pitchActive = m.prepare<M1Checkbox>({ 320, 420,
-                                                100, 20 })
-                                                .controlling(&monitorState->pitchActive)
-                                                .withLabel("P");
-    pitchActive.enabled = true;
-    pitchActive.draw();
-
-    if (pitchActive.changed) {
-        processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
-    }
-    
-    auto& rollActive = m.prepare<M1Checkbox>({ 370, 420,
-                                                100, 20 })
-                                                .controlling(&monitorState->rollActive)
-                                                .withLabel("R");
-    rollActive.enabled = true;
-    rollActive.draw();
-
-    if (rollActive.changed) {
-        processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
 
         // TODO: Add more state messages if needed
@@ -341,8 +289,7 @@ void MonitorUIBaseComponent::draw()
         
         float checkboxSlotHeight = 30;
         
-        auto& yawActive = m.prepare<M1Checkbox>({ 267, 410 + checkboxSlotHeight * 3,
-            100, 30 })
+        auto& yawActive = m.prepare<M1Checkbox>({ 270, 420, 100, 20 })
         .controlling(&monitorState->yawActive)
         .withLabel("Y");
         yawActive.enabled = true;
@@ -350,10 +297,10 @@ void MonitorUIBaseComponent::draw()
         
         if (yawActive.changed) {
             processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
+            processor->m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
         }
         
-        auto& pitchActive = m.prepare<M1Checkbox>({ 307, 410 + checkboxSlotHeight * 3,
-            100, 30 })
+        auto& pitchActive = m.prepare<M1Checkbox>({ 320, 420, 100, 20 })
         .controlling(&monitorState->pitchActive)
         .withLabel("P");
         pitchActive.enabled = true;
@@ -361,10 +308,10 @@ void MonitorUIBaseComponent::draw()
         
         if (pitchActive.changed) {
             processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
+            processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
         }
         
-        auto& rollActive = m.prepare<M1Checkbox>({ 347, 410 + checkboxSlotHeight * 3,
-            100, 30 })
+        auto& rollActive = m.prepare<M1Checkbox>({ 370, 420, 100, 20 })
         .controlling(&monitorState->rollActive)
         .withLabel("R");
         rollActive.enabled = true;
@@ -372,19 +319,22 @@ void MonitorUIBaseComponent::draw()
         
         if (rollActive.changed) {
             processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
+            processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
+        }
+        
+        auto& recenterButton = m.prepare<M1Checkbox>({ 420, 420, 200, 20 })
+        .controlling(&recenterButtonActive)
+        .withLabel("RECENTER");
+        recenterButton.enabled = true;
+        recenterButton.draw();
+            
+        if (recenterButton.changed) {
+            processor->m1OrientationOSCClient.command_recenter();
+            if (recenterButtonActive && recenterButton.checked) {
+                recenterButtonActive = false;
+            }
         }
     }
-    
-    auto& recenterActive = m.prepare<M1Checkbox>({ 420, 420,
-                                                200, 20 })
-                                                .controlling(&monitorState->monitor_mode)
-                                                .withLabel("RECENTER");
-    recenterActive.enabled = true;
-    recenterActive.draw();
-
-//    if (recenterActive.changed) {
-//        processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
-//    }
     
     std::function<void()> deleteTheSettingsButton = [&]() {
         // Temporary solution to delete the TextField:
@@ -428,7 +378,7 @@ void MonitorUIBaseComponent::draw()
         // draw settings arrow indicator pointing up
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
-        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 14};
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 12};
         std::vector<MurkaPoint3D> triangle;
         triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
         triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
@@ -439,12 +389,12 @@ void MonitorUIBaseComponent::draw()
         // draw settings arrow indicator pointing down
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
-        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 14};
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 18};
         std::vector<MurkaPoint3D> triangle;
-        triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
-        triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
-        triangle.push_back({triangleCenter.x , triangleCenter.y - 5, 0});
-        triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
+        triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
+        triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
+        triangle.push_back({triangleCenter.x , triangleCenter.y + 5, 0});
+        triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
         m.drawPath(triangle);
     }
     
@@ -475,7 +425,7 @@ void MonitorUIBaseComponent::draw()
     m.drawImage(m1logo, 20, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
 
-} 
+}
 
 //==============================================================================
 void MonitorUIBaseComponent::paint (juce::Graphics& g)

@@ -119,10 +119,11 @@ public:
 
     // Transport
     ScopedPointer<Transport> transport;
-    
+
+    // Orientation Manager/Client
     void setStatus(bool success, std::string message);
     M1OrientationOSCClient m1OrientationOSCClient;
-    
+
     // TODO: change this
     bool external_spatialmixer_active = false; // global detect spatialmixer
 

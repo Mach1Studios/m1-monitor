@@ -70,6 +70,7 @@ private:
     MurkaPoint currentMousePosition = { 0, 0 };
     
     bool showSettingsMenu = false;
+    bool recenterButtonActive = false;
     
 	MurImage m1logo;
 
@@ -87,6 +88,7 @@ private:
 	std::function<void(int, int)> teleportCursor = [&](int x, int y) {
 		//
 	};
+    
     M1OrientationClientWindow orientationControlWindow;
     bool showOrientationControlMenu = false;
     bool showedOrientationControlBefore = false;
