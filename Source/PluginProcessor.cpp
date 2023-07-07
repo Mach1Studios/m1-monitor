@@ -66,8 +66,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     transport = new Transport();
     transport->setProcessor(this);
     
-    m1OrientationOSCClient.init(6345, 6346);
-    m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
+    //m1OrientationOSCClient.init(6345, 6346);
+    //m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
