@@ -373,7 +373,6 @@ void MonitorUIBaseComponent::draw()
         if (rollActive.changed) {
             processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
         }
->>>>>>> 9ae16342730e98f826c2e5454085ce5de8cc5cff
     }
     
     auto& recenterActive = m.prepare<M1Checkbox>({ 420, 420,
