@@ -314,24 +314,6 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     juce::ScopedNoDenormals noDenormals;
     auto numInputChannels  = getMainBusNumInputChannels();
     auto numOutputChannels = getMainBusNumOutputChannels();
-
-    if (numInputChannels == 4){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoHorizon_4);
-    } else if (numInputChannels == 8){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
-    } else if (numInputChannels == 12){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_12);
-    } else if (numInputChannels == 14){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_14);
-    } else if (numInputChannels == 32){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_32);
-    } else if (numInputChannels == 36){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_36);
-    } else if (numInputChannels == 48){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_48);
-    } else if (numInputChannels == 60){
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_60);
-    }
     
     // if you've got more output channels than input clears extra outputs
     for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
