@@ -33,6 +33,10 @@ public:
         animatedData = A(*((bool*)dataToControl));
         m.drawCircle(getSize().y / 2, getSize().y / 2,
                           4 * animatedData);
+        
+        if (animatedData >= 1) {
+            checked = true;
+        }
 
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
@@ -52,7 +56,7 @@ public:
     float animatedData = 0;
     bool didntInitialiseYet = true;
     bool changed = false;
-    bool checked = true;
+    bool checked = false;
     std::string label;
     double fontSize = 10;
     bool* dataToControl = nullptr;

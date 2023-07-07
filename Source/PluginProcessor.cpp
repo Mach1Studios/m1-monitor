@@ -65,11 +65,16 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
 
     transport = new Transport();
     transport->setProcessor(this);
+    
+    m1OrientationOSCClient.init(6345, 6346);
+    m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
 {
     transport = nullptr;
+    m1OrientationOSCClient.command_disconnect();
+    m1OrientationOSCClient.close();
 }
 
 //==============================================================================
@@ -477,6 +482,13 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
         }
     // TODO: implement stereo downmix for 32,36,48,60
     }
+}
+
+//==============================================================================
+void M1MonitorAudioProcessor::setStatus(bool success, std::string message)
+{
+    //this->status = message;
+    std::cout << success << " , " << message << std::endl;
 }
 
 //==============================================================================
