@@ -77,34 +77,43 @@ void MonitorUIBaseComponent::draw()
         
         //right side
         m.setColor(DISABLED_PARAM);
-        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
         m.prepare<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
         m.setColor(ENABLED_PARAM);
         m.prepare<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
-        auto& hhfield = m.prepare<murka::TextField>({270, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->HH);
+        auto& hhfield = m.prepare<murka::TextField>({270, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->HH);
         hhfield.widgetBgColor.a = 0;
+        hhfield.drawBounds = false;
         hhfield.draw();
         if (processor->transport->HH < 0) processor->transport->HH = 0;
         if (processor->transport->HH > 100) processor->transport->HH = 99;
         
-        auto& mmfield = m.prepare<murka::TextField>({315, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->MM);
+        m.prepare<murka::Label>({300, 332, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+        
+        auto& mmfield = m.prepare<murka::TextField>({315, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->MM);
         if (processor->transport->MM < 0) processor->transport->MM = 0;
         if (processor->transport->MM > 100) processor->transport->MM = 99;
         mmfield.widgetBgColor.a = 0;
+        mmfield.drawBounds = false;
         mmfield.draw();
         
-        auto& ssfield = m.prepare<murka::TextField>({360, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
+        m.prepare<murka::Label>({345, 332, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+        
+        auto& ssfield = m.prepare<murka::TextField>({360, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
         if (processor->transport->SS < 0) processor->transport->SS = 0;
         if (processor->transport->SS > 100) processor->transport->SS = 99;
         ssfield.widgetBgColor.a = 0;
+        ssfield.drawBounds = false;
         ssfield.draw();
         
-        auto& fsfield = m.prepare<murka::TextField>({405, 323, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
+        m.prepare<murka::Label>({390, 332, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+
+        auto& fsfield = m.prepare<murka::TextField>({405, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
         if (processor->transport->FS < 0) processor->transport->FS = 0;
         if (processor->transport->FS > 100) processor->transport->FS = 99;
         fsfield.widgetBgColor.a = 0;
+        fsfield.drawBounds = false;
         fsfield.draw();
-        
         
         m.prepare<murka::Label>({267, 365, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").draw();
         m.prepare<murka::Label>({267, 390, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
@@ -258,6 +267,7 @@ void MonitorUIBaseComponent::draw()
         pitchSlider.withFontSize(DEFAULT_FONT_SIZE);
         pitchSlider.draw();
         
+        m.setColor(REF_LABEL_TEXT_COLOR);
         m.prepare<M1Label>({310, 70, 320, 90}).text("PITCH").draw();
         
         if (pitchSlider.changed) {
@@ -283,6 +293,7 @@ void MonitorUIBaseComponent::draw()
             processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
         }
         
+        m.setColor(REF_LABEL_TEXT_COLOR);
         m.prepare<M1Label>({355, 150, 70, 50}).text("ROLL").draw();
         
         /// CHECKBOXES
@@ -352,6 +363,7 @@ void MonitorUIBaseComponent::draw()
     };
     
     /// Monitor Settings button
+    m.setColor(ENABLED_PARAM);
     if (showSettingsMenu) {
         auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 440,
             100, 20 })
