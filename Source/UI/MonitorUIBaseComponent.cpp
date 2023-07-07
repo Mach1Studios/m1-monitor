@@ -173,8 +173,8 @@ void MonitorUIBaseComponent::draw()
     
 	float checkboxSlotHeight = 30;
     
-    auto& yawActive = m.prepare<M1Checkbox>({ 267, 410 + checkboxSlotHeight * 3,
-                                                100, 30 })
+    auto& yawActive = m.prepare<M1Checkbox>({ 270, 420,
+                                                100, 20 })
                                                 .controlling(&monitorState->yawActive)
                                                 .withLabel("Y");
     yawActive.enabled = true;
@@ -184,8 +184,8 @@ void MonitorUIBaseComponent::draw()
         processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
     }
     
-    auto& pitchActive = m.prepare<M1Checkbox>({ 307, 410 + checkboxSlotHeight * 3,
-                                                100, 30 })
+    auto& pitchActive = m.prepare<M1Checkbox>({ 320, 420,
+                                                100, 20 })
                                                 .controlling(&monitorState->pitchActive)
                                                 .withLabel("P");
     pitchActive.enabled = true;
@@ -195,8 +195,8 @@ void MonitorUIBaseComponent::draw()
         processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
     }
     
-    auto& rollActive = m.prepare<M1Checkbox>({ 347, 410 + checkboxSlotHeight * 3,
-                                                100, 30 })
+    auto& rollActive = m.prepare<M1Checkbox>({ 370, 420,
+                                                100, 20 })
                                                 .controlling(&monitorState->rollActive)
                                                 .withLabel("R");
     rollActive.enabled = true;
@@ -205,6 +205,17 @@ void MonitorUIBaseComponent::draw()
     if (rollActive.changed) {
         processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
     }
+    
+    auto& recenterActive = m.prepare<M1Checkbox>({ 420, 420,
+                                                200, 20 })
+                                                .controlling(&monitorState->monitor_mode)
+                                                .withLabel("RECENTER");
+    recenterActive.enabled = true;
+    recenterActive.draw();
+
+//    if (recenterActive.changed) {
+//        processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
+//    }
     
     std::function<void()> deleteTheSettingsButton = [&]() {
         // Temporary solution to delete the TextField:
