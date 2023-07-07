@@ -18,11 +18,13 @@
               enableIAA="0">
   <MAINGROUP id="kcbQk5" name="M1-Monitor-dev">
     <FILE id="mL5YjJ" name="mach1logo.png" compile="0" resource="1" file="Resources/mach1logo.png"/>
-    <FILE id="iIHjto" name="bluetooth_icon.png" compile="0" resource="1"
-          file="../m1-player/Resources/bluetooth_icon.png"/>
-    <FILE id="CRBFXi" name="tech_support_icon.png" compile="0" resource="1"
-          file="../m1-player/Resources/tech_support_icon.png"/>
-    <FILE id="GYNdth" name="wi-fi_icon.png" compile="0" resource="1" file="../m1-player/Resources/wi-fi_icon.png"/>
+    <FILE id="Ii2GFs" name="bluetooth_icon.png" compile="0" resource="1"
+          file="Modules/m1_orientation_client/Resources/bluetooth_icon.png"/>
+    <FILE id="A7P6Xo" name="camera_icon.png" compile="0" resource="1" file="Modules/m1_orientation_client/Resources/camera_icon.png"/>
+    <FILE id="S3YqiN" name="tech_support_icon.png" compile="0" resource="1"
+          file="Modules/m1_orientation_client/Resources/tech_support_icon.png"/>
+    <FILE id="iPkZw2" name="usb_icon.png" compile="0" resource="1" file="Modules/m1_orientation_client/Resources/usb_icon.png"/>
+    <FILE id="DE5EAX" name="wi-fi_icon.png" compile="0" resource="1" file="Modules/m1_orientation_client/Resources/wi-fi_icon.png"/>
     <FILE id="LZ4a2M" name="AileronSemiBold.ttf" compile="0" resource="1"
           file="Resources/AileronSemiBold.ttf"/>
     <GROUP id="{1A61DF24-6C83-F2B0-E219-82AEC738A757}" name="Source">

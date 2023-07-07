@@ -36,7 +36,7 @@ void Transport::sendDataViaOsc() {
 	if (processor != nullptr)
 	{
 		juce::OSCMessage m = juce::OSCMessage("/transport");
-		//        m.addFloat32((float) lastPosInfo.timeInSeconds); // << previous way
+		//m.addFloat32((float) lastPosInfo.timeInSeconds); // << previous way
 		m.addFloat32(correctTimeInSeconds); // << testing new way
 		m.addInt32((lastPosInfo.isPlaying ? 1 : 0));
 		reqResult = "Sent HH = " + String(HH) + " ; MM = " + String(MM) + ", packet #" + String(packetsSent);

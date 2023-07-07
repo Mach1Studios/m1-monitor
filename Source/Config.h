@@ -71,10 +71,6 @@
     #pragma message "CUSTOM_CHANNEL_LAYOUT Active"
 #endif
 
-#ifdef ITD_PARAMETERS
-    #pragma message "ITD_PARAMETERS Active"
-#endif
-
 // ---
 
 #ifndef PI
@@ -109,9 +105,10 @@
 #else
     // default CC0 font
     #define PLUGIN_FONT "AileronSemiBold.ttf"
-    #define BINARYDATA_FONT BinaryData::AileronSemiBold_ttf
-    #define BINARYDATA_FONT_SIZE BinaryData::AileronSemiBold_ttfSize
+    #define BINARYDATA_FONT "BinaryData::AileronSemiBold_ttf"
+    #define BINARYDATA_FONT_SIZE "BinaryData::AileronSemiBold_ttfSize"
 #endif
 #pragma message XSTR(PLUGIN_FONT)
 #pragma message XSTR(BINARYDATA_FONT)
 #pragma message XSTR(BINARYDATA_FONT_SIZE)
+#pragma message XSTR(DEFAULT_FONT_SIZE)

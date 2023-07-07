@@ -54,11 +54,9 @@ public:
         outlineEnabled = outlineEnabled_;
         return *this;
     }
-
     
     M1DropdownButton & withFontSize(double fontSize_) {
         fontSize = fontSize_;
         return *this;
     }
-
 };
