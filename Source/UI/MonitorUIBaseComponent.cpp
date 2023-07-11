@@ -333,9 +333,12 @@ void MonitorUIBaseComponent::draw()
             processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
         }
         
-        auto& recenterButton = m.prepare<M1Checkbox>({ 420, 420, 200, 20 })
+        recenterButtonActive = true;
+        auto& recenterButton = m.prepare<M1Checkbox>({ 390, 420, 200, 20 })
         .controlling(&recenterButtonActive)
-        .withLabel("RECENTER");
+        .withLabel("RECENTER")
+        .showCircle(false)
+        .buttonMode(true);
         recenterButton.enabled = true;
         recenterButton.draw();
             

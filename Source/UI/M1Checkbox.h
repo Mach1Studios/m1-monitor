@@ -23,16 +23,18 @@ public:
         float animation = A(inside() * enabled);
         
         m.pushStyle();
-        m.setColor(100 + 110 * enabled + 30 * animation, 220);
-        m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2);
-        m.setColor(40 + 20 * !enabled, 255);
-        m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2 - 2);
-        
-        m.setColor(100 + 110 * enabled + 30 * animation, 220);
-        
-        animatedData = A(*((bool*)dataToControl));
-        m.drawCircle(getSize().y / 2, getSize().y / 2,
-                          4 * animatedData);
+        if (showCircleWithText) {
+                m.setColor(100 + 110 * enabled + 30 * animation, 220);
+            m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2);
+            m.setColor(40 + 20 * !enabled, 255);
+            m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2 - 2);
+            
+            m.setColor(100 + 110 * enabled + 30 * animation, 220);
+            
+            animatedData = A(*((bool*)dataToControl));
+                m.drawCircle(getSize().y / 2, getSize().y / 2,
+                             4 * animatedData);
+        }
         
         if (animatedData >= 1) {
             checked = true;
@@ -45,8 +47,13 @@ public:
 
         // Action
         if ((mouseDownPressed(0)) && (inside()) && enabled) {
-            *((bool*)dataToControl) = !*((bool*)dataToControl);
-            changed = true;
+            if (useButtonMode) {
+                changed = true;
+            }
+            else {
+                *((bool*)dataToControl) = !*((bool*)dataToControl);
+                changed = true;
+            }
         }
         else {
             changed = false;
@@ -60,6 +67,8 @@ public:
     std::string label;
     double fontSize = 10;
     bool* dataToControl = nullptr;
+    bool showCircleWithText = true;
+    bool useButtonMode = false;
     
     M1Checkbox & controlling(bool* dataPointer) {
         dataToControl = dataPointer;
@@ -70,7 +79,17 @@ public:
         label = label_;
         return *this;
     }
-    
+
+    M1Checkbox & showCircle(bool show) {
+        showCircleWithText = show;
+        return *this;
+    }
+
+    M1Checkbox & buttonMode(bool use) {
+        useButtonMode = use;
+        return *this;
+    }
+
     M1Checkbox & withFontSize(double fontSize_) {
         fontSize = fontSize_;
         return *this;
