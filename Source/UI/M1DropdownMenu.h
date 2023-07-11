@@ -92,6 +92,13 @@ public:
         }
     }
     
+    void close() {
+        opened = false;
+        mouseKeptDownFrames = 0;
+        closingMode = closingModeTypes::modeUnknown;
+        changed = false;
+    }
+    
     void open() {
         opened = true;
         mouseKeptDownFrames = 0;
