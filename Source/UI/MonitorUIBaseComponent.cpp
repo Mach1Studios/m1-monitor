@@ -348,6 +348,24 @@ void MonitorUIBaseComponent::draw()
                 recenterButtonActive = false;
             }
         }
+        
+        std::vector<std::string> monitorModes = {"M1 Spatial", "M1 Horizon", "Stereo safe", "Fold/back down"};
+        auto& dropdown = m.prepare<M1DropdownMenu>({15, 270, 120, 30 * 4}).withOptions(monitorModes);
+        if (!showModeDropdownMenu) {
+            auto& dropdownInit = m.prepare<M1DropdownButton>({15, 270, 120, 30}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
+            
+            if (dropdownInit.pressed) {
+                showModeDropdownMenu = true;
+                dropdown.open();
+            }
+        } else {
+            dropdown.draw();
+            if (dropdown.changed || !dropdown.opened) {
+                selectedMonitorMode = dropdown.selectedOption;
+                showModeDropdownMenu = false;
+                dropdown.close();
+            }
+        }
     }
     
     std::function<void()> deleteTheSettingsButton = [&]() {
