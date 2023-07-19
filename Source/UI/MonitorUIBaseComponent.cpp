@@ -34,6 +34,8 @@ void MonitorUIBaseComponent::initialise()
     m.setResourcesPath(resourcesPath);
     
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
+    openedImg.loadFromRawData(BinaryData::opened_png, BinaryData::opened_pngSize);
+    closedImg.loadFromRawData(BinaryData::closed_png, BinaryData::closed_pngSize);
 }
 
 void MonitorUIBaseComponent::timerCallback() {
@@ -64,7 +66,7 @@ void MonitorUIBaseComponent::draw()
     // TODO: window resize for settings view
     if (showSettingsMenu) {
         // Settings rendering
-        setShouldResizeTo(MurkaPoint(504, 330));
+        setShouldResizeTo(MurkaPoint(504, 467));
 
         //Timecode rect
         m.setColor(GRID_LINES_1_RGBA);
@@ -209,7 +211,7 @@ void MonitorUIBaseComponent::draw()
         }
     #endif // end of bottom bar macro check
     } else {
-        setShouldResizeTo(MurkaPoint(504, 180));
+        setShouldResizeTo(MurkaPoint(504, 267));
     }
     
     if (processor->external_spatialmixer_active) {
@@ -457,6 +459,15 @@ void MonitorUIBaseComponent::draw()
 #else
     m.drawImage(m1logo, 20, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
+    
+    m.setColor(255, 60);
+//    std::cout << openedImg.getWidth() << " vs " << m.getSize().width() << "\n";
+//    std::cout << openedImg.getHeight() << " vs " << m.getSize().height() << "\n";
+    if (showSettingsMenu) {
+        m.drawImage(openedImg, 0, 0, m.getSize().width(), m.getSize().height());
+    } else {
+        m.drawImage(closedImg, 0, 0, m.getSize().width(), m.getSize().height());
+    }
 
 }
 
