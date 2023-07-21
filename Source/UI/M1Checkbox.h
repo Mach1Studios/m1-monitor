@@ -32,12 +32,9 @@ public:
             m.setColor(100 + 110 * enabled + 30 * animation, 220);
             
             animatedData = A(*((bool*)dataToControl));
-                m.drawCircle(getSize().y / 2, getSize().y / 2,
-                             4 * animatedData);
-        }
-        
-        if (animatedData >= 1) {
-            checked = true;
+            if (!useButtonMode) {
+                m.drawCircle(getSize().y / 2, getSize().y / 2, 4 * animatedData);
+            }
         }
 
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
@@ -63,7 +60,7 @@ public:
     float animatedData = 0;
     bool didntInitialiseYet = true;
     bool changed = false;
-    bool checked = false;
+    bool checked = false; // TODO: implement a way to uncheck/check button fill
     std::string label;
     double fontSize = 10;
     bool* dataToControl = nullptr;

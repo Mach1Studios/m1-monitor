@@ -48,7 +48,8 @@ public:
                     m.drawRectangle(1, i * optionHeight, shape.size.x - 2, optionHeight);
                     m.setColor(BACKGROUND_GREY);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + 3, shape.size.x, optionHeight}).text(options[i]).withAlignment(TEXT_CENTER).draw();
+                    m.prepare<murka::Label>({0, optionHeight * i + (optionHeight/3),
+                        shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                     
                     if (closingMode == modeMouseDown) {
                         if (mouseDownPressed(0)) {
@@ -71,7 +72,7 @@ public:
                 } else {
                     m.setColor(LABEL_TEXT_COLOR);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + 3, shape.size.x, optionHeight}).text(options[i]).withAlignment(TEXT_CENTER).draw();
+                    m.prepare<murka::Label>({0, optionHeight * i + (optionHeight/3), shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                 }
                 
                 // Closing if pressed/released outside of the menu
@@ -116,7 +117,8 @@ public:
     bool enabled = true;
     std::string label;
     MurkaShape triggerButtonShape;
-    
+    TextAlignment textAlignment = TEXT_CENTER;
+
     M1DropdownMenu & controlling(Mach1DecodeAlgoType* dataPointer) {
         dataToControl = dataPointer;
         return *this;

@@ -71,13 +71,20 @@ void MonitorUIBaseComponent::draw()
         
         /// LEFT SIDE
         m.setColor(ENABLED_PARAM);
-        m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
+        m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y, 150, 20})
+            .withAlignment(TEXT_LEFT).text("MONITOR MODE")
+            .draw();
         
         // TODO: hide this if output menu is active?
         std::vector<std::string> monitorModes = {"M1SPATIAL", "M1HORIZON", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
-        auto& dropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 180, 120}).withOptions(monitorModes);
+        auto& dropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 180, 160}).withOptions(monitorModes);
+        dropdown.textAlignment = TEXT_LEFT;
+        dropdown.optionHeight = 40;
+        
         if (!showModeDropdownMenu) {
-            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 180, 30}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
+            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 180, 40}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
+            dropdownInit.textAlignment = TEXT_LEFT;
             
             if (dropdownInit.pressed) {
                 showModeDropdownMenu = true;
@@ -214,7 +221,7 @@ void MonitorUIBaseComponent::draw()
             // Remove bottom bar for CUSTOM_CHANNEL_LAYOUT macro
         #else
 
-        int dropdownItemHeight = 25;
+        int dropdownItemHeight = 40;
 
         if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() <= 2 || processor->getMainBusNumOutputChannels() <= 2))) {
 
@@ -248,9 +255,10 @@ void MonitorUIBaseComponent::draw()
             outputLabel.highlighted = false;
             outputLabel.draw();
             
-            auto& outputDropdownButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 + 20, m.getSize().height()-33,
-                                                        80, 30 })
-                                                        .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount())).draw();
+            auto& outputDropdownButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 + 20, m.getSize().height() - 33, 80, 30 })
+                .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount()))
+                .withOutline(true)
+                .draw();
             std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
             if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 12) output_options.push_back("M1Spatial-12");
             if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 14) output_options.push_back("M1Spatial-14");
@@ -260,7 +268,7 @@ void MonitorUIBaseComponent::draw()
             if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 60) output_options.push_back("M1Spatial-60");
 
             auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({  m.getSize().width()/2 + 20,
-                                                                m.getSize().height() - 33 - output_options.size() * dropdownItemHeight,
+                                                                    m.getSize().height() - 33 - output_options.size() * dropdownItemHeight,
                                                                 120, output_options.size() * dropdownItemHeight })
                                                         .withOptions(output_options);
             if (outputDropdownButton.pressed) {
@@ -400,10 +408,12 @@ void MonitorUIBaseComponent::draw()
     float settings_button_height = 370;
     if (showSettingsMenu) {
         auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 23, settings_button_height - 30,
-            80, 30 })
+            120, 30 })
         .withLabel("SETTINGS")
         .withFontSize(DEFAULT_FONT_SIZE)
-        .withOutline(false).draw();
+        .withOutline(false);
+        showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
+        showSettingsWhileOpenedButton.draw();
         
         if (showSettingsWhileOpenedButton.pressed) {
             showSettingsMenu = false;
@@ -411,10 +421,12 @@ void MonitorUIBaseComponent::draw()
         }
     } else {
         auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 23, settings_button_height - 30,
-            80, 30 })
+            120, 30 })
         .withLabel("SETTINGS")
         .withFontSize(DEFAULT_FONT_SIZE)
-        .withOutline(false).draw();
+        .withOutline(false);
+        showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
+        showSettingsWhileClosedButton.draw();
         
         if (showSettingsWhileClosedButton.pressed) {
             showSettingsMenu = true;
