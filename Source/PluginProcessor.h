@@ -109,7 +109,7 @@ public:
     static juce::String paramPitchEnable;
     static juce::String paramRollEnable;
     static juce::String paramMonitorMode;
-    static juce::String paramDecodeMode;
+    static juce::String paramOscPort;
 
     double processorSampleRate = 44100; // only has to be something for the initilizer to work
     void m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode);

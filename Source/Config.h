@@ -82,6 +82,7 @@
 // 204, 204, 204 seen on ENABLED knobs in legacy as well
 #define ENABLED_PARAM 190, 190, 190
 #define DISABLED_PARAM 63, 63, 63
+#define BACKGROUND_COMPONENT 50, 50, 50
 #define BACKGROUND_GREY 40, 40, 40
 
 #define GRID_LINES_1_RGBA 68, 68, 68, 51//0.2 opacity //small grid lines
