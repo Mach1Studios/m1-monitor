@@ -40,16 +40,13 @@ public:
         m.setLineWidth(8);
         m.enableFill();
         
-        //g.setColour(Colour(51, 51, 51));
         m.setColor(GRID_LINES_1_RGBA);
         m.drawCircle(shape.size.x/2, shape.size.y/2, shape.size.x/2);
         
-        //g.setColour(Colour(120, 120, 120));
         m.setColor(REF_LABEL_TEXT_COLOR);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         m.prepare<murka::Label>({(shape.size.x / 2 - 20), shape.size.y / 4, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
         
-        //g.setColour(Colour(204, 204, 204));
         m.setColor(ENABLED_PARAM);
         
         // Circular lines
@@ -258,7 +255,7 @@ public:
     bool enabled = true;
     bool draggingNow = false;
     std::string label = "";
-    std::string postfix = "º";
+    std::string postfix = "";
     std::string prefix = "";
     double fontSize = 9;
     float rangeFrom = 0;

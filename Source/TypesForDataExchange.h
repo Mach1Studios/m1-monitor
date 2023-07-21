@@ -12,6 +12,7 @@ struct MixerSettings {
 	float pitch = 0;
 	float roll = 0;
     int monitor_mode = 0;
+    int osc_port = 9898;
     
     bool yawActive = true, pitchActive = true, rollActive = true;
 };

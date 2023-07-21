@@ -63,7 +63,6 @@ public:
     
     // Timer callback for resizing
     void timerCallback() override;
-
     
 private:
     MurkaPoint cachedMousePositionWhenMouseWasHidden = { 0, 0 };
