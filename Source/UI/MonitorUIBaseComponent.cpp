@@ -63,7 +63,6 @@ void MonitorUIBaseComponent::draw()
     m.setColor(BACKGROUND_GREY);
     m.clear();
     
-    // TODO: window resize for settings view
     if (showSettingsMenu) {
         // Settings rendering
         setShouldResizeTo(MurkaPoint(504, 467));
@@ -122,7 +121,7 @@ void MonitorUIBaseComponent::draw()
         
         //left side
         m.setColor(ENABLED_PARAM);
-        m.prepare<murka::Label>({17, 252, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
+        m.prepare<murka::Label>({18, 365, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
         
         /// Bottom bar
         #ifdef CUSTOM_CHANNEL_LAYOUT
@@ -241,14 +240,14 @@ void MonitorUIBaseComponent::draw()
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
         
         /// YPR SLIDERS
-        auto& yawRadial = m.prepare<M1Radial>({ 35, 25, 189, 189 }).withLabel("YAW");
+        auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
         yawRadial.cursorHide = cursorHide;
         yawRadial.cursorShow = cursorShow;
         yawRadial.rangeFrom = 0.;
         yawRadial.rangeTo = 360.;
         yawRadial.dataToControl = &monitorState->yaw;
         yawRadial.enabled = true;
-        yawRadial.withFontSize(DEFAULT_FONT_SIZE);
+        yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
         yawRadial.draw();
         
         if (yawRadial.changed) {
@@ -256,9 +255,9 @@ void MonitorUIBaseComponent::draw()
             processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
         }
         
-        auto& pitchSlider = m.prepare<M1Slider>({  327, 26, 108, 108 })
-        //                                            .withLabel("PITCH")
+        auto& pitchSlider = m.prepare<M1Slider>({ 465, 42, 160, 140 }).withLabel("PITCH")
             .hasMovingLabel(true)
+            .withFontSize(DEFAULT_FONT_SIZE-2)
             .drawHorizontal(false);
         pitchSlider.cursorHide = cursorHide;
         pitchSlider.cursorShow = cursorShow;
@@ -266,20 +265,16 @@ void MonitorUIBaseComponent::draw()
         pitchSlider.rangeTo = 90.;
         pitchSlider.dataToControl = &monitorState->pitch;
         pitchSlider.enabled = true;
-        pitchSlider.withFontSize(DEFAULT_FONT_SIZE);
         pitchSlider.draw();
-        
-        m.setColor(REF_LABEL_TEXT_COLOR);
-        m.prepare<M1Label>({310, 70, 320, 90}).text("PITCH").draw();
-        
+                
         if (pitchSlider.changed) {
             double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch) - 0.5 ) / 2;
             processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
         }
         
-        auto& rollSlider = m.prepare<M1Slider>({   317, 148, 129, 68 })
-        //                                            .withLabel("ROLL")
+        auto& rollSlider = m.prepare<M1Slider>({ 465, 180, 160, 160 }).withLabel("ROLL")
             .hasMovingLabel(true)
+            .withFontSize(DEFAULT_FONT_SIZE-2)
             .drawHorizontal(true);
         rollSlider.cursorHide = cursorHide;
         rollSlider.cursorShow = cursorShow;
@@ -287,22 +282,18 @@ void MonitorUIBaseComponent::draw()
         rollSlider.rangeTo = 90.;
         rollSlider.dataToControl = &monitorState->roll;
         rollSlider.enabled = true;
-        rollSlider.withFontSize(DEFAULT_FONT_SIZE);
         rollSlider.draw();
         
         if (rollSlider.changed) {
             double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll) - 0.5 ) / 2;
             processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
         }
-        
-        m.setColor(REF_LABEL_TEXT_COLOR);
-        m.prepare<M1Label>({355, 150, 70, 50}).text("ROLL").draw();
-        
+                
         /// CHECKBOXES
         
         float checkboxSlotHeight = 30;
         
-        auto& yawActive = m.prepare<M1Checkbox>({ 270, 420, 100, 20 })
+        auto& yawActive = m.prepare<M1Checkbox>({ 320, 500, 100, 20 })
         .controlling(&monitorState->yawActive)
         .withLabel("Y");
         yawActive.enabled = true;
@@ -313,7 +304,7 @@ void MonitorUIBaseComponent::draw()
             processor->m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
         }
         
-        auto& pitchActive = m.prepare<M1Checkbox>({ 320, 420, 100, 20 })
+        auto& pitchActive = m.prepare<M1Checkbox>({ 370, 500, 100, 20 })
         .controlling(&monitorState->pitchActive)
         .withLabel("P");
         pitchActive.enabled = true;
@@ -324,7 +315,7 @@ void MonitorUIBaseComponent::draw()
             processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
         }
         
-        auto& rollActive = m.prepare<M1Checkbox>({ 370, 420, 100, 20 })
+        auto& rollActive = m.prepare<M1Checkbox>({ 390, 500, 100, 20 })
         .controlling(&monitorState->rollActive)
         .withLabel("R");
         rollActive.enabled = true;
@@ -336,7 +327,7 @@ void MonitorUIBaseComponent::draw()
         }
         
         recenterButtonActive = true;
-        auto& recenterButton = m.prepare<M1Checkbox>({ 390, 420, 200, 20 })
+        auto& recenterButton = m.prepare<M1Checkbox>({ 410, 500, 200, 20 })
         .controlling(&recenterButtonActive)
         .withLabel("RECENTER")
         .showCircle(false)
@@ -351,10 +342,11 @@ void MonitorUIBaseComponent::draw()
             }
         }
         
+        // TODO: hide this if output menu is active?
         std::vector<std::string> monitorModes = {"M1 Spatial", "M1 Horizon", "Stereo safe", "Fold/back down"};
-        auto& dropdown = m.prepare<M1DropdownMenu>({15, 270, 120, 30 * 4}).withOptions(monitorModes);
+        auto& dropdown = m.prepare<M1DropdownMenu>({20, 390, 120, 30 * 4}).withOptions(monitorModes);
         if (!showModeDropdownMenu) {
-            auto& dropdownInit = m.prepare<M1DropdownButton>({15, 270, 120, 30}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
+            auto& dropdownInit = m.prepare<M1DropdownButton>({20, 390, 120, 30}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
             
             if (dropdownInit.pressed) {
                 showModeDropdownMenu = true;
@@ -388,20 +380,23 @@ void MonitorUIBaseComponent::draw()
     /// Monitor Settings button
     m.setColor(ENABLED_PARAM);
     if (showSettingsMenu) {
-        auto& showSettingsButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 440,
-            100, 20 })
+        auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 10, m.getSize().height() - 40,
+            80, 20 })
         .withLabel("SETTINGS")
+        .withFontSize(DEFAULT_FONT_SIZE)
         .withOutline(false).draw();
-        if (showSettingsButton.pressed) {
+        if (showSettingsWhileClosedButton.pressed) {
             showSettingsMenu = false;
             deleteTheSettingsButton();
         }
     } else {
-        auto& showSettingsButton2 = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 40, 225,
-            100, 20 })
+        auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 10, m.getSize().height() - 40,
+            80, 20 })
         .withLabel("SETTINGS")
+        .withFontSize(DEFAULT_FONT_SIZE)
         .withOutline(false).draw();
-        if (showSettingsButton2.pressed) {
+        
+        if (showSettingsWhileOpenedButton.pressed) {
             showSettingsMenu = true;
             deleteTheSettingsButton();
         }
@@ -455,14 +450,13 @@ void MonitorUIBaseComponent::draw()
     
     m.setColor(200, 255);
 #ifdef CUSTOM_CHANNEL_LAYOUT
-    m.drawImage(m1logo, 20, m.getSize().height() - 30, 161 / 3, 39 / 3);
+    m.drawImage(m1logo, 30, m.getSize().height() - 30, 161 / 3, 39 / 3);
 #else
-    m.drawImage(m1logo, 20, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
+    m.drawImage(m1logo, 30, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
     
     m.setColor(255, 60);
-//    std::cout << openedImg.getWidth() << " vs " << m.getSize().width() << "\n";
-//    std::cout << openedImg.getHeight() << " vs " << m.getSize().height() << "\n";
+
     if (showSettingsMenu) {
         m.drawImage(openedImg, 0, 0, m.getSize().width(), m.getSize().height());
     } else {

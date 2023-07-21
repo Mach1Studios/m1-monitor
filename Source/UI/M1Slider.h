@@ -68,14 +68,14 @@ public:
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
 
             if (movingLabel) {
-                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 - 10, 40, 60}).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, 28 + 40, ellipseSize * 6, 20})
+                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, shape.size.y/2 - 35, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, shape.size.y/2 + 25, 40, 30})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
-                // TODO: add the value label
-                m.prepare<murka::Label>({  shape.size.x / 2 - 40, shape.size.y - 20,
-                                        80, 20})
-                                        .withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - 40/2, shape.size.y - 30,
+                                        40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - 40/2, shape.size.y + 30,
+                                        40, 30}).withAlignment(TEXT_CENTER).text(valueText).draw();
             }
             
             // Draw reticle circle
@@ -94,10 +94,9 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
-                m.prepare<murka::Label>({ shape.size.x / 2 - 70, reticlePositionNorm * (shape.size.y - ellipseSize) - 14, 60, 40}).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({ shape.size.x / 2 + 10,
-                    reticlePositionNorm * (shape.size.y - ellipseSize) - 9,
-                                        ellipseSize * 6, 20})
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, reticlePositionNorm * shape.size.y - 10, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 + 15,
+                    reticlePositionNorm * shape.size.y - 10, 40, 30})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
                 m.prepare<murka::Label>({  0, shape.size.y / 2 - 10,

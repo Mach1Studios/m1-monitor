@@ -14,7 +14,6 @@ M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor (M1MonitorAudioProc
     : AudioProcessorEditor (&p)
 {
     setSize(504, 267);
-    //juce::OpenGLAppComponent::setSize(504, 266);
     // size when advanced settings open = 504, 469
     
     processor = &p;
