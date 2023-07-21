@@ -34,8 +34,6 @@ void MonitorUIBaseComponent::initialise()
     m.setResourcesPath(resourcesPath);
     
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
-    openedImg.loadFromRawData(BinaryData::opened_png, BinaryData::opened_pngSize);
-    closedImg.loadFromRawData(BinaryData::closed_png, BinaryData::closed_pngSize);
 }
 
 void MonitorUIBaseComponent::timerCallback() {
@@ -65,63 +63,151 @@ void MonitorUIBaseComponent::draw()
     
     if (showSettingsMenu) {
         // Settings rendering
-        setShouldResizeTo(MurkaPoint(504, 467));
+        float leftSide_LeftBound_x = 18;
+        float rightSide_LeftBound_x = 380; // prev 265
+        float bottomSettings_topBound_y = 380;
 
-        //Timecode rect
-        m.setColor(GRID_LINES_1_RGBA);
-        m.enableFill();
-        m.drawRectangle(265, 327, 215, 27);
+        setShouldResizeTo(MurkaPoint(504, 467));
         
+        /// LEFT SIDE
+        m.setColor(ENABLED_PARAM);
+        m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
+        
+        // TODO: hide this if output menu is active?
+        std::vector<std::string> monitorModes = {"M1SPATIAL", "M1HORIZON", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
+        auto& dropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 180, 120}).withOptions(monitorModes);
+        if (!showModeDropdownMenu) {
+            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 180, 30}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
+            
+            if (dropdownInit.pressed) {
+                showModeDropdownMenu = true;
+                dropdown.open();
+            }
+        } else {
+            dropdown.draw();
+            if (dropdown.changed || !dropdown.opened) {
+                selectedMonitorMode = dropdown.selectedOption;
+                showModeDropdownMenu = false;
+                dropdown.close();
+            }
+        }
+        
+        /// RIGHT SIDE
         //Broadcast rect
-        m.enableFill();
-        m.drawRectangle(265, 272, 215, 27);
-        
-        //right side
         m.setColor(DISABLED_PARAM);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
-        m.prepare<murka::Label>({267, 252, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
+        m.prepare<murka::Label>({rightSide_LeftBound_x + 2, bottomSettings_topBound_y, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
+        m.setColor(BACKGROUND_COMPONENT);
+        m.enableFill();
+        m.drawRectangle(rightSide_LeftBound_x, bottomSettings_topBound_y + 20, 310, 40);
+        
+        //Timecode rect
+        m.setColor(GRID_LINES_1_RGBA);
         m.setColor(ENABLED_PARAM);
-        m.prepare<murka::Label>({267, 305, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
-        auto& hhfield = m.prepare<murka::TextField>({270, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->HH);
+        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
+        m.setColor(BACKGROUND_COMPONENT);
+        m.enableFill();
+        m.drawRectangle(rightSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
+        
+        m.setColor(ENABLED_PARAM);
+        auto& hhfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->HH);
         hhfield.widgetBgColor.a = 0;
         hhfield.drawBounds = false;
         hhfield.draw();
         if (processor->transport->HH < 0) processor->transport->HH = 0;
         if (processor->transport->HH > 100) processor->transport->HH = 99;
         
-        m.prepare<murka::Label>({300, 332, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+        m.prepare<murka::Label>({rightSide_LeftBound_x + 35, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
         
-        auto& mmfield = m.prepare<murka::TextField>({315, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->MM);
+        auto& mmfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->MM);
         if (processor->transport->MM < 0) processor->transport->MM = 0;
         if (processor->transport->MM > 100) processor->transport->MM = 99;
         mmfield.widgetBgColor.a = 0;
         mmfield.drawBounds = false;
         mmfield.draw();
         
-        m.prepare<murka::Label>({345, 332, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+        m.prepare<murka::Label>({rightSide_LeftBound_x + 80, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
         
-        auto& ssfield = m.prepare<murka::TextField>({360, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
+        auto& ssfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
         if (processor->transport->SS < 0) processor->transport->SS = 0;
         if (processor->transport->SS > 100) processor->transport->SS = 99;
         ssfield.widgetBgColor.a = 0;
         ssfield.drawBounds = false;
         ssfield.draw();
         
-        m.prepare<murka::Label>({390, 332, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+        m.prepare<murka::Label>({rightSide_LeftBound_x + 125, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
 
-        auto& fsfield = m.prepare<murka::TextField>({405, 325, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
+        auto& fsfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
         if (processor->transport->FS < 0) processor->transport->FS = 0;
         if (processor->transport->FS > 100) processor->transport->FS = 99;
         fsfield.widgetBgColor.a = 0;
         fsfield.drawBounds = false;
         fsfield.draw();
         
-        m.prepare<murka::Label>({267, 365, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").draw();
-        m.prepare<murka::Label>({267, 390, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
+        // OSC Port Field
+        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 165, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").draw();
         
-        //left side
+        m.setColor(BACKGROUND_COMPONENT);
+        m.enableFill();
+        m.drawRectangle(rightSide_LeftBound_x + 100, bottomSettings_topBound_y + 155, 90, 30);
         m.setColor(ENABLED_PARAM);
-        m.prepare<murka::Label>({18, 365, 150, 20}).withAlignment(TEXT_LEFT).text("MONITOR MODE").draw();
+
+        auto& oscfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 120, bottomSettings_topBound_y + 155, 100, 30}).onlyAllowNumbers(true).controlling(&processor->monitorSettings.osc_port);
+        oscfield.widgetBgColor.a = 0;
+        oscfield.drawBounds = false;
+        oscfield.draw();
+        
+        // CHECKBOXES
+        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 195, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
+
+        auto& yawActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 2, bottomSettings_topBound_y + 222 - 5, 100, 20 })
+        .controlling(&monitorState->yawActive)
+        .withLabel("Y");
+        yawActive.enabled = true;
+        yawActive.draw();
+        
+        if (yawActive.changed) {
+            processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
+            processor->m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
+        }
+        
+        auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 222 - 5, 100, 20 })
+        .controlling(&monitorState->pitchActive)
+        .withLabel("P");
+        pitchActive.enabled = true;
+        pitchActive.draw();
+        
+        if (pitchActive.changed) {
+            processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
+            processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
+        }
+        
+        auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 222 - 5, 100, 20 })
+        .controlling(&monitorState->rollActive)
+        .withLabel("R");
+        rollActive.enabled = true;
+        rollActive.draw();
+        
+        if (rollActive.changed) {
+            processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
+            processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
+        }
+        
+        recenterButtonActive = true;
+        auto& recenterButton = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 195, bottomSettings_topBound_y + 222 - 5, 200, 20 })
+        .controlling(&recenterButtonActive)
+        .withLabel("RECENTER")
+        .showCircle(true)
+        .buttonMode(true);
+        recenterButton.enabled = true;
+        recenterButton.draw();
+            
+        if (recenterButton.changed) {
+            processor->m1OrientationOSCClient.command_recenter();
+            if (recenterButtonActive && recenterButton.checked) {
+                recenterButtonActive = false;
+            }
+        }
         
         /// Bottom bar
         #ifdef CUSTOM_CHANNEL_LAYOUT
@@ -245,6 +331,7 @@ void MonitorUIBaseComponent::draw()
         yawRadial.cursorShow = cursorShow;
         yawRadial.rangeFrom = 0.;
         yawRadial.rangeTo = 360.;
+        yawRadial.postfix = "º";
         yawRadial.dataToControl = &monitorState->yaw;
         yawRadial.enabled = true;
         yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
@@ -255,14 +342,16 @@ void MonitorUIBaseComponent::draw()
             processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
         }
         
-        auto& pitchSlider = m.prepare<M1Slider>({ 465, 42, 160, 140 }).withLabel("PITCH")
+        auto& pitchSlider = m.prepare<M1Slider>({ 465, 45, 160, 140 }).withLabel("PITCH")
             .hasMovingLabel(true)
             .withFontSize(DEFAULT_FONT_SIZE-2)
             .drawHorizontal(false);
         pitchSlider.cursorHide = cursorHide;
         pitchSlider.cursorShow = cursorShow;
+        // TODO: fix reversed values
         pitchSlider.rangeFrom = -90.;
         pitchSlider.rangeTo = 90.;
+        pitchSlider.postfix = "º";
         pitchSlider.dataToControl = &monitorState->pitch;
         pitchSlider.enabled = true;
         pitchSlider.draw();
@@ -280,6 +369,7 @@ void MonitorUIBaseComponent::draw()
         rollSlider.cursorShow = cursorShow;
         rollSlider.rangeFrom = -90.;
         rollSlider.rangeTo = 90.;
+        rollSlider.postfix = "º";
         rollSlider.dataToControl = &monitorState->roll;
         rollSlider.enabled = true;
         rollSlider.draw();
@@ -287,78 +377,6 @@ void MonitorUIBaseComponent::draw()
         if (rollSlider.changed) {
             double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll) - 0.5 ) / 2;
             processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
-        }
-                
-        /// CHECKBOXES
-        
-        float checkboxSlotHeight = 30;
-        
-        auto& yawActive = m.prepare<M1Checkbox>({ 320, 500, 100, 20 })
-        .controlling(&monitorState->yawActive)
-        .withLabel("Y");
-        yawActive.enabled = true;
-        yawActive.draw();
-        
-        if (yawActive.changed) {
-            processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
-            processor->m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
-        }
-        
-        auto& pitchActive = m.prepare<M1Checkbox>({ 370, 500, 100, 20 })
-        .controlling(&monitorState->pitchActive)
-        .withLabel("P");
-        pitchActive.enabled = true;
-        pitchActive.draw();
-        
-        if (pitchActive.changed) {
-            processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
-            processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
-        }
-        
-        auto& rollActive = m.prepare<M1Checkbox>({ 390, 500, 100, 20 })
-        .controlling(&monitorState->rollActive)
-        .withLabel("R");
-        rollActive.enabled = true;
-        rollActive.draw();
-        
-        if (rollActive.changed) {
-            processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
-            processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
-        }
-        
-        recenterButtonActive = true;
-        auto& recenterButton = m.prepare<M1Checkbox>({ 410, 500, 200, 20 })
-        .controlling(&recenterButtonActive)
-        .withLabel("RECENTER")
-        .showCircle(false)
-        .buttonMode(true);
-        recenterButton.enabled = true;
-        recenterButton.draw();
-            
-        if (recenterButton.changed) {
-            processor->m1OrientationOSCClient.command_recenter();
-            if (recenterButtonActive && recenterButton.checked) {
-                recenterButtonActive = false;
-            }
-        }
-        
-        // TODO: hide this if output menu is active?
-        std::vector<std::string> monitorModes = {"M1 Spatial", "M1 Horizon", "Stereo safe", "Fold/back down"};
-        auto& dropdown = m.prepare<M1DropdownMenu>({20, 390, 120, 30 * 4}).withOptions(monitorModes);
-        if (!showModeDropdownMenu) {
-            auto& dropdownInit = m.prepare<M1DropdownButton>({20, 390, 120, 30}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
-            
-            if (dropdownInit.pressed) {
-                showModeDropdownMenu = true;
-                dropdown.open();
-            }
-        } else {
-            dropdown.draw();
-            if (dropdown.changed || !dropdown.opened) {
-                selectedMonitorMode = dropdown.selectedOption;
-                showModeDropdownMenu = false;
-                dropdown.close();
-            }
         }
     }
     
@@ -377,38 +395,39 @@ void MonitorUIBaseComponent::draw()
         m.imChildren.erase(idToDelete);
     };
     
-    /// Monitor Settings button
+    /// SETTINGS BUTTON
     m.setColor(ENABLED_PARAM);
+    float settings_button_height = 370;
     if (showSettingsMenu) {
-        auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 10, m.getSize().height() - 40,
-            80, 20 })
-        .withLabel("SETTINGS")
-        .withFontSize(DEFAULT_FONT_SIZE)
-        .withOutline(false).draw();
-        if (showSettingsWhileClosedButton.pressed) {
-            showSettingsMenu = false;
-            deleteTheSettingsButton();
-        }
-    } else {
-        auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 10, m.getSize().height() - 40,
-            80, 20 })
+        auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 23, settings_button_height - 30,
+            80, 30 })
         .withLabel("SETTINGS")
         .withFontSize(DEFAULT_FONT_SIZE)
         .withOutline(false).draw();
         
         if (showSettingsWhileOpenedButton.pressed) {
+            showSettingsMenu = false;
+            deleteTheSettingsButton();
+        }
+    } else {
+        auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 23, settings_button_height - 30,
+            80, 30 })
+        .withLabel("SETTINGS")
+        .withFontSize(DEFAULT_FONT_SIZE)
+        .withOutline(false).draw();
+        
+        if (showSettingsWhileClosedButton.pressed) {
             showSettingsMenu = true;
             deleteTheSettingsButton();
         }
     }
     
     // draw Settings button arrow
-    // TODO: fix and fill arrow
     if (showSettingsMenu) {
         // draw settings arrow indicator pointing up
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
-        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 12};
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 10};
         std::vector<MurkaPoint3D> triangle;
         triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
         triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
@@ -419,7 +438,7 @@ void MonitorUIBaseComponent::draw()
         // draw settings arrow indicator pointing down
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
-        MurkaPoint triangleCenter = {m.getSize().width()/2 + 55, m.getSize().height() - 18};
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 15};
         std::vector<MurkaPoint3D> triangle;
         triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
         triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
@@ -454,15 +473,6 @@ void MonitorUIBaseComponent::draw()
 #else
     m.drawImage(m1logo, 30, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
-    
-    m.setColor(255, 60);
-
-    if (showSettingsMenu) {
-        m.drawImage(openedImg, 0, 0, m.getSize().width(), m.getSize().height());
-    } else {
-        m.drawImage(closedImg, 0, 0, m.getSize().width(), m.getSize().height());
-    }
-
 }
 
 //==============================================================================

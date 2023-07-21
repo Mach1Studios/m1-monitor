@@ -94,16 +94,16 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
-                m.prepare<murka::Label>({ shape.size.x / 2 - 60, reticlePositionNorm * shape.size.y - 10, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, reticlePositionNorm * shape.size.y - 7.5, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
                 m.prepare<murka::Label>({ shape.size.x / 2 + 15,
-                    reticlePositionNorm * shape.size.y - 10, 40, 30})
+                    reticlePositionNorm * shape.size.y - 7.5, 40, 30})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
-                m.prepare<murka::Label>({  0, shape.size.y / 2 - 10,
-                                        shape.size.x / 3, 20})
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, shape.size.y / 2 - 7.5,
+                                        40, 30})
                                         .withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({  shape.size.x / 2 - 5, shape.size.y - ellipseSize - 4,
-                                        ellipseSize * 6, 20})
+                m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 7.5,
+                                        40, 30})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             }
             
@@ -184,7 +184,7 @@ public:
     float rangeFrom = 0;
     float rangeTo = 1;
 
-    std::string postfix = "º";
+    std::string postfix = "";
     std::string prefix = "";
 
     float* dataToControl = nullptr;

@@ -16,7 +16,7 @@ juce::String M1MonitorAudioProcessor::paramYawEnable("enableYaw");
 juce::String M1MonitorAudioProcessor::paramPitchEnable("enablePitch");
 juce::String M1MonitorAudioProcessor::paramRollEnable("enableRoll");
 juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
-juce::String M1MonitorAudioProcessor::paramDecodeMode("decodeMode");
+juce::String M1MonitorAudioProcessor::paramOscPort("oscPort");
 
 //==============================================================================
 M1MonitorAudioProcessor::M1MonitorAudioProcessor()
@@ -42,6 +42,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                     std::make_unique<juce::AudioParameterBool>(paramPitchEnable, TRANS("Enable Pitch"), monitorSettings.pitchActive),
                     std::make_unique<juce::AudioParameterBool>(paramRollEnable, TRANS("Enable Roll"), monitorSettings.rollActive),
                     std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 3, monitorSettings.monitor_mode),
+                    std::make_unique<juce::AudioParameterInt>(paramOscPort, TRANS("Input OSC Port"), 0, 12000, monitorSettings.osc_port),
                })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -51,7 +52,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     parameters.addParameterListener(paramPitchEnable, this);
     parameters.addParameterListener(paramRollEnable, this);
     parameters.addParameterListener(paramMonitorMode, this);
-    
+    parameters.addParameterListener(paramOscPort, this);
+
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
 	monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
