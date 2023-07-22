@@ -47,7 +47,12 @@ public:
         auto font = m.getCurrentFont();
         
         int ellipseSize = 5;
-        float reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
+        float reticlePositionNorm;
+        if (isHorizontal) {
+            reticlePositionNorm = (*((float*)dataToControl) - rangeFrom) / (rangeTo - rangeFrom);
+        } else {
+            reticlePositionNorm = (*((float*)dataToControl) - rangeTo) / (rangeFrom - rangeTo);
+        }
         MurkaShape reticlePosition = { getSize().x / 2 - 6,
                                       (shape.size.y) * reticlePositionNorm - 6,
                                       12,
@@ -94,15 +99,15 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             
             if (movingLabel){
-                m.prepare<murka::Label>({ shape.size.x / 2 - 60, reticlePositionNorm * shape.size.y - 7.5, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, reticlePositionNorm * shape.size.y - 9, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
                 m.prepare<murka::Label>({ shape.size.x / 2 + 15,
-                    reticlePositionNorm * shape.size.y - 7.5, 40, 30})
+                    reticlePositionNorm * shape.size.y - 9, 40, 30})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
-                m.prepare<murka::Label>({ shape.size.x / 2 - 60, shape.size.y / 2 - 7.5,
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, shape.size.y / 2 - 9,
                                         40, 30})
                                         .withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 7.5,
+                m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 9,
                                         40, 30})
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             }
@@ -155,7 +160,7 @@ public:
                 if (isHorizontal) {
                         *((float*)dataToControl) -= ( mouseDelta().x / s) * (rangeTo - rangeFrom);
                 } else {
-                        *((float*)dataToControl) -= ( mouseDelta().y / s) * (rangeTo - rangeFrom);
+                        *((float*)dataToControl) -= ( mouseDelta().y / s) * (rangeFrom - rangeTo);
                 }
             
             if (*((float*)dataToControl) > rangeTo) {

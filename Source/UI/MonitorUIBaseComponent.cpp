@@ -77,13 +77,13 @@ void MonitorUIBaseComponent::draw()
             .draw();
         
         // TODO: hide this if output menu is active?
-        std::vector<std::string> monitorModes = {"M1SPATIAL", "M1HORIZON", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
+        std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
         auto& dropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 180, 160}).withOptions(monitorModes);
         dropdown.textAlignment = TEXT_LEFT;
         dropdown.optionHeight = 40;
         
         if (!showModeDropdownMenu) {
-            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 180, 40}).withLabel(monitorModes[selectedMonitorMode]).withOutline(true).draw();
+            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 180, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).draw();
             dropdownInit.textAlignment = TEXT_LEFT;
             
             if (dropdownInit.pressed) {
@@ -93,7 +93,7 @@ void MonitorUIBaseComponent::draw()
         } else {
             dropdown.draw();
             if (dropdown.changed || !dropdown.opened) {
-                selectedMonitorMode = dropdown.selectedOption;
+                monitorState->monitor_mode = dropdown.selectedOption;
                 showModeDropdownMenu = false;
                 dropdown.close();
             }
@@ -159,7 +159,7 @@ void MonitorUIBaseComponent::draw()
         m.drawRectangle(rightSide_LeftBound_x + 100, bottomSettings_topBound_y + 155, 90, 30);
         m.setColor(ENABLED_PARAM);
 
-        auto& oscfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 120, bottomSettings_topBound_y + 155, 100, 30}).onlyAllowNumbers(true).controlling(&processor->monitorSettings.osc_port);
+        auto& oscfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 120, bottomSettings_topBound_y + 155, 100, 30}).onlyAllowNumbers(true).controlling(&monitorState->osc_port);
         oscfield.widgetBgColor.a = 0;
         oscfield.drawBounds = false;
         oscfield.draw();
@@ -346,7 +346,8 @@ void MonitorUIBaseComponent::draw()
         yawRadial.draw();
         
         if (yawRadial.changed) {
-            double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw - 180);
+            double normalisedValue =
+            processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw - 180);
             processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
         }
         
@@ -356,12 +357,19 @@ void MonitorUIBaseComponent::draw()
             .drawHorizontal(false);
         pitchSlider.cursorHide = cursorHide;
         pitchSlider.cursorShow = cursorShow;
-        // TODO: fix reversed values
         pitchSlider.rangeFrom = -90.;
         pitchSlider.rangeTo = 90.;
         pitchSlider.postfix = "º";
         pitchSlider.dataToControl = &monitorState->pitch;
-        pitchSlider.enabled = true;
+        if (monitorState->monitor_mode > 0 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
+            // Disabling pitch slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
+            processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
+            processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
+            pitchSlider.enabled = false;
+            
+        } else {
+            pitchSlider.enabled = true;
+        }
         pitchSlider.draw();
                 
         if (pitchSlider.changed) {
@@ -379,7 +387,15 @@ void MonitorUIBaseComponent::draw()
         rollSlider.rangeTo = 90.;
         rollSlider.postfix = "º";
         rollSlider.dataToControl = &monitorState->roll;
-        rollSlider.enabled = true;
+        if (monitorState->monitor_mode > 0 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
+            // Disabling roll slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
+            processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
+            processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
+            rollSlider.enabled = false;
+            
+        } else {
+            rollSlider.enabled = true;
+        }
         rollSlider.draw();
         
         if (rollSlider.changed) {

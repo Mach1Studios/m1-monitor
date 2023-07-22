@@ -126,13 +126,12 @@ public:
 
     // TODO: change this
     bool external_spatialmixer_active = false; // global detect spatialmixer
-
+        
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
 
 private:
     void createLayout();
-
 
     std::vector<std::vector<float>> audioDataIn;
     std::vector<float> spatialMixerCoeffs;

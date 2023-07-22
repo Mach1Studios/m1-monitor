@@ -41,8 +41,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                     std::make_unique<juce::AudioParameterBool>(paramYawEnable, TRANS("Enable Yaw"), monitorSettings.yawActive),
                     std::make_unique<juce::AudioParameterBool>(paramPitchEnable, TRANS("Enable Pitch"), monitorSettings.pitchActive),
                     std::make_unique<juce::AudioParameterBool>(paramRollEnable, TRANS("Enable Roll"), monitorSettings.rollActive),
-                    std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 3, monitorSettings.monitor_mode),
-                    std::make_unique<juce::AudioParameterInt>(paramOscPort, TRANS("Input OSC Port"), 0, 12000, monitorSettings.osc_port),
+                    std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
+                    std::make_unique<juce::AudioParameterInt>(paramOscPort, TRANS("Input OSC Port"), 0, 65535, monitorSettings.osc_port),
                })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -205,6 +205,8 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         parameters.getParameter(paramRollEnable)->setValue(newValue);
     } else if (parameterID == paramMonitorMode) {
         parameters.getParameter(paramMonitorMode)->setValue(newValue);
+    } else if (parameterID == paramOscPort) {
+        parameters.getParameter(paramOscPort)->setValue(newValue);
     }
 }
 
@@ -352,11 +354,11 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (getMainBusNumInputChannels() == monitorSettings.m1Decode.getFormatChannelCount()){
         // TODO: Setup an else case for streaming input or error message
   
-//        TODO: Setup monitor modes
-//        if (stereoDownmix) {
-//            processStereoDownmix(buffer);
-//            return;
-//        }
+        if (monitorSettings.monitor_mode == 2) {
+            // TODO: add stereo downmix dsp for 32ch and higher
+            processStereoDownmix(buffer);
+            return;
+        }
         
         // Setup buffers for Left & Right outputs, correct for PT 7.1 buss
         if (getMainBusNumInputChannels() == 8 && hostType.isProTools()){
