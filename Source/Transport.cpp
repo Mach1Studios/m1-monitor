@@ -49,7 +49,6 @@ void Transport::sendDataViaOsc() {
 
 void Transport::timerCallback() {
 	updateCurrentTimeInfoFromHost();
-
 	sendDataViaOsc();
 }
 
