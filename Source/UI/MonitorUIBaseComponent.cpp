@@ -76,29 +76,34 @@ void MonitorUIBaseComponent::draw()
             .withAlignment(TEXT_LEFT).text("MONITOR MODE")
             .draw();
         
+        m.setColor(BACKGROUND_COMPONENT);
+        m.enableFill();
+        m.drawRectangle(20, bottomSettings_topBound_y + 20, 310, 40);
+        m.setColor(ENABLED_PARAM);
+        
         // TODO: hide this if output menu is active?
         std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
-        auto& dropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 180, 160}).withOptions(monitorModes);
-        dropdown.textAlignment = TEXT_LEFT;
-        dropdown.optionHeight = 40;
+        auto& modeDropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 310, 120}).withOptions(monitorModes);
+        modeDropdown.textAlignment = TEXT_LEFT;
+        modeDropdown.optionHeight = 40;
         
-        if (!showModeDropdownMenu) {
-            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 180, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).draw();
+        if (!showMonitorModeDropdown) {
+            auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).draw();
             dropdownInit.textAlignment = TEXT_LEFT;
             
             if (dropdownInit.pressed) {
-                showModeDropdownMenu = true;
-                dropdown.open();
+                showMonitorModeDropdown = true;
+                modeDropdown.open();
             }
         } else {
-            dropdown.draw();
-            if (dropdown.changed || !dropdown.opened) {
-                monitorState->monitor_mode = dropdown.selectedOption;
-                showModeDropdownMenu = false;
-                dropdown.close();
+            modeDropdown.draw();
+            if (modeDropdown.changed || !modeDropdown.opened) {
+                monitorState->monitor_mode = modeDropdown.selectedOption;
+                showMonitorModeDropdown = false;
+                modeDropdown.close();
             }
         }
-        
+                
         /// RIGHT SIDE
         //Broadcast rect
         m.setColor(DISABLED_PARAM);
@@ -151,23 +156,10 @@ void MonitorUIBaseComponent::draw()
         fsfield.drawBounds = false;
         fsfield.draw();
         
-        // OSC Port Field
-        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 165, 150, 20}).withAlignment(TEXT_LEFT).text("OSC PORT").draw();
-        
-        m.setColor(BACKGROUND_COMPONENT);
-        m.enableFill();
-        m.drawRectangle(rightSide_LeftBound_x + 100, bottomSettings_topBound_y + 155, 90, 30);
-        m.setColor(ENABLED_PARAM);
-
-        auto& oscfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 120, bottomSettings_topBound_y + 155, 100, 30}).onlyAllowNumbers(true).controlling(&monitorState->osc_port);
-        oscfield.widgetBgColor.a = 0;
-        oscfield.drawBounds = false;
-        oscfield.draw();
-        
         // CHECKBOXES
-        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 195, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
+        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 165, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
 
-        auto& yawActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 2, bottomSettings_topBound_y + 222 - 5, 100, 20 })
+        auto& yawActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 2, bottomSettings_topBound_y + 192 - 5, 100, 20 })
         .controlling(&monitorState->yawActive)
         .withLabel("Y");
         yawActive.enabled = true;
@@ -178,7 +170,7 @@ void MonitorUIBaseComponent::draw()
             processor->m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
         }
         
-        auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 222 - 5, 100, 20 })
+        auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 192 - 5, 100, 20 })
         .controlling(&monitorState->pitchActive)
         .withLabel("P");
         pitchActive.enabled = true;
@@ -189,7 +181,7 @@ void MonitorUIBaseComponent::draw()
             processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
         }
         
-        auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 222 - 5, 100, 20 })
+        auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 192 - 5, 100, 20 })
         .controlling(&monitorState->rollActive)
         .withLabel("R");
         rollActive.enabled = true;
@@ -201,7 +193,7 @@ void MonitorUIBaseComponent::draw()
         }
         
         recenterButtonActive = true;
-        auto& recenterButton = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 195, bottomSettings_topBound_y + 222 - 5, 200, 20 })
+        auto& recenterButton = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 195, bottomSettings_topBound_y + 192 - 5, 200, 20 })
         .controlling(&recenterButtonActive)
         .withLabel("RECENTER")
         .showCircle(true)
@@ -361,12 +353,9 @@ void MonitorUIBaseComponent::draw()
         pitchSlider.rangeTo = 90.;
         pitchSlider.postfix = "º";
         pitchSlider.dataToControl = &monitorState->pitch;
-        if (monitorState->monitor_mode > 0 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
+        if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
             // Disabling pitch slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
-            processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
-            processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
             pitchSlider.enabled = false;
-            
         } else {
             pitchSlider.enabled = true;
         }
@@ -387,12 +376,9 @@ void MonitorUIBaseComponent::draw()
         rollSlider.rangeTo = 90.;
         rollSlider.postfix = "º";
         rollSlider.dataToControl = &monitorState->roll;
-        if (monitorState->monitor_mode > 0 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
+        if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
             // Disabling roll slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
-            processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
-            processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
             rollSlider.enabled = false;
-            
         } else {
             rollSlider.enabled = true;
         }
@@ -474,6 +460,9 @@ void MonitorUIBaseComponent::draw()
         triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
         m.drawPath(triangle);
     }
+    
+    // orientation button
+    update_orientation_client_window(m, processor->m1OrientationOSCClient, orientationControlWindow, showOrientationControlMenu, showedOrientationControlBefore);
     
     /// Monitor label
     m.setColor(200, 255);

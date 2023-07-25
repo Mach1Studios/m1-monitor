@@ -16,7 +16,6 @@ juce::String M1MonitorAudioProcessor::paramYawEnable("enableYaw");
 juce::String M1MonitorAudioProcessor::paramPitchEnable("enablePitch");
 juce::String M1MonitorAudioProcessor::paramRollEnable("enableRoll");
 juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
-juce::String M1MonitorAudioProcessor::paramOscPort("oscPort");
 
 //==============================================================================
 M1MonitorAudioProcessor::M1MonitorAudioProcessor()
@@ -42,7 +41,6 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                     std::make_unique<juce::AudioParameterBool>(paramPitchEnable, TRANS("Enable Pitch"), monitorSettings.pitchActive),
                     std::make_unique<juce::AudioParameterBool>(paramRollEnable, TRANS("Enable Roll"), monitorSettings.rollActive),
                     std::make_unique<juce::AudioParameterInt>(paramMonitorMode, TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
-                    std::make_unique<juce::AudioParameterInt>(paramOscPort, TRANS("Input OSC Port"), 0, 65535, monitorSettings.osc_port),
                })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -52,7 +50,6 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     parameters.addParameterListener(paramPitchEnable, this);
     parameters.addParameterListener(paramRollEnable, this);
     parameters.addParameterListener(paramMonitorMode, this);
-    parameters.addParameterListener(paramOscPort, this);
 
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
@@ -68,8 +65,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     transport = new Transport();
     transport->setProcessor(this);
     
-    //m1OrientationOSCClient.init(6345, 6346);
-    //m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
+    m1OrientationOSCClient.init(6345, 6346);
+    m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
@@ -205,8 +202,6 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         parameters.getParameter(paramRollEnable)->setValue(newValue);
     } else if (parameterID == paramMonitorMode) {
         parameters.getParameter(paramMonitorMode)->setValue(newValue);
-    } else if (parameterID == paramOscPort) {
-        parameters.getParameter(paramOscPort)->setValue(newValue);
     }
 }
 
@@ -315,11 +310,17 @@ void M1MonitorAudioProcessor::fillChannelOrderArray(int numInputChannels) {
     }
 }
 
+M1OrientationYPR M1MonitorAudioProcessor::updateOSCClientOrientation()
+{
+    M1OrientationYPR ypr = m1OrientationOSCClient.getOrientation().getNormalised(m1OrientationOSCClient.getOrientation().getYPR());
+    parameters.getParameter(paramYaw)->setValueNotifyingHost(ypr.yaw);
+    parameters.getParameter(paramPitch)->setValueNotifyingHost(ypr.pitch);
+    parameters.getParameter(paramRoll)->setValueNotifyingHost(ypr.roll);
+    return ypr;
+}
+
 void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    // transport
-    transport->update();
-    
     juce::ScopedNoDenormals noDenormals;
     auto numInputChannels  = getMainBusNumInputChannels();
     auto numOutputChannels = getMainBusNumOutputChannels();
@@ -328,12 +329,29 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
         buffer.clear(channel, 0, buffer.getNumSamples());
     
+    // transport
+    transport->update();
+    
+    // m1_orientation_client update
+    M1OrientationYPR external_device_orientation;
+    if (m1OrientationOSCClient.isConnectedToServer()) {
+        // update the external orientation normalised
+        external_device_orientation.angleType = M1OrientationYPR::NORMALED;
+        external_device_orientation = updateOSCClientOrientation();
+    }
+    
     // Mach1Decode processing loop
     Mach1Point3D currentOrientation;
-    // retrieve normalized values
-    (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() : currentOrientation.x = 0.0f;
-    (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() : currentOrientation.y = 0.0f;
-    (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() : currentOrientation.z = 0.0f;
+    // retrieve normalized values and add the current external device orientation
+    (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.x = parameters.getParameter(paramYaw)->getValue() + external_device_orientation.yaw : currentOrientation.x = 0.0f;
+    (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.y = parameters.getParameter(paramPitch)->getValue() + external_device_orientation.pitch : currentOrientation.y = 0.0f;
+    (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.z = parameters.getParameter(paramRoll)->getValue() + external_device_orientation.roll : currentOrientation.z = 0.0f;
+    
+    if (m1OrientationOSCClient.isConnectedToServer()) {
+        // update the server and panners of current orientation
+        m1OrientationOSCClient.command_setMonitorYPR(currentOrientation.x, currentOrientation.y, currentOrientation.z, parameters.getParameter(paramMonitorMode)->getValue());
+    }
+
     monitorSettings.m1Decode.setRotation(currentOrientation);
     monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
