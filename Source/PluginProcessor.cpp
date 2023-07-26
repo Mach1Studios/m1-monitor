@@ -349,7 +349,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     
     if (m1OrientationOSCClient.isConnectedToServer()) {
         // update the server and panners of current orientation
-        m1OrientationOSCClient.command_setMonitorYPR(currentOrientation.x, currentOrientation.y, currentOrientation.z, parameters.getParameter(paramMonitorMode)->getValue());
+        m1OrientationOSCClient.command_setMonitorYPR(parameters.getParameter(paramMonitorMode)->getValue(), currentOrientation.x, currentOrientation.y, currentOrientation.z);
     }
 
     monitorSettings.m1Decode.setRotation(currentOrientation);
