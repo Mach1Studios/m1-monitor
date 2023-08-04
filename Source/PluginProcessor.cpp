@@ -67,7 +67,21 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     
     // TODO: make this file path search for `Mach1` dir
     // We will assume the folders are properly created during the installation step
-    std::string settingsFilePath = (juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory).getFullPathName()+"/Application Support/Mach1/settings.json").toStdString();
+    
+    // Using common support files installation location
+    juce::File m1SupportDirectory = juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory);
+
+    std::string settingsFilePath;
+
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) {
+        // test for any windows OS
+        settingsFilePath = (m1SupportDirectory.getFullPathName()+"/Mach1/settings.json").toStdString();
+    } else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+        // test for any mac OS
+        settingsFilePath = (m1SupportDirectory.getFullPathName()+"/Application Support/Mach1/settings.json").toStdString();
+    } else {
+        settingsFilePath = (m1SupportDirectory.getFullPathName()+"/Mach1/settings.json").toStdString();
+    }
     m1OrientationOSCClient.initFromSettings(settingsFilePath, true);
     m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
