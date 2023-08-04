@@ -65,7 +65,10 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     transport = new Transport();
     transport->setProcessor(this);
     
-    m1OrientationOSCClient.init(6345, 6346);
+    // TODO: make this file path search for `Mach1` dir
+    // We will assume the folders are properly created during the installation step
+    std::string settingsFilePath = (juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory).getFullPathName()+"/Application Support/Mach1/settings.json").toStdString();
+    m1OrientationOSCClient.initFromSettings(settingsFilePath, true);
     m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 
