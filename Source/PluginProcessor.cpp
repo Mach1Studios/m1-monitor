@@ -66,20 +66,23 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     transport->setProcessor(this);
     
     // We will assume the folders are properly created during the installation step
-    // TODO: make this file path search for `Mach1` dir
+    juce::File settingsFile;
     // Using common support files installation location
     juce::File m1SupportDirectory = juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory);
-    std::string settingsFilePath;
-    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) {
-        // test for any windows OS
-        settingsFilePath = (m1SupportDirectory.getFullPathName()+"/Mach1/settings.json").toStdString();
-    } else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
         // test for any mac OS
-        settingsFilePath = (m1SupportDirectory.getFullPathName()+"/Application Support/Mach1/settings.json").toStdString();
+        settingsFile = m1SupportDirectory.getChildFile("Application Support").getChildFile("Mach1");
+    } else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) {
+        // test for any windows OS
+        settingsFile = m1SupportDirectory.getChildFile("Mach1");
     } else {
-        settingsFilePath = (m1SupportDirectory.getFullPathName()+"/Mach1/settings.json").toStdString();
+        settingsFile = m1SupportDirectory.getChildFile("Mach1");
     }
-    m1OrientationOSCClient.initFromSettings(settingsFilePath, true);
+    settingsFile = settingsFile.getChildFile("settings.json");
+    DBG("Opening settings file: " + settingsFile.getFullPathName().quoted());
+    
+    m1OrientationOSCClient.initFromSettings(settingsFile.getFullPathName().toStdString(), true);
     m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 

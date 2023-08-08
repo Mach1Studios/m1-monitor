@@ -27,6 +27,8 @@ M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor (M1MonitorAudioProc
 
 M1MonitorAudioProcessorEditor::~M1MonitorAudioProcessorEditor()
 {
+    processor->m1OrientationOSCClient.command_disconnect();
+    processor->m1OrientationOSCClient.close();
     monitorUIBaseComponent->shutdownOpenGL();
     removeAllChildren();
     delete monitorUIBaseComponent;
