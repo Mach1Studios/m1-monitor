@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="ybOF6l" name="M1-Monitor-dev" projectType="audioplug" version="2.0.0.0"
-              bundleIdentifier="com.mach1.monitor.dev" includeBinaryInAppConfig="1"
-              pluginName="M1-Monitor-dev" pluginDesc="M1-Monitor-dev" pluginManufacturer="Mach1"
+<JUCERPROJECT id="ybOF6l" name="M1-Monitor" projectType="audioplug" version="2.0.0.0"
+              bundleIdentifier="com.mach1.spatial.monitor" includeBinaryInAppConfig="1"
+              pluginName="M1-Monitor" pluginDesc="M1-Monitor" pluginManufacturer="Mach1"
               pluginManufacturerCode="MCH1" pluginCode="M1MT" pluginIsSynth="0"
               pluginWantsMidiIn="0" pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0"
               pluginEditorRequiresKeys="0" pluginAUExportPrefix="Mach1MonitorAU"
-              pluginRTASCategory="0,512" aaxIdentifier="com.mach1.monitor"
+              pluginRTASCategory="0,512" aaxIdentifier="com.mach1.spatial.monitor"
               pluginAAXCategory="0,512" companyName="Mach1" companyWebsite="http://www.mach1.tech"
               pluginSilenceInIsSilenceOut="0" pluginCharacteristicsValue="pluginAAXDisableMultiMono,pluginRTASDisableMultiMono"
               pluginAUMainType="'aufx'" pluginVST3Category="Spatial,Tools,Up-Downmix"
@@ -16,7 +16,7 @@
               pluginFormats="buildStandalone" buildVST="0" buildVST3="0" buildAU="0"
               buildAUv3="0" buildRTAS="0" buildAAX="0" buildStandalone="1"
               enableIAA="0">
-  <MAINGROUP id="kcbQk5" name="M1-Monitor-dev">
+  <MAINGROUP id="kcbQk5" name="M1-Monitor">
     <FILE id="mL5YjJ" name="mach1logo.png" compile="0" resource="1" file="Resources/mach1logo.png"/>
     <FILE id="Ii2GFs" name="bluetooth_icon.png" compile="0" resource="1"
           file="Modules/m1_orientation_client/Resources/bluetooth_icon.png"/>
