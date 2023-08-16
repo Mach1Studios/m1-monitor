@@ -37,7 +37,7 @@ public:
         // Increase circle resolution
         m.setCircleResolution(64);
         
-        m.setLineWidth(8);
+        m.setLineWidth(2);
         m.enableFill();
         
         m.setColor(GRID_LINES_1_RGBA);

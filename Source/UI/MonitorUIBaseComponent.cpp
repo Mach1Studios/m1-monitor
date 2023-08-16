@@ -81,7 +81,6 @@ void MonitorUIBaseComponent::draw()
         m.drawRectangle(20, bottomSettings_topBound_y + 20, 310, 40);
         m.setColor(ENABLED_PARAM);
         
-        // TODO: hide this if output menu is active?
         std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
         auto& modeDropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 310, 120}).withOptions(monitorModes);
         modeDropdown.textAlignment = TEXT_LEFT;
@@ -409,7 +408,7 @@ void MonitorUIBaseComponent::draw()
     m.setColor(ENABLED_PARAM);
     float settings_button_height = 370;
     if (showSettingsMenu) {
-        auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 23, settings_button_height - 30,
+        auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
             120, 30 })
         .withLabel("SETTINGS")
         .withFontSize(DEFAULT_FONT_SIZE)
@@ -422,7 +421,7 @@ void MonitorUIBaseComponent::draw()
             deleteTheSettingsButton();
         }
     } else {
-        auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 23, settings_button_height - 30,
+        auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
             120, 30 })
         .withLabel("SETTINGS")
         .withFontSize(DEFAULT_FONT_SIZE)
@@ -441,7 +440,7 @@ void MonitorUIBaseComponent::draw()
         // draw settings arrow indicator pointing up
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
-        MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 10};
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8};
         std::vector<MurkaPoint3D> triangle;
         triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
         triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
@@ -452,7 +451,7 @@ void MonitorUIBaseComponent::draw()
         // draw settings arrow indicator pointing down
         m.enableFill();
         m.setColor(LABEL_TEXT_COLOR);
-        MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 15};
+        MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8 - 5};
         std::vector<MurkaPoint3D> triangle;
         triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
         triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
