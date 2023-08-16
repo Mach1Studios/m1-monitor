@@ -150,7 +150,7 @@ private:
         
         if (showOrientationControlMenu) {
             bool showOrientationSettingsPanelInsideWindow = (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
-            orientationControlWindow = m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 300 + 100 * showOrientationSettingsPanelInsideWindow })
+            orientationControlWindow = m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 240 + 100 * showOrientationSettingsPanelInsideWindow })
                 .withDeviceList(slots)
                 .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
                 .onClickOutside([&]() {
@@ -178,14 +178,14 @@ private:
                                          m1OrientationOSCClient.getTrackingRollEnabled(),
                                          std::pair<int, int>(0, 180),
                                          std::pair<int, int>(0, 180),
-                                         std::pair<int, int>(0, 180))
+                                         std::pair<int, int>(0, 180)
+                )
                 .withYPR(
                          m1OrientationOSCClient.getOrientation().getYPR().yaw,
                          m1OrientationOSCClient.getOrientation().getYPR().pitch,
                          m1OrientationOSCClient.getOrientation().getYPR().roll
-                         );
-
-                            orientationControlWindow.draw();
+                );
+                orientationControlWindow.draw();
         }
     }
 
