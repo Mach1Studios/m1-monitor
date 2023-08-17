@@ -12,8 +12,8 @@ class M1Radial : public murka::View<M1Radial> {
 public:
     void internalDraw(Murka & m) {
         float* data = dataToControl;
-//        MurkaContext& ctx = m.currentContext;
-        
+        float inputValueNormalised = ((*data - rangeFrom) / (rangeTo - rangeFrom));
+
         bool isInside = inside()
             * (!editingTextNow);
         
@@ -29,9 +29,7 @@ public:
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
         auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
-        
-        float inputValueNormalised = ((*data - rangeFrom) / (rangeTo - rangeFrom));
-        
+                
         m.pushStyle();
         
         // Increase circle resolution

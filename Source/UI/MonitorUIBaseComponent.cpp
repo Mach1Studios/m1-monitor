@@ -60,7 +60,7 @@ void MonitorUIBaseComponent::draw()
    
     m.setColor(BACKGROUND_GREY);
     m.clear();
-    
+        
     if (showSettingsMenu) {
         // Settings rendering
         float leftSide_LeftBound_x = 18;
@@ -337,8 +337,7 @@ void MonitorUIBaseComponent::draw()
         yawRadial.draw();
         
         if (yawRadial.changed) {
-            double normalisedValue =
-            processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw - 180);
+            double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw);
             processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
         }
         
@@ -361,7 +360,7 @@ void MonitorUIBaseComponent::draw()
         pitchSlider.draw();
                 
         if (pitchSlider.changed) {
-            double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch) - 0.5 ) / 2;
+            double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch));
             processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
         }
         
@@ -384,7 +383,7 @@ void MonitorUIBaseComponent::draw()
         rollSlider.draw();
         
         if (rollSlider.changed) {
-            double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll) - 0.5 ) / 2;
+            double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll));
             processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
         }
     }
