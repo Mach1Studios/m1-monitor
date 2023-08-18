@@ -217,6 +217,7 @@ void MonitorUIBaseComponent::draw()
         if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() <= 2 || processor->getMainBusNumOutputChannels() <= 2))) {
 
             // Show bottom bar
+            m.setLineWidth(1);
             m.setColor(GRID_LINES_3_RGBA);
             m.drawLine(0, m.getSize().height()-36, m.getSize().width(), m.getSize().height()-36); // Divider line
             m.setColor(BACKGROUND_GREY);

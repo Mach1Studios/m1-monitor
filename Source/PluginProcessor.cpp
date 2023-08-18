@@ -386,7 +386,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         // update the server and panners of final calculated orientation
-        m1OrientationOSCClient.command_setMonitorYPR(parameters.getParameter(paramMonitorMode)->getValue(), currentOrientation.yaw, currentOrientation.pitch, currentOrientation.roll);
+        m1OrientationOSCClient.command_setMonitorYPR(monitorSettings.monitor_mode, parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
         
         // store orientation for next loop's delta check
         previous_external_orientation = external_orientation;
