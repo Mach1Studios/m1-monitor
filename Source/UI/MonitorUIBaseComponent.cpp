@@ -36,12 +36,119 @@ void MonitorUIBaseComponent::initialise()
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
 }
 
-void MonitorUIBaseComponent::timerCallback() {
+void MonitorUIBaseComponent::timerCallback()
+{
     if (shouldResizeComponent) {
         repaint();
         setSize(targetSize.x, targetSize.y);
         editor->setSize(targetSize.x, targetSize.y);
         shouldResizeComponent = false;
+    }
+}
+
+void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M1OrientationOSCClient &m1OrientationOSCClient, M1OrientationClientWindow &orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore) {
+    std::vector<M1OrientationClientWindowDeviceSlot> slots;
+    
+    std::vector<M1OrientationDeviceInfo> devices = m1OrientationOSCClient.getDevices();
+    for (int i = 0; i < devices.size(); i++) {
+        std::string icon = "";
+        if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeSerial && devices[i].getDeviceName().find("Bluetooth-Incoming-Port") != std::string::npos) {
+            icon = "bt";
+        } else if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeSerial && devices[i].getDeviceName().find("Mach1-") != std::string::npos) {
+            icon = "bt";
+        } else if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeBLE) {
+            icon = "bt";
+        } else if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeSerial) {
+            icon = "usb";
+        } else if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeCamera) {
+            icon = "camera";
+        } else if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeEmulator) {
+            icon = "none";
+        } else {
+            icon = "wifi";
+        }
+        
+        std::string name = devices[i].getDeviceName();
+        slots.push_back({ icon, name, name == m1OrientationOSCClient.getCurrentDevice().getDeviceName(), i, [&](int idx)
+            {
+                m1OrientationOSCClient.command_startTrackingUsingDevice(devices[idx]);
+            }
+        });
+    }
+    
+    auto& orientationControlButton = m.prepare<M1OrientationWindowToggleButton>({ m.getSize().width() - 40 - 5, 5, 40, 40 }).onClick([&](M1OrientationWindowToggleButton& b) {
+        showOrientationControlMenu = !showOrientationControlMenu;
+    })
+        .withInteractiveOrientationGimmick(m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationOSCClient.getOrientation().getYPR().yaw)
+        .draw();
+    
+    // TODO: move this to be to the left of the orientation client window button
+    if (std::holds_alternative<bool>(m1OrientationOSCClient.getCurrentDevice().batteryPercentage)) {
+        // it's false, which means the battery percentage is unknown
+    } else {
+        // it has a battery percentage value
+        int battery_value = std::get<int>(m1OrientationOSCClient.getCurrentDevice().batteryPercentage);
+        m.getCurrentFont()->drawString("Battery: " + std::to_string(battery_value), m.getWindowWidth() - 100, m.getWindowHeight() - 100);
+    }
+    
+    if (orientationControlButton.hovered && (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone)) {
+        std::string deviceReportString = "CONNECTED DEVICE: " + m1OrientationOSCClient.getCurrentDevice().getDeviceName();
+        auto font = m.getCurrentFont();
+        auto bbox = font->getStringBoundingBox(deviceReportString, 0, 0);
+        //m.setColor(40, 40, 40, 200);
+        // TODO: fix this bounding box (doesnt draw the same place despite matching settings with Label.draw
+        //m.drawRectangle(     m.getSize().width() - 40 - 10 /* padding */ - bbox.width - 5, 5, bbox.width + 10, 40);
+        m.setColor(230, 230, 230);
+        m.prepare<M1Label>({ m.getSize().width() - 40 - 10 /* padding */ - bbox.width - 5, 5 + 10, bbox.width + 10, 40 }).text(deviceReportString).withTextAlignment(TEXT_CENTER).draw();
+    }
+    
+    if (showOrientationControlMenu) {
+        bool showOrientationSettingsPanelInsideWindow = (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
+        orientationControlWindow = m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 240 + 100 * showOrientationSettingsPanelInsideWindow })
+            .withDeviceList(slots)
+            .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
+            .onClickOutside([&]() {
+                if (!orientationControlButton.hovered) { // Only switch showing the orientation control if we didn't click on the button
+                    showOrientationControlMenu = !showOrientationControlMenu;
+                    if (showOrientationControlMenu && !showedOrientationControlBefore) {
+                        orientationControlWindow.startRefreshing();
+                    }
+                }
+            })
+            .onDisconnectClicked([&]() {
+                m1OrientationOSCClient.command_disconnect();
+            })
+            .onRefreshClicked([&]() {
+                m1OrientationOSCClient.command_refreshDevices();
+            })
+            .onYPRSwitchesClicked([&](int whichone) {
+                if (whichone == 0)
+                    // yaw clicked
+                    monitorState->yawActive = !monitorState->yawActive;
+                    processor->parameters.getParameter(processor->paramYawEnable)->setValueNotifyingHost(monitorState->yawActive);
+                if (whichone == 1)
+                    // pitch clicked
+                    monitorState->pitchActive = !monitorState->pitchActive;
+                    processor->parameters.getParameter(processor->paramPitchEnable)->setValueNotifyingHost(monitorState->pitchActive);
+                if (whichone == 2)
+                    // roll clicked
+                    monitorState->rollActive = !monitorState->rollActive;
+                    processor->parameters.getParameter(processor->paramRollEnable)->setValueNotifyingHost(monitorState->rollActive);
+            })
+            .withYPRTrackingSettings(
+                                     m1OrientationOSCClient.getTrackingYawEnabled(),
+                                     m1OrientationOSCClient.getTrackingPitchEnabled(),
+                                     m1OrientationOSCClient.getTrackingRollEnabled(),
+                                     std::pair<int, int>(0, 180),
+                                     std::pair<int, int>(0, 180),
+                                     std::pair<int, int>(0, 180)
+            )
+            .withYPR(
+                     m1OrientationOSCClient.getOrientation().getYPR().yaw,
+                     m1OrientationOSCClient.getOrientation().getYPR().pitch,
+                     m1OrientationOSCClient.getOrientation().getYPR().roll
+            );
+            orientationControlWindow.draw();
     }
 }
 
@@ -165,8 +272,8 @@ void MonitorUIBaseComponent::draw()
         yawActive.draw();
         
         if (yawActive.changed) {
-            processor->parameterChanged(processor->paramYawEnable, monitorState->yawActive);
-            processor->m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
+            monitorState->yawActive = !monitorState->yawActive;
+            processor->parameters.getParameter(processor->paramYawEnable)->setValueNotifyingHost(monitorState->yawActive);
         }
         
         auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 192 - 5, 100, 20 })
@@ -176,8 +283,7 @@ void MonitorUIBaseComponent::draw()
         pitchActive.draw();
         
         if (pitchActive.changed) {
-            processor->parameterChanged(processor->paramPitchEnable, monitorState->pitchActive);
-            processor->m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
+            processor->parameters.getParameter(processor->paramPitchEnable)->setValueNotifyingHost(monitorState->pitchActive);
         }
         
         auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 192 - 5, 100, 20 })
@@ -187,8 +293,7 @@ void MonitorUIBaseComponent::draw()
         rollActive.draw();
         
         if (rollActive.changed) {
-            processor->parameterChanged(processor->paramRollEnable, monitorState->rollActive);
-            processor->m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
+            processor->parameters.getParameter(processor->paramRollEnable)->setValueNotifyingHost(monitorState->rollActive);
         }
         
         recenterButtonActive = true;

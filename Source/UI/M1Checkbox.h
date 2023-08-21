@@ -13,8 +13,7 @@ using namespace murka;
 class M1Checkbox : public murka::View<M1Checkbox> {
 public:
     void internalDraw(Murka & m) {
-        bool* data = dataToControl;
-        
+
         if (didntInitialiseYet) {
             animatedData = *((bool*)dataToControl) ? 1.0 : 0.0;
             didntInitialiseYet = false;
@@ -23,6 +22,7 @@ public:
         float animation = A(inside() * enabled);
         
         m.pushStyle();
+        
         if (showCircleWithText) {
                 m.setColor(100 + 110 * enabled + 30 * animation, 220);
             m.drawCircle(getSize().y / 2, getSize().y / 2, getSize().y / 2);
