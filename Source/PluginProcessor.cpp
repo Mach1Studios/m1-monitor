@@ -223,10 +223,13 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         monitorSettings.roll = parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue());
     } else if (parameterID == paramYawEnable) {
         monitorSettings.yawActive = (bool)parameters.getParameter(paramYawEnable)->convertFrom0to1(parameters.getParameter(paramYawEnable)->getValue());
+        m1OrientationOSCClient.command_setTrackingYawEnabled(monitorSettings.yawActive);
     } else if (parameterID == paramPitchEnable) {
         monitorSettings.pitchActive = (bool)parameters.getParameter(paramPitchEnable)->convertFrom0to1(parameters.getParameter(paramPitchEnable)->getValue());
+        m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorSettings.pitchActive);
     } else if (parameterID == paramRollEnable) {
         monitorSettings.rollActive = (bool)parameters.getParameter(paramRollEnable)->convertFrom0to1(parameters.getParameter(paramRollEnable)->getValue());
+        m1OrientationOSCClient.command_setTrackingRollEnabled(monitorSettings.rollActive);
     } else if (parameterID == paramMonitorMode) {
         monitorSettings.monitor_mode = (int)parameters.getParameter(paramMonitorMode)->convertFrom0to1(parameters.getParameter(paramMonitorMode)->getValue());
     }
@@ -386,6 +389,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         // update the server and panners of final calculated orientation
+        // sending un-normalized full range values in degrees
         m1OrientationOSCClient.command_setMonitorYPR(monitorSettings.monitor_mode, parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
         
         // store orientation for next loop's delta check
