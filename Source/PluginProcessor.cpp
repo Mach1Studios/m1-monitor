@@ -363,7 +363,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         
         // retrieve normalized values and add the current external device orientation
         if (previous_external_orientation.yaw != external_orientation.yaw) {
-            ((bool)parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.yaw = external_orientation.yaw - previous_external_orientation.yaw + parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
+            ((bool)parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.yaw = external_orientation.yaw - previous_external_orientation.yaw + parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw) : currentOrientation.yaw = 0.0f;
             // manual version of modulo for the endless yaw radial
             if (currentOrientation.yaw < 0.0f) {
                 currentOrientation.yaw += 1.0f;
@@ -372,34 +372,47 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
                 currentOrientation.yaw -= 1.0f;
             }
             parameters.getParameter(paramYaw)->setValueNotifyingHost(currentOrientation.yaw);
+        } else {
+            // since there is no change from external sources we will just update the orientation via monitorSettings
+            currentOrientation.yaw = parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw);
         }
+        
         if (previous_external_orientation.pitch != external_orientation.pitch) {
-            ((bool)parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = external_orientation.pitch - previous_external_orientation.pitch + parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.0f;
+            ((bool)parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = external_orientation.pitch - previous_external_orientation.pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.0f;
             // manual clamp for pitch slider
             if (currentOrientation.pitch < 0.) currentOrientation.pitch = 0.;
             if (currentOrientation.pitch > 1.) currentOrientation.pitch = 1.;
             parameters.getParameter(paramPitch)->setValueNotifyingHost(currentOrientation.pitch);
+        } else {
+            // since there is no change from external sources we will just update the orientation via monitorSettings
+            currentOrientation.pitch = parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch);
         }
+        
         if (previous_external_orientation.roll != external_orientation.roll) {
-            ((bool)parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = external_orientation.roll - previous_external_orientation.roll + parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.0f;
+            ((bool)parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = external_orientation.roll - previous_external_orientation.roll + parameters.getParameter(paramRoll)->convertTo0to1(monitorSettings.roll) : currentOrientation.roll = 0.0f;
             // manual clamp for roll slider
             if (currentOrientation.roll < 0.) currentOrientation.roll = 0.;
             if (currentOrientation.roll > 1.) currentOrientation.roll = 1.;
             parameters.getParameter(paramRoll)->setValueNotifyingHost(currentOrientation.roll);
+        } else {
+            // since there is no change from external sources we will just update the orientation via monitorSettings
+            currentOrientation.roll = parameters.getParameter(paramRoll)->convertTo0to1(monitorSettings.roll);
         }
-        
-        // update the server and panners of final calculated orientation
-        // sending un-normalized full range values in degrees
-        m1OrientationOSCClient.command_setMonitorYPR(monitorSettings.monitor_mode, parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
-        
+                
         // store orientation for next loop's delta check
         previous_external_orientation = external_orientation;
-
+        
     } else {
         // update orientation without external orientation
         (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.yaw = parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
         (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.0f;
         (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.0f;
+    }
+    
+    if (m1OrientationOSCClient.isConnectedToServer()) {
+        // update the server and panners of final calculated orientation
+        // sending un-normalized full range values in degrees
+        m1OrientationOSCClient.command_setMonitorYPR(monitorSettings.monitor_mode, parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
     }
     
     // Mach1Decode processing loop
