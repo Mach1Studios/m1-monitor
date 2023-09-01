@@ -9,6 +9,15 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+/*
+ Architecture:
+    - all changes to I/O should be made to pannerSettings first
+    - use parameterChanged() with the pannerSettings values
+    - parameterChanged() updates the i/o layout
+    - parameterChanged() checks if matched with pannerSettings and otherwise updates this too
+    parameters expect normalized 0->1 where all the rest of the i/o expects int
+ */
+
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
 juce::String M1MonitorAudioProcessor::paramRoll("roll");
@@ -64,6 +73,14 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
 
     transport = new Transport();
     transport->setProcessor(this);
+    
+    // normalize initial external orientation values for comparisons
+    external_orientation.angleType = M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
+    external_orientation.yaw_min = 0.0f, external_orientation.pitch_min = 0.0f, external_orientation.roll_min = 0.0f;
+    external_orientation.yaw_max = 1.0f, external_orientation.pitch_max = 1.0f, external_orientation.roll_max = 1.0f;
+    previous_external_orientation.angleType = M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
+    previous_external_orientation.yaw_min = 0.0f, previous_external_orientation.pitch_min = 0.0f, previous_external_orientation.roll_min = 0.0f;
+    previous_external_orientation.yaw_max = 1.0f, previous_external_orientation.pitch_max = 1.0f, previous_external_orientation.roll_max = 1.0f;
     
     // We will assume the folders are properly created during the installation step
     juce::File settingsFile;
@@ -197,7 +214,7 @@ void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     fillChannelOrderArray(monitorSettings.m1Decode.getFormatChannelCount());
     
     // setup initial values for currentOrientation
-    currentOrientation.angleType == M1OrientationYPR::AngleType::NORMALED;
+    currentOrientation.angleType == M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
     currentOrientation.yaw_min, currentOrientation.pitch_min, currentOrientation.roll_min = 0.0f;
     currentOrientation.yaw_max, currentOrientation.pitch_max, currentOrientation.roll_max = 1.0f;
     currentOrientation.yaw = parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw);
@@ -251,8 +268,12 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
     }
         
     if (hostType.isProTools()) {
-        if ((   layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
-             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic())
+        if ((   layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic()
+             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
+             || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(3)
+             || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(5)
+             //|| layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(7)
+             )
             &&
             (   layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size() )) {
                 return true;
@@ -356,10 +377,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // m1_orientation_client update
     if (m1OrientationOSCClient.isConnectedToServer()) {
         // update the external orientation normalised
-        external_orientation = m1OrientationOSCClient.getOrientation().getNormalised(m1OrientationOSCClient.getOrientation().getYPR());
-        external_orientation.angleType = M1OrientationYPR::AngleType::NORMALED;
-        external_orientation.yaw_min, external_orientation.pitch_min, external_orientation.roll_min = 0.0f;
-        external_orientation.yaw_max, external_orientation.pitch_max, external_orientation.roll_max = 1.0f;
+        external_orientation = m1OrientationOSCClient.getOrientation().getYPRasSignedNormalled();
         
         // retrieve normalized values and add the current external device orientation
         if (previous_external_orientation.yaw != external_orientation.yaw) {
@@ -621,7 +639,7 @@ void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInB
     // whose contents will have been created by the getStateInformation() call.
     juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
     if (tree.isValid()) {
-        parameters.state = tree;
+        //parameters.state = tree;
     }
 }
 
