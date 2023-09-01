@@ -123,7 +123,11 @@ public:
     void setStatus(bool success, std::string message);
     M1OrientationOSCClient m1OrientationOSCClient;
     M1OrientationYPR currentOrientation;
+    
+    // normalize first value
     M1OrientationYPR external_orientation;
+    
+    // normalize first value
     M1OrientationYPR previous_external_orientation;
 
     // TODO: change this

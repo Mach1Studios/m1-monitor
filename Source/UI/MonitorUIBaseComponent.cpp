@@ -79,7 +79,7 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
     auto& orientationControlButton = m.prepare<M1OrientationWindowToggleButton>({ m.getSize().width() - 40 - 5, 5, 40, 40 }).onClick([&](M1OrientationWindowToggleButton& b) {
         showOrientationControlMenu = !showOrientationControlMenu;
     })
-        .withInteractiveOrientationGimmick(m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationOSCClient.getOrientation().getYPR().yaw)
+        .withInteractiveOrientationGimmick(m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationOSCClient.getOrientation().getYPRinDegrees().yaw)
         .draw();
     
     // TODO: move this to be to the left of the orientation client window button
@@ -144,9 +144,9 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                                      std::pair<int, int>(0, 180)
             )
             .withYPR(
-                     m1OrientationOSCClient.getOrientation().getYPR().yaw,
-                     m1OrientationOSCClient.getOrientation().getYPR().pitch,
-                     m1OrientationOSCClient.getOrientation().getYPR().roll
+                     m1OrientationOSCClient.getOrientation().getYPRinDegrees().yaw,
+                     m1OrientationOSCClient.getOrientation().getYPRinDegrees().pitch,
+                     m1OrientationOSCClient.getOrientation().getYPRinDegrees().roll
             );
             orientationControlWindow.draw();
     }
@@ -171,7 +171,7 @@ void MonitorUIBaseComponent::draw()
     if (showSettingsMenu) {
         // Settings rendering
         float leftSide_LeftBound_x = 18;
-        float rightSide_LeftBound_x = 380; // prev 265
+        float rightSide_LeftBound_x = 380;
         float bottomSettings_topBound_y = 380;
 
         setShouldResizeTo(MurkaPoint(504, 467));
@@ -262,53 +262,55 @@ void MonitorUIBaseComponent::draw()
         fsfield.drawBounds = false;
         fsfield.draw();
         
-        // CHECKBOXES
-        m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 165, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
+        if (processor->m1OrientationOSCClient.isConnectedToServer()) {
+            // CHECKBOXES
+            m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 165, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
 
-        auto& yawActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 2, bottomSettings_topBound_y + 192 - 5, 100, 20 })
-        .controlling(&monitorState->yawActive)
-        .withLabel("Y");
-        yawActive.enabled = true;
-        yawActive.draw();
-        
-        if (yawActive.changed) {
-            monitorState->yawActive = !monitorState->yawActive;
-            processor->parameters.getParameter(processor->paramYawEnable)->setValueNotifyingHost(monitorState->yawActive);
-        }
-        
-        auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 192 - 5, 100, 20 })
-        .controlling(&monitorState->pitchActive)
-        .withLabel("P");
-        pitchActive.enabled = true;
-        pitchActive.draw();
-        
-        if (pitchActive.changed) {
-            processor->parameters.getParameter(processor->paramPitchEnable)->setValueNotifyingHost(monitorState->pitchActive);
-        }
-        
-        auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 192 - 5, 100, 20 })
-        .controlling(&monitorState->rollActive)
-        .withLabel("R");
-        rollActive.enabled = true;
-        rollActive.draw();
-        
-        if (rollActive.changed) {
-            processor->parameters.getParameter(processor->paramRollEnable)->setValueNotifyingHost(monitorState->rollActive);
-        }
-        
-        recenterButtonActive = true;
-        auto& recenterButton = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 195, bottomSettings_topBound_y + 192 - 5, 200, 20 })
-        .controlling(&recenterButtonActive)
-        .withLabel("RECENTER")
-        .showCircle(true)
-        .buttonMode(true);
-        recenterButton.enabled = true;
-        recenterButton.draw();
+            auto& yawActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 2, bottomSettings_topBound_y + 192 - 5, 100, 20 })
+            .controlling(&monitorState->yawActive)
+            .withLabel("Y");
+            yawActive.enabled = true;
+            yawActive.draw();
             
-        if (recenterButton.changed) {
-            processor->m1OrientationOSCClient.command_recenter();
-            if (recenterButtonActive && recenterButton.checked) {
-                recenterButtonActive = false;
+            if (yawActive.changed) {
+                monitorState->yawActive = !monitorState->yawActive;
+                processor->parameters.getParameter(processor->paramYawEnable)->setValueNotifyingHost(monitorState->yawActive);
+            }
+            
+            auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 192 - 5, 100, 20 })
+            .controlling(&monitorState->pitchActive)
+            .withLabel("P");
+            pitchActive.enabled = true;
+            pitchActive.draw();
+            
+            if (pitchActive.changed) {
+                processor->parameters.getParameter(processor->paramPitchEnable)->setValueNotifyingHost(monitorState->pitchActive);
+            }
+            
+            auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 192 - 5, 100, 20 })
+            .controlling(&monitorState->rollActive)
+            .withLabel("R");
+            rollActive.enabled = true;
+            rollActive.draw();
+            
+            if (rollActive.changed) {
+                processor->parameters.getParameter(processor->paramRollEnable)->setValueNotifyingHost(monitorState->rollActive);
+            }
+            
+            recenterButtonActive = true;
+            auto& recenterButton = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 195, bottomSettings_topBound_y + 192 - 5, 200, 20 })
+            .controlling(&recenterButtonActive)
+            .withLabel("RECENTER")
+            .showCircle(true)
+            .buttonMode(true);
+            recenterButton.enabled = true;
+            recenterButton.draw();
+                
+            if (recenterButton.changed) {
+                processor->m1OrientationOSCClient.command_recenter();
+                if (recenterButtonActive && recenterButton.checked) {
+                    recenterButtonActive = false;
+                }
             }
         }
         
@@ -319,7 +321,9 @@ void MonitorUIBaseComponent::draw()
 
         int dropdownItemHeight = 40;
 
-        if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() <= 2 || processor->getMainBusNumOutputChannels() <= 2))) {
+        if (!processor->hostType.isProTools() || // is not PT
+            (processor->hostType.isProTools() && // or has an output dropdown in PT
+            (processor->getMainBusNumInputChannels() == 8 || processor->getMainBusNumInputChannels() == 16 || processor->getMainBusNumInputChannels() == 36 || processor->getMainBusNumInputChannels() == 64))) {
 
             // Show bottom bar
             m.setLineWidth(1);
@@ -332,7 +336,7 @@ void MonitorUIBaseComponent::draw()
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
 
             // OUTPUT DROPDOWN & LABELS
-            /// -> label
+            /// --> label
             m.setColor(200, 255);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
             auto& arrowLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 20, m.getSize().height() - 26, 40, 20));
@@ -357,12 +361,32 @@ void MonitorUIBaseComponent::draw()
                 .withOutline(true)
                 .draw();
             std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
-            if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 12) output_options.push_back("M1Spatial-12");
-            if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 14) output_options.push_back("M1Spatial-14");
-            if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 32) output_options.push_back("M1Spatial-32");
-            if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 36) output_options.push_back("M1Spatial-36");
-            if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 48) output_options.push_back("M1Spatial-48");
-            if (processor->external_spatialmixer_active || processor->getMainBusNumOutputChannels() >= 60) output_options.push_back("M1Spatial-60");
+            if (processor->hostType.isProTools()) {
+                // more selective assignment in PT only
+                if (processor->getMainBusNumInputChannels() == 16) {
+                    output_options.push_back("M1Spatial-12");
+                    output_options.push_back("M1Spatial-14");
+                } else if (processor->getMainBusNumInputChannels() == 36) {
+                    output_options.push_back("M1Spatial-12");
+                    output_options.push_back("M1Spatial-14");
+                    output_options.push_back("M1Spatial-32");
+                    output_options.push_back("M1Spatial-36");
+                } else if (processor->getMainBusNumInputChannels() == 64) {
+                    output_options.push_back("M1Spatial-12");
+                    output_options.push_back("M1Spatial-14");
+                    output_options.push_back("M1Spatial-32");
+                    output_options.push_back("M1Spatial-36");
+                    output_options.push_back("M1Spatial-48");
+                    output_options.push_back("M1Spatial-60");
+                }
+            } else {
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 12) output_options.push_back("M1Spatial-12");
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 14) output_options.push_back("M1Spatial-14");
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 32) output_options.push_back("M1Spatial-32");
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 36) output_options.push_back("M1Spatial-36");
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 48) output_options.push_back("M1Spatial-48");
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 60) output_options.push_back("M1Spatial-60");
+            }
 
             auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({  m.getSize().width()/2 + 20,
                                                                     m.getSize().height() - 33 - output_options.size() * dropdownItemHeight,
@@ -436,6 +460,7 @@ void MonitorUIBaseComponent::draw()
         yawRadial.cursorShow = cursorShow;
         yawRadial.rangeFrom = 0.;
         yawRadial.rangeTo = 360.;
+        yawRadial.defaultValue = 0.;
         yawRadial.postfix = "º";
         yawRadial.dataToControl = &monitorState->yaw;
         yawRadial.enabled = true;
@@ -455,6 +480,7 @@ void MonitorUIBaseComponent::draw()
         pitchSlider.cursorShow = cursorShow;
         pitchSlider.rangeFrom = -90.;
         pitchSlider.rangeTo = 90.;
+        pitchSlider.defaultValue = 0.0;
         pitchSlider.postfix = "º";
         pitchSlider.dataToControl = &monitorState->pitch;
         if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
@@ -478,6 +504,7 @@ void MonitorUIBaseComponent::draw()
         rollSlider.cursorShow = cursorShow;
         rollSlider.rangeFrom = -90.;
         rollSlider.rangeTo = 90.;
+        rollSlider.defaultValue = 0.0;
         rollSlider.postfix = "º";
         rollSlider.dataToControl = &monitorState->roll;
         if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
