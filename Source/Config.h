@@ -73,10 +73,6 @@
 
 // ---
 
-#ifndef PI
-#define PI       3.14159265358979323846
-#endif
-
 /// Static Color Scheme
 #define M1_ACTION_YELLOW 255, 198, 30
 // 204, 204, 204 seen on ENABLED knobs in legacy as well
@@ -106,8 +102,9 @@
 #else
     // default CC0 font
     #define PLUGIN_FONT "AileronSemiBold.ttf"
-    #define BINARYDATA_FONT "BinaryData::AileronSemiBold_ttf"
-    #define BINARYDATA_FONT_SIZE "BinaryData::AileronSemiBold_ttfSize"
+    #define BINARYDATA_FONT BinaryData::AileronSemiBold_ttf
+    #define BINARYDATA_FONT_SIZE BinaryData::AileronSemiBold_ttfSize
+    #define DEFAULT_FONT_SIZE 11
 #endif
 #pragma message XSTR(PLUGIN_FONT)
 #pragma message XSTR(BINARYDATA_FONT)
