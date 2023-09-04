@@ -46,7 +46,7 @@ void MonitorUIBaseComponent::timerCallback()
     }
 }
 
-void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M1OrientationOSCClient &m1OrientationOSCClient, M1OrientationClientWindow &orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore) {
+void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M1OrientationOSCClient &m1OrientationOSCClient, M1OrientationClientWindow* orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore) {
     std::vector<M1OrientationClientWindowDeviceSlot> slots;
     
     std::vector<M1OrientationDeviceInfo> devices = m1OrientationOSCClient.getDevices();
@@ -104,14 +104,14 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
     
     if (showOrientationControlMenu) {
         bool showOrientationSettingsPanelInsideWindow = (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
-        orientationControlWindow = m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 240 + 100 * showOrientationSettingsPanelInsideWindow })
+        orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 240 + 100 * showOrientationSettingsPanelInsideWindow })
             .withDeviceList(slots)
             .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
             .onClickOutside([&]() {
                 if (!orientationControlButton.hovered) { // Only switch showing the orientation control if we didn't click on the button
                     showOrientationControlMenu = !showOrientationControlMenu;
                     if (showOrientationControlMenu && !showedOrientationControlBefore) {
-                        orientationControlWindow.startRefreshing();
+                        orientationControlWindow->startRefreshing();
                     }
                 }
             })
@@ -147,8 +147,8 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                      m1OrientationOSCClient.getOrientation().getYPR().yaw,
                      m1OrientationOSCClient.getOrientation().getYPR().pitch,
                      m1OrientationOSCClient.getOrientation().getYPR().roll
-            );
-            orientationControlWindow.draw();
+            ));
+            orientationControlWindow->draw();
     }
 }
 
