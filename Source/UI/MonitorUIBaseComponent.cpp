@@ -144,19 +144,11 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                                      std::pair<int, int>(0, 180)
             )
             .withYPR(
-<<<<<<< HEAD
-                     m1OrientationOSCClient.getOrientation().getYPR().yaw,
-                     m1OrientationOSCClient.getOrientation().getYPR().pitch,
-                     m1OrientationOSCClient.getOrientation().getYPR().roll
-            ));
-            orientationControlWindow->draw();
-=======
                      m1OrientationOSCClient.getOrientation().getYPRinDegrees().yaw,
                      m1OrientationOSCClient.getOrientation().getYPRinDegrees().pitch,
                      m1OrientationOSCClient.getOrientation().getYPRinDegrees().roll
-            );
-            orientationControlWindow.draw();
->>>>>>> 047e5c956430cf8e5b0bda612d1c860c56587859
+            ));
+            orientationControlWindow->draw();
     }
 }
 
