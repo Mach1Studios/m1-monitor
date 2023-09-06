@@ -602,7 +602,9 @@ void MonitorUIBaseComponent::draw()
     auto& monitorLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
 #else
     int labelYOffset;
-    if (!processor->hostType.isProTools() || (processor->hostType.isProTools() && (processor->getMainBusNumInputChannels() > 2 || processor->getMainBusNumOutputChannels() > 2))) {
+    if (!processor->hostType.isProTools() || // not pro tools
+        (processor->hostType.isProTools() && // or is pro tools with multichannel processing
+         processor->getMainBusNumInputChannels() > 2)) {
         labelYOffset = 26;
     } else {
         labelYOffset = 30;

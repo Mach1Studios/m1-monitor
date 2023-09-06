@@ -22,6 +22,7 @@ public:
         float animation = A(inside() * enabled);
         
         m.pushStyle();
+        m.enableFill();
         
         if (showCircleWithText) {
                 m.setColor(100 + 110 * enabled + 30 * animation, 220);
@@ -40,6 +41,7 @@ public:
         m.setColor(100 + 110 * enabled + 30 * animation, 220);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         m.prepare<murka::Label>({shape.size.y + 3, 3, 150, shape.size.y + 5}).text(label).draw();
+        m.disableFill();
         m.popStyle();
 
         // Action
