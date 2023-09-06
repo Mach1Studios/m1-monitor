@@ -174,9 +174,11 @@ void M1MonitorAudioProcessor::changeProgramName (int index, const juce::String& 
 
 //==============================================================================
 void M1MonitorAudioProcessor::createLayout(){
-    int numInChans = monitorSettings.m1Decode.getFormatChannelCount();
+    int numInputsFromMonitorSettings = monitorSettings.m1Decode.getFormatChannelCount();
     
     if (external_spatialmixer_active) {
+        /// EXTERNAL MULTICHANNEL PROCESSING
+
         // INPUT
         if (monitorSettings.m1Decode.getFormatChannelCount() == 1){
             getBus(true, 0)->setCurrentLayout(juce::AudioChannelSet::mono());
@@ -187,8 +189,59 @@ void M1MonitorAudioProcessor::createLayout(){
         // OUTPUT
         getBus(false, 0)->setCurrentLayout(juce::AudioChannelSet::stereo());
     } else {
-        // internal processing
+        /// INTERNAL MULTICHANNEL PROCESSING
         
+        // check if there is a mismatch of the current bus size on PT
+        if (hostType.isProTools()) {
+            // update the monitorSettings if there is a mismatch
+            
+            // I/O Concept
+            // Inputs: for this plugin we allow the m1Decode object to have a higher channel count input mode than what the host allows to support more configurations on channel specific hosts
+            // Outputs: this is always stereo as the purpose of this plugin is the decode a stereo output stream via Mach1Decode API
+
+            /// INPUTS
+            if (getBus(true, 0)->getCurrentLayout().size() != monitorSettings.m1Decode.getFormatChannelCount()) {
+                if (getBus(true, 0)->getCurrentLayout().size() == 4) {
+                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoHorizon_4);
+                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoHorizon_4);
+                } else if (getBus(true, 0)->getCurrentLayout().size() == 8) {
+                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
+                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
+                } else if (getBus(true, 0)->getCurrentLayout().size() == 16) {
+                    if ((monitorSettings.m1Decode.getFormatChannelCount() != 4) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 8) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 12) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 14)) {
+                        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
+                        m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
+                    }
+                } else if (getBus(true, 0)->getCurrentLayout().size() == 36) {
+                    if ((monitorSettings.m1Decode.getFormatChannelCount() != 4) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 8) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 12) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 14) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 32) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 36)) {
+                        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_36);
+                        m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_36);
+                    }
+                } else if (getBus(true, 0)->getCurrentLayout().size() == 64) {
+                    if ((monitorSettings.m1Decode.getFormatChannelCount() != 4) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 8) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 12) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 14) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 32) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 36) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 48) ||
+                        (monitorSettings.m1Decode.getFormatChannelCount() != 60)) {
+                        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_60);
+                        m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_60);
+                    }
+                } else {
+                    // an unsupported format
+                }
+            }
+        }
     }
     layoutCreated = true; // flow control for static i/o
     updateHostDisplay();
@@ -272,7 +325,7 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
              || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
              || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(3)
              || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(5)
-             //|| layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(7)
+             || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(7)
              )
             &&
             (   layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size() )) {
@@ -291,7 +344,7 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
         for (int inputEnum = 0; inputEnum != Mach1DecodeAlgoSpatial_60; inputEnum++ ) {
             configTester.setDecodeAlgoType(static_cast<Mach1DecodeAlgoType>(inputEnum));
             // test each input, if the input has the number of channels as the input testing layout has move on to output testing
-            if (layouts.getMainInputChannelSet().size() == configTester.getFormatChannelCount()) {
+            if (layouts.getMainInputChannelSet().size() >= configTester.getFormatChannelCount()) {
                 // test each output
                 if (layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size()){
                     return true;

@@ -1,6 +1,8 @@
 # m1-monitor
 GUI and plugin concept for Mach1Decode API
 
+#### AAX requires AAX SDK 2.5.1 or higher
+
 ## Compiler Options
 
 **It is recommended to compile production plugins via CMake style, all example commands will be supplied at the bottom of this section**
