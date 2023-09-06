@@ -323,9 +323,9 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
     if (hostType.isProTools()) {
         if ((   layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic()
              || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
-             || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(3)
-             || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(5)
-             || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::ambisonic(7)
+             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::ambisonic(3)
+             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::ambisonic(5)
+             || layouts.getMainInputChannelSet() == juce::AudioChannelSet::ambisonic(7)
              )
             &&
             (   layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size() )) {
@@ -484,6 +484,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         // update the server and panners of final calculated orientation
         // sending un-normalized full range values in degrees
         m1OrientationOSCClient.command_setMonitorYPR(monitorSettings.monitor_mode, parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
+        // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
     
     // Mach1Decode processing loop
