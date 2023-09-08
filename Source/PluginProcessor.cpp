@@ -430,7 +430,10 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // m1_orientation_client update
     if (m1OrientationOSCClient.isConnectedToServer()) {
         // update the external orientation normalised
-        external_orientation = m1OrientationOSCClient.getOrientation().getYPRasSignedNormalled();
+        external_orientation = m1OrientationOSCClient.getOrientation().getYPRasUnsignedNormalled();
+        // rescale the pitch and roll from -180->180 back to the e the -90->90 ranges
+        //external_orientation.pitch *= 2;
+        //external_orientation.roll  *= 2;
         
         // retrieve normalized values and add the current external device orientation
         if (previous_external_orientation.yaw != external_orientation.yaw) {
@@ -449,7 +452,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         if (previous_external_orientation.pitch != external_orientation.pitch) {
-            ((bool)parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = external_orientation.pitch - previous_external_orientation.pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.0f;
+            ((bool)parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = external_orientation.pitch - previous_external_orientation.pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.5f;
             // manual clamp for pitch slider
             if (currentOrientation.pitch < 0.) currentOrientation.pitch = 0.;
             if (currentOrientation.pitch > 1.) currentOrientation.pitch = 1.;
@@ -460,7 +463,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         if (previous_external_orientation.roll != external_orientation.roll) {
-            ((bool)parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = external_orientation.roll - previous_external_orientation.roll + parameters.getParameter(paramRoll)->convertTo0to1(monitorSettings.roll) : currentOrientation.roll = 0.0f;
+            ((bool)parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = external_orientation.roll - previous_external_orientation.roll + parameters.getParameter(paramRoll)->convertTo0to1(monitorSettings.roll) : currentOrientation.roll = 0.5f;
             // manual clamp for roll slider
             if (currentOrientation.roll < 0.) currentOrientation.roll = 0.;
             if (currentOrientation.roll > 1.) currentOrientation.roll = 1.;
@@ -476,8 +479,8 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     } else {
         // update orientation without external orientation
         (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.yaw = parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
-        (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.0f;
-        (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.0f;
+        (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.5f;
+        (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
     }
     
     if (m1OrientationOSCClient.isConnectedToServer()) {
