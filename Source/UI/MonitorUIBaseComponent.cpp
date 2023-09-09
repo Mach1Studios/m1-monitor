@@ -104,7 +104,7 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
     
     if (showOrientationControlMenu) {
         bool showOrientationSettingsPanelInsideWindow = (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
-        orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 240 + 100 * showOrientationSettingsPanelInsideWindow })
+        orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 210 + 130 * showOrientationSettingsPanelInsideWindow })
             .withDeviceList(slots)
             .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
             .withOscSettingsEnabled((m1OrientationOSCClient.getCurrentDevice().getDeviceType() == M1OrientationManagerDeviceTypeOSC))
@@ -129,15 +129,15 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                 if (whichone == 0)
                     // yaw clicked
                     monitorState->yawActive = !monitorState->yawActive;
-                    processor->parameters.getParameter(processor->paramYawEnable)->setValueNotifyingHost(monitorState->yawActive);
+                    m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
                 if (whichone == 1)
                     // pitch clicked
                     monitorState->pitchActive = !monitorState->pitchActive;
-                    processor->parameters.getParameter(processor->paramPitchEnable)->setValueNotifyingHost(monitorState->pitchActive);
+                    m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
                 if (whichone == 2)
                     // roll clicked
                     monitorState->rollActive = !monitorState->rollActive;
-                    processor->parameters.getParameter(processor->paramRollEnable)->setValueNotifyingHost(monitorState->rollActive);
+                    m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
             })
             .withYPRTrackingSettings(
                                      m1OrientationOSCClient.getTrackingYawEnabled(),
@@ -265,59 +265,7 @@ void MonitorUIBaseComponent::draw()
         fsfield.widgetBgColor.a = 0;
         fsfield.drawBounds = false;
         fsfield.draw();
-        
-        if (processor->m1OrientationOSCClient.isConnectedToServer()) {
-            // CHECKBOXES
-            m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 165, 150, 20}).withAlignment(TEXT_LEFT).text("INPUT").draw();
-
-            auto& yawActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 2, bottomSettings_topBound_y + 192 - 5, 100, 20 })
-            .controlling(&monitorState->yawActive)
-            .withLabel("Y");
-            yawActive.enabled = true;
-            yawActive.draw();
-            
-            if (yawActive.changed) {
-                monitorState->yawActive = !monitorState->yawActive;
-                processor->parameters.getParameter(processor->paramYawEnable)->setValueNotifyingHost(monitorState->yawActive);
-            }
-            
-            auto& pitchActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 60, bottomSettings_topBound_y + 192 - 5, 100, 20 })
-            .controlling(&monitorState->pitchActive)
-            .withLabel("P");
-            pitchActive.enabled = true;
-            pitchActive.draw();
-            
-            if (pitchActive.changed) {
-                processor->parameters.getParameter(processor->paramPitchEnable)->setValueNotifyingHost(monitorState->pitchActive);
-            }
-            
-            auto& rollActive = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 118, bottomSettings_topBound_y + 192 - 5, 100, 20 })
-            .controlling(&monitorState->rollActive)
-            .withLabel("R");
-            rollActive.enabled = true;
-            rollActive.draw();
-            
-            if (rollActive.changed) {
-                processor->parameters.getParameter(processor->paramRollEnable)->setValueNotifyingHost(monitorState->rollActive);
-            }
-            
-            recenterButtonActive = true;
-            auto& recenterButton = m.prepare<M1Checkbox>({ rightSide_LeftBound_x + 195, bottomSettings_topBound_y + 192 - 5, 200, 20 })
-            .controlling(&recenterButtonActive)
-            .withLabel("RECENTER")
-            .showCircle(true)
-            .buttonMode(true);
-            recenterButton.enabled = true;
-            recenterButton.draw();
                 
-            if (recenterButton.changed) {
-                processor->m1OrientationOSCClient.command_recenter();
-                if (recenterButtonActive && recenterButton.checked) {
-                    recenterButtonActive = false;
-                }
-            }
-        }
-        
         /// Bottom bar
         #ifdef CUSTOM_CHANNEL_LAYOUT
             // Remove bottom bar for CUSTOM_CHANNEL_LAYOUT macro
