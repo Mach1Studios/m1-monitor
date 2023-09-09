@@ -105,9 +105,6 @@ public:
     static juce::String paramYaw;
     static juce::String paramPitch;
     static juce::String paramRoll;
-    static juce::String paramYawEnable;
-    static juce::String paramPitchEnable;
-    static juce::String paramRollEnable;
     static juce::String paramMonitorMode;
 
     double processorSampleRate = 44100; // only has to be something for the initilizer to work
@@ -123,10 +120,8 @@ public:
     void setStatus(bool success, std::string message);
     M1OrientationOSCClient m1OrientationOSCClient;
     M1OrientationYPR currentOrientation;
-    
     // normalize first value
     M1OrientationYPR external_orientation;
-    
     // normalize first value
     M1OrientationYPR previous_external_orientation;
 

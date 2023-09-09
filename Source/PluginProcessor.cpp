@@ -21,9 +21,6 @@
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
 juce::String M1MonitorAudioProcessor::paramRoll("roll");
-juce::String M1MonitorAudioProcessor::paramYawEnable("enableYaw");
-juce::String M1MonitorAudioProcessor::paramPitchEnable("enablePitch");
-juce::String M1MonitorAudioProcessor::paramRollEnable("enableRoll");
 juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
 
 //==============================================================================
@@ -46,18 +43,12 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                             juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter,
                                                             [](float v, int) { return juce::String (v, 1) + "°"; },
                                                             [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
-                    std::make_unique<juce::AudioParameterBool>(juce::ParameterID(paramYawEnable, 1), TRANS("Enable Yaw"), monitorSettings.yawActive),
-                    std::make_unique<juce::AudioParameterBool>(juce::ParameterID(paramPitchEnable, 1), TRANS("Enable Pitch"), monitorSettings.pitchActive),
-                    std::make_unique<juce::AudioParameterBool>(juce::ParameterID(paramRollEnable, 1), TRANS("Enable Roll"), monitorSettings.rollActive),
                     std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
                })
 {
     parameters.addParameterListener(paramYaw, this);
     parameters.addParameterListener(paramPitch, this);
     parameters.addParameterListener(paramRoll, this);
-    parameters.addParameterListener(paramYawEnable, this);
-    parameters.addParameterListener(paramPitchEnable, this);
-    parameters.addParameterListener(paramRollEnable, this);
     parameters.addParameterListener(paramMonitorMode, this);
 
     // Setup for Mach1Decode API
@@ -292,15 +283,6 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         monitorSettings.pitch = parameters.getParameter(paramPitch)->convertFrom0to1(parameters.getParameter(paramPitch)->getValue());
     } else if (parameterID == paramRoll) {
         monitorSettings.roll = parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue());
-    } else if (parameterID == paramYawEnable) {
-        monitorSettings.yawActive = (bool)parameters.getParameter(paramYawEnable)->convertFrom0to1(parameters.getParameter(paramYawEnable)->getValue());
-        m1OrientationOSCClient.command_setTrackingYawEnabled(monitorSettings.yawActive);
-    } else if (parameterID == paramPitchEnable) {
-        monitorSettings.pitchActive = (bool)parameters.getParameter(paramPitchEnable)->convertFrom0to1(parameters.getParameter(paramPitchEnable)->getValue());
-        m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorSettings.pitchActive);
-    } else if (parameterID == paramRollEnable) {
-        monitorSettings.rollActive = (bool)parameters.getParameter(paramRollEnable)->convertFrom0to1(parameters.getParameter(paramRollEnable)->getValue());
-        m1OrientationOSCClient.command_setTrackingRollEnabled(monitorSettings.rollActive);
     } else if (parameterID == paramMonitorMode) {
         monitorSettings.monitor_mode = (int)parameters.getParameter(paramMonitorMode)->convertFrom0to1(parameters.getParameter(paramMonitorMode)->getValue());
     }
@@ -438,7 +420,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         
         // retrieve normalized values and add the current external device orientation
         if (previous_external_orientation.yaw != external_orientation.yaw) {
-            ((bool)parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.yaw = external_orientation.yaw - previous_external_orientation.yaw + parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw) : currentOrientation.yaw = 0.0f;
+            (monitorSettings.yawActive) ? currentOrientation.yaw = external_orientation.yaw - previous_external_orientation.yaw + parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw) : currentOrientation.yaw = 0.0f;
             // manual version of modulo for the endless yaw radial
             if (currentOrientation.yaw < 0.0f) {
                 currentOrientation.yaw += 1.0f;
@@ -453,7 +435,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         if (previous_external_orientation.pitch != external_orientation.pitch) {
-            ((bool)parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = external_orientation.pitch - previous_external_orientation.pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.5f;
+            (monitorSettings.pitchActive) ? currentOrientation.pitch = external_orientation.pitch - previous_external_orientation.pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.5f;
             // manual clamp for pitch slider
             if (currentOrientation.pitch < 0.) currentOrientation.pitch = 0.;
             if (currentOrientation.pitch > 1.) currentOrientation.pitch = 1.;
@@ -464,7 +446,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         if (previous_external_orientation.roll != external_orientation.roll) {
-            ((bool)parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = external_orientation.roll - previous_external_orientation.roll + parameters.getParameter(paramRoll)->convertTo0to1(monitorSettings.roll) : currentOrientation.roll = 0.5f;
+            (monitorSettings.rollActive) ? currentOrientation.roll = external_orientation.roll - previous_external_orientation.roll + parameters.getParameter(paramRoll)->convertTo0to1(monitorSettings.roll) : currentOrientation.roll = 0.5f;
             // manual clamp for roll slider
             if (currentOrientation.roll < 0.) currentOrientation.roll = 0.;
             if (currentOrientation.roll > 1.) currentOrientation.roll = 1.;
@@ -479,9 +461,9 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         
     } else {
         // update orientation without external orientation
-        (parameters.getParameter(paramYawEnable)->getValue()) ? currentOrientation.yaw = parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
-        (parameters.getParameter(paramPitchEnable)->getValue()) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.5f;
-        (parameters.getParameter(paramRollEnable)->getValue()) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
+        (monitorSettings.yawActive) ? currentOrientation.yaw = parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
+        (monitorSettings.pitchActive) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.5f;
+        (monitorSettings.rollActive) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
     }
     
     if (m1OrientationOSCClient.isConnectedToServer()) {
