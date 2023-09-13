@@ -1,7 +1,5 @@
 #pragma once
 
-#include "MurkaView.h"
-#include "MurkaInputEventsRegister.h"
 #include "MurkaBasicWidgets.h"
 #include "TextField.h"
 #include "../Config.h"
@@ -202,36 +200,25 @@ public:
             }
             changed = true;
         }
+        
+        // hot key resets
+        if (isKeyReleased(murka::MurkaKey::MURKA_KEY_UP)) {
+            *((float*)dataToControl) = 0.0f;
+            changed = true;
+        }
+        if (isKeyReleased(murka::MurkaKey::MURKA_KEY_RIGHT)) {
+            *((float*)dataToControl) = 90.0f;
+            changed = true;
+        }
+        if (isKeyReleased(murka::MurkaKey::MURKA_KEY_DOWN)) {
+            *((float*)dataToControl) = 180.0f;
+            changed = true;
+        }
+        if (isKeyReleased(murka::MurkaKey::MURKA_KEY_LEFT)) {
+            *((float*)dataToControl) = 270.0f;
+            changed = true;
+        }
     }
-    
-    //TODO: add arrow key resets
-//    bool keyPressed (const KeyPress &key) override {
-//        if (key == juce::KeyPress::upKey){
-//            parameter->beginChangeGesture();
-//            updateNormalisedValue(0.0);
-//            parameter->setValueNotifyingHost(normalisedValue);
-//            parameter->endChangeGesture();
-//        }
-//        if (key == juce::KeyPress::rightKey){
-//            parameter->beginChangeGesture();
-//            updateNormalisedValue(0.25);
-//            parameter->setValueNotifyingHost(normalisedValue);
-//            parameter->endChangeGesture();
-//        }
-//        if (key == juce::KeyPress::downKey){
-//            parameter->beginChangeGesture();
-//            updateNormalisedValue(0.5);
-//            parameter->setValueNotifyingHost(normalisedValue);
-//            parameter->endChangeGesture();
-//        }
-//        if (key == juce::KeyPress::leftKey){
-//            parameter->beginChangeGesture();
-//            updateNormalisedValue(0.75);
-//            parameter->setValueNotifyingHost(normalisedValue);
-//            parameter->endChangeGesture();
-//        }
-//        return true;
-//    }
     
     // Text based declares
     std::stringstream converterStringStream;
