@@ -64,13 +64,13 @@ public:
     void timerCallback() override;
     
 private:
-    MurkaPoint cachedMousePositionWhenMouseWasHidden = { 0, 0 };
-    MurkaPoint currentMousePosition = { 0, 0 };
-    
     bool showSettingsMenu = false;
     bool recenterButtonActive = false;
     
 	MurImage m1logo;
+
+    MurkaPoint cachedMousePositionWhenMouseWasHidden = { 0, 0 };
+    MurkaPoint currentMousePosition = { 0, 0 };
 
 	std::function<void()> cursorHide = [&]() {
 		setMouseCursor(juce::MouseCursor::NoCursor);
