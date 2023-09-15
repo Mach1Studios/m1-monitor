@@ -69,10 +69,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     external_orientation.angleType = M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
     external_orientation.yaw_min = 0.0f, external_orientation.pitch_min = 0.0f, external_orientation.roll_min = 0.0f;
     external_orientation.yaw_max = 1.0f, external_orientation.pitch_max = 1.0f, external_orientation.roll_max = 1.0f;
-    previous_external_orientation.yaw = 0.0f, previous_external_orientation.pitch = 0.5f, previous_external_orientation.roll = 0.5f; // set first default value so connection does not apply to monitor
-    previous_external_orientation.angleType = M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
-    previous_external_orientation.yaw_min = 0.0f, previous_external_orientation.pitch_min = 0.0f, previous_external_orientation.roll_min = 0.0f;
-    previous_external_orientation.yaw_max = 1.0f, previous_external_orientation.pitch_max = 1.0f, previous_external_orientation.roll_max = 1.0f;
+    previous_external_orientation = external_orientation; // set the default for the prev storage too
     
     // We will assume the folders are properly created during the installation step
     juce::File settingsFile;
@@ -414,9 +411,6 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (m1OrientationOSCClient.isConnectedToServer()) {
         // update the external orientation normalised
         external_orientation = m1OrientationOSCClient.getOrientation().getYPRasUnsignedNormalled();
-        // rescale the pitch and roll from -180->180 back to the e the -90->90 ranges
-        //external_orientation.pitch *= 2;
-        //external_orientation.roll  *= 2;
         
         // retrieve normalized values and add the current external device orientation
         if (previous_external_orientation.yaw != external_orientation.yaw) {
@@ -472,9 +466,9 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         m1OrientationOSCClient.command_setMonitorYPR(monitorSettings.monitor_mode, parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
         // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
-    
+
     // Mach1Decode processing loop
-    monitorSettings.m1Decode.setRotation({ currentOrientation.yaw, currentOrientation.pitch, currentOrientation.roll });
+    monitorSettings.m1Decode.setRotationDegrees({ currentOrientation.yaw * 360.0f, (currentOrientation.pitch * 180.0f) - 90.0f, (currentOrientation.roll * 180.0f) - 90.0f });
     monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
     monitorSettings.m1Decode.endBuffer();
@@ -485,13 +479,13 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         smoothedChannelCoeffs[channel][1].setTargetValue(spatialMixerCoeffs[channel * 2 + 1]); // Right output coeffs
     }
     
-    juce::AudioBuffer<float> tempBuffer(monitorSettings.m1Decode.getFormatCoeffCount(), buffer.getNumSamples());
+    juce::AudioBuffer<float> tempBuffer(std::max(buffer.getNumChannels()*2, monitorSettings.m1Decode.getFormatCoeffCount()), buffer.getNumSamples());
     tempBuffer.clear();
     
     float* outBufferL = buffer.getWritePointer(0);
     float* outBufferR = buffer.getWritePointer(1);
 
-    if (getMainBusNumInputChannels() == monitorSettings.m1Decode.getFormatChannelCount()){
+    if (getMainBusNumInputChannels() >= monitorSettings.m1Decode.getFormatChannelCount()){
         // TODO: Setup an else case for streaming input or error message
   
         if (monitorSettings.monitor_mode == 2) {
@@ -534,7 +528,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
         
         for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-            for (int input_channel = 0; input_channel < buffer.getNumChannels(); input_channel++) {
+            for (int input_channel = 0; input_channel < monitorSettings.m1Decode.getFormatChannelCount(); input_channel++) {
                 outBufferL[sample] += tempBuffer.getReadPointer(input_channel * 2    )[sample] * smoothedChannelCoeffs[input_channel][0].getNextValue();
                 outBufferR[sample] += tempBuffer.getReadPointer(input_channel * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel][1].getNextValue();
             }
