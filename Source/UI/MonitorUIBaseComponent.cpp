@@ -79,7 +79,7 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
     auto& orientationControlButton = m.prepare<M1OrientationWindowToggleButton>({ m.getSize().width() - 40 - 5, 5, 40, 40 }).onClick([&](M1OrientationWindowToggleButton& b) {
         showOrientationControlMenu = !showOrientationControlMenu;
     })
-        .withInteractiveOrientationGimmick(m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationOSCClient.getOrientation().getYPRinDegrees().yaw)
+    .withInteractiveOrientationGimmick(m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationOSCClient.getOrientation().getYPRasDegrees().yaw)
         .draw();
     
     // TODO: move this to be to the left of the orientation client window button
@@ -148,9 +148,9 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                                      std::pair<int, int>(0, 180)
             )
             .withYPR(
-                     m1OrientationOSCClient.getOrientation().getYPRinDegrees().yaw,
-                     m1OrientationOSCClient.getOrientation().getYPRinDegrees().pitch,
-                     m1OrientationOSCClient.getOrientation().getYPRinDegrees().roll
+                     m1OrientationOSCClient.getOrientation().getYPRasDegrees().yaw,
+                     m1OrientationOSCClient.getOrientation().getYPRasDegrees().pitch,
+                     m1OrientationOSCClient.getOrientation().getYPRasDegrees().roll
             ));
             orientationControlWindow->draw();
     }
