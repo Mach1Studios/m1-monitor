@@ -66,6 +66,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     transport->setProcessor(this);
     
     // normalize initial external orientation values for comparisons
+    external_orientation.yaw = 0.0f, external_orientation.pitch = 0.0f, external_orientation.roll = 0.0f; // set first default value so connection does not apply to monitor
     external_orientation.angleType = M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
     external_orientation.yaw_min = 0.0f, external_orientation.pitch_min = 0.0f, external_orientation.roll_min = 0.0f;
     external_orientation.yaw_max = 1.0f, external_orientation.pitch_max = 1.0f, external_orientation.roll_max = 1.0f;
