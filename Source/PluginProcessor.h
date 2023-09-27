@@ -119,7 +119,7 @@ public:
     // Orientation Manager/Client
     void setStatus(bool success, std::string message);
     M1OrientationOSCClient m1OrientationOSCClient;
-    M1OrientationYPR currentOrientation;
+    M1OrientationYPR currentOrientation; // TODO: use Orientation class instead
     // normalize first value
     M1OrientationYPR external_orientation;
     // normalize first value
