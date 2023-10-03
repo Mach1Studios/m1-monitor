@@ -1,12 +1,11 @@
-#ifndef TRANSPORT_H_INCLUDED
-#define TRANSPORT_H_INCLUDED
+#pragma once
 
 #include <JuceHeader.h>
 
 class Transport : public juce::Timer
 {
 public:
-	Transport();
+	Transport(M1OrientationOSCClient* osc_client);
 
 	// Offset timecode
 	int HH = 0, MM = 0, SS = 0, FS = 0;
@@ -40,5 +39,3 @@ private:
 
     juce::AudioProcessor* processor = nullptr;
 };
-
-#endif  // TRANSPORT_H_INCLUDED

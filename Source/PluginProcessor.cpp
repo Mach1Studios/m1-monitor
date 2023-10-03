@@ -62,7 +62,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
         smoothedChannelCoeffs[input_channel].resize(2);
     }
 
-    transport = new Transport();
+    transport = new Transport(&m1OrientationOSCClient);
     transport->setProcessor(this);
     
     // normalize initial external orientation values for comparisons

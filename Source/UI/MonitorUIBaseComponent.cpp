@@ -123,7 +123,7 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                 m1OrientationOSCClient.command_refreshDevices();
             })
             .onOscSettingsChanged([&](int port, std::string addr_pttrn) {
-                m1OrientationOSCClient.command_updateOscDevice(port, addr_pttrn);
+                m1OrientationOSCClient.command_setOscDevice(port, addr_pttrn);
             })
             .onYPRSwitchesClicked([&](int whichone) {
                 if (whichone == 0)
