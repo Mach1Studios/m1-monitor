@@ -113,9 +113,6 @@ public:
     juce::PluginHostType hostType;
     bool layoutCreated = false;
 
-    // Transport
-    ScopedPointer<Transport> transport;
-
     // Orientation Manager/Client
     void setStatus(bool success, std::string message);
     M1OrientationOSCClient m1OrientationOSCClient;
@@ -125,7 +122,10 @@ public:
     // normalize first value
     M1OrientationYPR previous_external_orientation;
 
-    // TODO: change this
+    // Transport
+    ScopedPointer<Transport> transport; // TODO: use std::unique_ptr
+    
+    // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer
         
     juce::UndoManager mUndoManager;

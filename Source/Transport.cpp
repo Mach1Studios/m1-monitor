@@ -2,10 +2,10 @@
 #include "Transport.h"
 
 //==============================================================================
-Transport::Transport()
+Transport::Transport(M1OrientationOSCClient* osc_client)
 {
-    if (!sender.connect("127.0.0.1", 9001)) {
-		showConnectionErrorMessage("Error: could not connect to UDP port 9001.");
+    if (!sender.connect("127.0.0.1", osc_client->getServerPort())) {
+		showConnectionErrorMessage("Error: could not connect to UDP port "+std::to_string(osc_client->getServerPort())+".");
     }
 
 	HH = 0;
