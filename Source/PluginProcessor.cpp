@@ -89,6 +89,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     settingsFile = settingsFile.getChildFile("settings.json");
     DBG("Opening settings file: " + settingsFile.getFullPathName().quoted());
     
+    // Informs OrientationManager that this client is expected to calculate the final orientation and to count instances for error handling
+    m1OrientationOSCClient.setClientType("Monitor"); // Needs to be set before the init() function
+    
     m1OrientationOSCClient.initFromSettings(settingsFile.getFullPathName().toStdString(), true);
     m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
