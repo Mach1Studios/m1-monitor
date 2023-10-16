@@ -1,5 +1,4 @@
-#ifndef TRANSPORT_H_INCLUDED
-#define TRANSPORT_H_INCLUDED
+#pragma once
 
 #include <JuceHeader.h>
 
@@ -40,5 +39,3 @@ private:
 
     juce::AudioProcessor* processor = nullptr;
 };
-
-#endif  // TRANSPORT_H_INCLUDED
