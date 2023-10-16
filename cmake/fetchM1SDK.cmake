@@ -29,8 +29,8 @@ endif()
 
 # link libraries
 if(WIN32 OR MSVC OR MINGW)
-    add_compile_definitions(M1_STATIC)
     message(STATUS "Adding windows OS flags")
+    add_compile_definitions(M1_STATIC)
 
     find_library(MACH1DECODE_LIBRARY_RELEASE
         NAMES Mach1DecodeCAPI

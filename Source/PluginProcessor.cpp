@@ -89,6 +89,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     settingsFile = settingsFile.getChildFile("settings.json");
     DBG("Opening settings file: " + settingsFile.getFullPathName().quoted());
     
+    // Informs OrientationManager that this client is expected to calculate the final orientation and to count instances for error handling
+    m1OrientationOSCClient.setClientType("monitor"); // Needs to be set before the init() function
     m1OrientationOSCClient.initFromSettings(settingsFile.getFullPathName().toStdString(), true);
     m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
@@ -461,7 +463,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         (monitorSettings.rollActive) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
     }
     
-    if (m1OrientationOSCClient.isConnectedToServer()) {
+    if (m1OrientationOSCClient.isConnectedToServer() && m1OrientationOSCClient.client_active) {
         // update the server and panners of final calculated orientation
         // sending un-normalized full range values in degrees
         m1OrientationOSCClient.command_setMonitorMode(monitorSettings.monitor_mode);
@@ -472,7 +474,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         offset.yaw_min = 0.0f; offset.pitch_max = 0.0f; offset.roll_max = 0.0f;
         offset = currentOrientation - previousOrientation;
         
-        m1OrientationOSCClient.command_setOffsetYPR(m1OrientationOSCClient.client_id,  parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
+        m1OrientationOSCClient.command_setMasterYPR(m1OrientationOSCClient.client_id,  parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
         // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
 

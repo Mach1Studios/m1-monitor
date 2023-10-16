@@ -7,8 +7,6 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-include(FetchContent)
-
 ### IDE Generator pre-config ###
 # Xcode: Disable automatic build scheme generation globally.
 #        Instead, we explicitely specify which targets require schemes.
@@ -181,7 +179,7 @@ set(JucePlugin_Desc ${PLUGIN_NAME})
 # download and link m1-sdk
 include(cmake/fetchM1SDK.cmake)
 target_link_libraries(${PLUGIN_NAME} PRIVATE ${MACH1DECODE_LIBRARY})
-target_sources(${PLUGIN_NAME} PRIVATE ${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp)
+target_sources(${PLUGIN_NAME} PRIVATE ${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp) # cpp file is the same for all targets, disregard the xcode path
 
 ### IDE Generator post-config ###
 # IDEs:  Move the "shared code" source group (main target) out of the "Targets" folder
@@ -196,7 +194,7 @@ get_target_property(juce_library_code "${PLUGIN_NAME}" JUCE_GENERATED_SOURCES_DI
 set(juce_header "${juce_library_code}/JuceHeader.h")
 list(REMOVE_ITEM project_sources "${juce_header}")
 # remove m1-sdk cpp files too
-list(REMOVE_ITEM project_sources "${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp")
+list(REMOVE_ITEM project_sources "${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp") # cpp file is the same for all targets, disregard the xcode path
 
 #   Place JuceHeader.h and the associated CMake Rule file into a "JUCE Library Code" folder.
 source_group("JUCE Library Code" FILES "${juce_header}")
