@@ -106,7 +106,8 @@ public:
     static juce::String paramPitch;
     static juce::String paramRoll;
     static juce::String paramMonitorMode;
-
+    static juce::String paramOutputMode;
+    
     double processorSampleRate = 44100; // only has to be something for the initilizer to work
     void m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode);
     MixerSettings monitorSettings;
