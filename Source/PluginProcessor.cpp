@@ -22,6 +22,7 @@ juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
 juce::String M1MonitorAudioProcessor::paramRoll("roll");
 juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
+juce::String M1MonitorAudioProcessor::paramOutputMode("outputMode");
 
 //==============================================================================
 M1MonitorAudioProcessor::M1MonitorAudioProcessor()
@@ -44,12 +45,14 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                             [](float v, int) { return juce::String (v, 1) + "°"; },
                                                             [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                     std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
+                    std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, Mach1DecodeAlgoSpatial_60, Mach1DecodeAlgoSpatial_8),
                })
 {
     parameters.addParameterListener(paramYaw, this);
     parameters.addParameterListener(paramPitch, this);
     parameters.addParameterListener(paramRoll, this);
     parameters.addParameterListener(paramMonitorMode, this);
+    parameters.addParameterListener(paramOutputMode, this);
 
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
