@@ -5,7 +5,7 @@
 class Transport : public juce::Timer
 {
 public:
-	Transport(M1OrientationOSCClient* osc_client);
+	Transport(M1OrientationClient* osc_client);
 
 	// Offset timecode
 	int HH = 0, MM = 0, SS = 0, FS = 0;

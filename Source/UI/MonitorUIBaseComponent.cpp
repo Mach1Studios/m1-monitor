@@ -46,10 +46,10 @@ void MonitorUIBaseComponent::timerCallback()
     }
 }
 
-void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M1OrientationOSCClient &m1OrientationOSCClient, M1OrientationClientWindow* orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore) {
+void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M1OrientationClient &m1OrientationClient, M1OrientationClientWindow* orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore) {
     std::vector<M1OrientationClientWindowDeviceSlot> slots;
     
-    std::vector<M1OrientationDeviceInfo> devices = m1OrientationOSCClient.getDevices();
+    std::vector<M1OrientationDeviceInfo> devices = m1OrientationClient.getDevices();
     for (int i = 0; i < devices.size(); i++) {
         std::string icon = "";
         if (devices[i].getDeviceType() == M1OrientationDeviceType::M1OrientationManagerDeviceTypeSerial && devices[i].getDeviceName().find("Bluetooth-Incoming-Port") != std::string::npos) {
@@ -69,9 +69,9 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
         }
         
         std::string name = devices[i].getDeviceName();
-        slots.push_back({ icon, name, name == m1OrientationOSCClient.getCurrentDevice().getDeviceName(), i, [&](int idx)
+        slots.push_back({ icon, name, name == m1OrientationClient.getCurrentDevice().getDeviceName(), i, [&](int idx)
             {
-                m1OrientationOSCClient.command_startTrackingUsingDevice(devices[idx]);
+                m1OrientationClient.command_startTrackingUsingDevice(devices[idx]);
             }
         });
     }
@@ -79,20 +79,20 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
     auto& orientationControlButton = m.prepare<M1OrientationWindowToggleButton>({ m.getSize().width() - 40 - 5, 5, 40, 40 }).onClick([&](M1OrientationWindowToggleButton& b) {
         showOrientationControlMenu = !showOrientationControlMenu;
     })
-    .withInteractiveOrientationGimmick(m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationOSCClient.getOrientation().getYPRasDegrees().yaw)
+    .withInteractiveOrientationGimmick(m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationClient.getOrientation().getYPRasDegrees().yaw)
         .draw();
     
     // TODO: move this to be to the left of the orientation client window button
-    if (std::holds_alternative<bool>(m1OrientationOSCClient.getCurrentDevice().batteryPercentage)) {
+    if (std::holds_alternative<bool>(m1OrientationClient.getCurrentDevice().batteryPercentage)) {
         // it's false, which means the battery percentage is unknown
     } else {
         // it has a battery percentage value
-        int battery_value = std::get<int>(m1OrientationOSCClient.getCurrentDevice().batteryPercentage);
+        int battery_value = std::get<int>(m1OrientationClient.getCurrentDevice().batteryPercentage);
         m.getCurrentFont()->drawString("Battery: " + std::to_string(battery_value), m.getWindowWidth() - 100, m.getWindowHeight() - 100);
     }
     
-    if (orientationControlButton.hovered && (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone)) {
-        std::string deviceReportString = "CONNECTED DEVICE: " + m1OrientationOSCClient.getCurrentDevice().getDeviceName();
+    if (orientationControlButton.hovered && (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone)) {
+        std::string deviceReportString = "CONNECTED DEVICE: " + m1OrientationClient.getCurrentDevice().getDeviceName();
         auto font = m.getCurrentFont();
         auto bbox = font->getStringBoundingBox(deviceReportString, 0, 0);
         //m.setColor(40, 40, 40, 200);
@@ -103,11 +103,11 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
     }
     
     if (showOrientationControlMenu) {
-        bool showOrientationSettingsPanelInsideWindow = (m1OrientationOSCClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
+        bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
         orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 210 + 130 * showOrientationSettingsPanelInsideWindow })
             .withDeviceList(slots)
             .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
-            .withOscSettingsEnabled((m1OrientationOSCClient.getCurrentDevice().getDeviceType() == M1OrientationManagerDeviceTypeOSC))
+            .withOscSettingsEnabled((m1OrientationClient.getCurrentDevice().getDeviceType() == M1OrientationManagerDeviceTypeOSC))
             .onClickOutside([&]() {
                 if (!orientationControlButton.hovered) { // Only switch showing the orientation control if we didn't click on the button
                     showOrientationControlMenu = !showOrientationControlMenu;
@@ -117,40 +117,40 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
                 }
             })
             .onDisconnectClicked([&]() {
-                m1OrientationOSCClient.command_disconnect();
+                m1OrientationClient.command_disconnect();
             })
             .onRefreshClicked([&]() {
-                m1OrientationOSCClient.command_refreshDevices();
+                m1OrientationClient.command_refreshDevices();
             })
             .onOscSettingsChanged([&](int port, std::string addr_pttrn) {
-                m1OrientationOSCClient.command_setOscDevice(port, addr_pttrn);
+                m1OrientationClient.command_setOscDevice(port, addr_pttrn);
             })
             .onYPRSwitchesClicked([&](int whichone) {
                 if (whichone == 0)
                     // yaw clicked
                     monitorState->yawActive = !monitorState->yawActive;
-                    m1OrientationOSCClient.command_setTrackingYawEnabled(monitorState->yawActive);
+                    m1OrientationClient.command_setTrackingYawEnabled(monitorState->yawActive);
                 if (whichone == 1)
                     // pitch clicked
                     monitorState->pitchActive = !monitorState->pitchActive;
-                    m1OrientationOSCClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
+                    m1OrientationClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
                 if (whichone == 2)
                     // roll clicked
                     monitorState->rollActive = !monitorState->rollActive;
-                    m1OrientationOSCClient.command_setTrackingRollEnabled(monitorState->rollActive);
+                    m1OrientationClient.command_setTrackingRollEnabled(monitorState->rollActive);
             })
             .withYPRTrackingSettings(
-                                     m1OrientationOSCClient.getTrackingYawEnabled(),
-                                     m1OrientationOSCClient.getTrackingPitchEnabled(),
-                                     m1OrientationOSCClient.getTrackingRollEnabled(),
+                                     m1OrientationClient.getTrackingYawEnabled(),
+                                     m1OrientationClient.getTrackingPitchEnabled(),
+                                     m1OrientationClient.getTrackingRollEnabled(),
                                      std::pair<int, int>(0, 180),
                                      std::pair<int, int>(0, 180),
                                      std::pair<int, int>(0, 180)
             )
             .withYPR(
-                     m1OrientationOSCClient.getOrientation().getYPRasDegrees().yaw,
-                     m1OrientationOSCClient.getOrientation().getYPRasDegrees().pitch,
-                     m1OrientationOSCClient.getOrientation().getYPRasDegrees().roll
+                     m1OrientationClient.getOrientation().getYPRasDegrees().yaw,
+                     m1OrientationClient.getOrientation().getYPRasDegrees().pitch,
+                     m1OrientationClient.getOrientation().getYPRasDegrees().roll
             ));
             orientationControlWindow->draw();
     }
@@ -172,7 +172,7 @@ void MonitorUIBaseComponent::draw()
     m.setColor(BACKGROUND_GREY);
     m.clear();
     
-    if (processor->m1OrientationOSCClient.client_active) {
+    if (processor->m1OrientationClient.client_active) {
         // Monitor plugin is marked as active, this is used to disable monitor plugin instances when more than 1 is discovered via the OSC messaging
         
         if (showSettingsMenu) {
@@ -548,7 +548,7 @@ void MonitorUIBaseComponent::draw()
         }
         
         // orientation button
-        update_orientation_client_window(m, processor->m1OrientationOSCClient, orientationControlWindow, showOrientationControlMenu, showedOrientationControlBefore);
+        update_orientation_client_window(m, processor->m1OrientationClient, orientationControlWindow, showOrientationControlMenu, showedOrientationControlBefore);
         
     } else {
         // The monitor has been marked to be disabled
