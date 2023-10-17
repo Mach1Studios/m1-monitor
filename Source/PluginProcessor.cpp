@@ -65,7 +65,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
         smoothedChannelCoeffs[input_channel].resize(2);
     }
 
-    transport = new Transport(&m1OrientationOSCClient);
+    transport = new Transport(&m1OrientationClient);
     transport->setProcessor(this);
     
     // normalize initial external orientation values for comparisons
@@ -93,16 +93,16 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     DBG("Opening settings file: " + settingsFile.getFullPathName().quoted());
     
     // Informs OrientationManager that this client is expected to calculate the final orientation and to count instances for error handling
-    m1OrientationOSCClient.setClientType("monitor"); // Needs to be set before the init() function
-    m1OrientationOSCClient.initFromSettings(settingsFile.getFullPathName().toStdString(), true);
-    m1OrientationOSCClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
+    m1OrientationClient.setClientType("monitor"); // Needs to be set before the init() function
+    m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString(), true);
+    m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
 {
     transport = nullptr;
-    m1OrientationOSCClient.command_disconnect();
-    m1OrientationOSCClient.close();
+    m1OrientationClient.command_disconnect();
+    m1OrientationClient.close();
 }
 
 //==============================================================================
@@ -414,9 +414,9 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     transport->update();
     
     // m1_orientation_client update
-    if (m1OrientationOSCClient.isConnectedToServer()) {
+    if (m1OrientationClient.isConnectedToServer()) {
         // update the external orientation normalised
-        external_orientation = m1OrientationOSCClient.getOrientation().getYPRasUnsignedNormalled();
+        external_orientation = m1OrientationClient.getOrientation().getYPRasUnsignedNormalled();
         
         // retrieve normalized values and add the current external device orientation
         if (previous_external_orientation.yaw != external_orientation.yaw) {
@@ -466,10 +466,10 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         (monitorSettings.rollActive) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
     }
     
-    if (m1OrientationOSCClient.isConnectedToServer() && m1OrientationOSCClient.client_active) {
+    if (m1OrientationClient.isConnectedToServer() && m1OrientationClient.client_active) {
         // update the server and panners of final calculated orientation
         // sending un-normalized full range values in degrees
-        m1OrientationOSCClient.command_setMonitoringMode(monitorSettings.monitor_mode);
+        m1OrientationClient.command_setMonitoringMode(monitorSettings.monitor_mode);
         
         // calculate normalized signed offset and send to server
         M1OrientationYPR offset;
@@ -477,7 +477,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         offset.yaw_min = 0.0f; offset.pitch_max = 0.0f; offset.roll_max = 0.0f;
         offset = currentOrientation - previousOrientation;
         
-        m1OrientationOSCClient.command_setMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
+        m1OrientationClient.command_setMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
         // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
 
