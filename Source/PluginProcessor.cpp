@@ -466,7 +466,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (m1OrientationOSCClient.isConnectedToServer() && m1OrientationOSCClient.client_active) {
         // update the server and panners of final calculated orientation
         // sending un-normalized full range values in degrees
-        m1OrientationOSCClient.command_setMonitorMode(monitorSettings.monitor_mode);
+        m1OrientationOSCClient.command_setMonitoringMode(monitorSettings.monitor_mode);
         
         // calculate normalized signed offset and send to server
         M1OrientationYPR offset;
@@ -474,7 +474,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         offset.yaw_min = 0.0f; offset.pitch_max = 0.0f; offset.roll_max = 0.0f;
         offset = currentOrientation - previousOrientation;
         
-        m1OrientationOSCClient.command_setMasterYPR(m1OrientationOSCClient.client_id,  parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
+        m1OrientationOSCClient.command_setMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
         // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
 
