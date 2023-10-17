@@ -557,7 +557,7 @@ void MonitorUIBaseComponent::draw()
         m.setColor(200, 255);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
 
-        auto& disabledLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 100, m.getSize().height()/2, 100, 20));
+        auto& disabledLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 100, m.getSize().height()/2, 200, 20));
         disabledLabel.label = "PLUGIN DISABLED";
         disabledLabel.alignment = TEXT_CENTER;
         disabledLabel.enabled = false;
