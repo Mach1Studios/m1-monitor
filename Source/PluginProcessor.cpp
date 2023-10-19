@@ -690,7 +690,7 @@ void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInB
     // whose contents will have been created by the getStateInformation() call.
     juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
     if (tree.isValid()) {
-        //parameters.state = tree;
+        parameters.state = tree;
     }
 }
 
