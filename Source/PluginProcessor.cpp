@@ -568,7 +568,7 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
     auto numInputChannels  = getMainBusNumInputChannels();
     auto numOutputChannels = getMainBusNumOutputChannels();
 
-    juce::AudioBuffer<float> tempBuffer(monitorSettings.m1Decode.getFormatCoeffCount(), buffer.getNumSamples());
+    juce::AudioBuffer<float> tempBuffer(numInputChannels*2 + 2, buffer.getNumSamples());
     tempBuffer.clear();
     
     float* outBufferL = buffer.getWritePointer(0);
