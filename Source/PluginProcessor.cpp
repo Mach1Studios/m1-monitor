@@ -11,11 +11,7 @@
 
 /*
  Architecture:
-    - all changes to I/O should be made to pannerSettings first
-    - use parameterChanged() with the pannerSettings values
-    - parameterChanged() updates the i/o layout
-    - parameterChanged() checks if matched with pannerSettings and otherwise updates this too
-    parameters expect normalized 0->1 where all the rest of the i/o expects int
+
  */
 
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
