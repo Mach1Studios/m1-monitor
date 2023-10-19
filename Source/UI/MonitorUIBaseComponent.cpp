@@ -175,6 +175,170 @@ void MonitorUIBaseComponent::draw()
     if (processor->m1OrientationClient.client_active) {
         // Monitor plugin is marked as active, this is used to disable monitor plugin instances when more than 1 is discovered via the OSC messaging
         
+        if (processor->external_spatialmixer_active) {
+            // External Mixer detected!
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE+2);
+            
+            auto& monitorStateLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2, m.getSize().height()/2, 200, 80));
+            monitorStateLabel.label = "M1-MONITOR DEACTIVATED";
+            monitorStateLabel.alignment = TEXT_CENTER;
+            monitorStateLabel.enabled = false;
+            monitorStateLabel.highlighted = false;
+            monitorStateLabel.draw();
+            
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
+            
+            // TODO: Add more state messages if needed
+            auto& monitorStateDescLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2, m.getSize().height()/2 - 80, 200, 80));
+            monitorStateDescLabel.label = "EXTERNAL MIXER DETECTED";
+            monitorStateDescLabel.alignment = TEXT_CENTER;
+            monitorStateDescLabel.enabled = false;
+            monitorStateDescLabel.highlighted = false;
+            monitorStateDescLabel.draw();
+            
+        } else {
+            // External Mixer not detected!
+            
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+            
+            /// YPR SLIDERS
+            auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
+            yawRadial.cursorHide = cursorHide;
+            yawRadial.cursorShow = cursorShow;
+            yawRadial.rangeFrom = 0.;
+            yawRadial.rangeTo = 360.;
+            yawRadial.defaultValue = 0.;
+            yawRadial.postfix = "º";
+            yawRadial.dataToControl = &monitorState->yaw;
+            yawRadial.enabled = true;
+            yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
+            yawRadial.draw();
+            
+            if (yawRadial.changed) {
+                double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw);
+                processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
+            }
+            
+            auto& pitchSlider = m.prepare<M1Slider>({ 465, 45, 160, 140 }).withLabel("PITCH")
+                .hasMovingLabel(true)
+                .withFontSize(DEFAULT_FONT_SIZE-2)
+                .drawHorizontal(false);
+            pitchSlider.cursorHide = cursorHide;
+            pitchSlider.cursorShow = cursorShow;
+            pitchSlider.rangeFrom = -90.;
+            pitchSlider.rangeTo = 90.;
+            pitchSlider.defaultValue = 0.0;
+            pitchSlider.postfix = "º";
+            pitchSlider.dataToControl = &monitorState->pitch;
+            if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
+                // Disabling pitch slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
+                pitchSlider.enabled = false;
+            } else {
+                pitchSlider.enabled = true;
+            }
+            pitchSlider.draw();
+            
+            if (pitchSlider.changed) {
+                double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch));
+                processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
+            }
+            
+            auto& rollSlider = m.prepare<M1Slider>({ 465, 180, 160, 160 }).withLabel("ROLL")
+                .hasMovingLabel(true)
+                .withFontSize(DEFAULT_FONT_SIZE-2)
+                .drawHorizontal(true);
+            rollSlider.cursorHide = cursorHide;
+            rollSlider.cursorShow = cursorShow;
+            rollSlider.rangeFrom = -90.;
+            rollSlider.rangeTo = 90.;
+            rollSlider.defaultValue = 0.0;
+            rollSlider.postfix = "º";
+            rollSlider.dataToControl = &monitorState->roll;
+            if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
+                // Disabling roll slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
+                rollSlider.enabled = false;
+            } else {
+                rollSlider.enabled = true;
+            }
+            rollSlider.draw();
+            
+            if (rollSlider.changed) {
+                double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll));
+                processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
+            }
+        }
+        
+        std::function<void()> deleteTheSettingsButton = [&]() {
+            // Temporary solution to delete the TextField:
+            // Searching for an id to delete the text field widget.
+            // To be redone after the UI library refactoring.
+            
+            imIdentifier idToDelete;
+            for (auto childTuple: m.imChildren) {
+                auto childIdTuple = childTuple.first;
+                if (std::get<1>(childIdTuple) == typeid(M1DropdownButton).name()) {
+                    idToDelete = childIdTuple;
+                }
+            }
+            m.imChildren.erase(idToDelete);
+        };
+        
+        /// SETTINGS BUTTON
+        m.setColor(ENABLED_PARAM);
+        float settings_button_height = 370;
+        if (showSettingsMenu) {
+            auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
+                120, 30 })
+            .withLabel("SETTINGS")
+            .withFontSize(DEFAULT_FONT_SIZE)
+            .withOutline(false);
+            showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
+            showSettingsWhileOpenedButton.draw();
+            
+            if (showSettingsWhileOpenedButton.pressed) {
+                showSettingsMenu = false;
+                deleteTheSettingsButton();
+            }
+        } else {
+            auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
+                120, 30 })
+            .withLabel("SETTINGS")
+            .withFontSize(DEFAULT_FONT_SIZE)
+            .withOutline(false);
+            showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
+            showSettingsWhileClosedButton.draw();
+            
+            if (showSettingsWhileClosedButton.pressed) {
+                showSettingsMenu = true;
+                deleteTheSettingsButton();
+            }
+        }
+        
+        // draw Settings button arrow
+        if (showSettingsMenu) {
+            // draw settings arrow indicator pointing up
+            m.enableFill();
+            m.setColor(LABEL_TEXT_COLOR);
+            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8};
+            std::vector<MurkaPoint3D> triangle;
+            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
+            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
+            triangle.push_back({triangleCenter.x , triangleCenter.y - 5, 0});
+            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
+            m.drawPath(triangle);
+        } else {
+            // draw settings arrow indicator pointing down
+            m.enableFill();
+            m.setColor(LABEL_TEXT_COLOR);
+            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8 - 5};
+            std::vector<MurkaPoint3D> triangle;
+            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
+            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
+            triangle.push_back({triangleCenter.x , triangleCenter.y + 5, 0});
+            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
+            m.drawPath(triangle);
+        }
+        
         if (showSettingsMenu) {
             // Settings rendering
             float leftSide_LeftBound_x = 18;
@@ -381,170 +545,6 @@ void MonitorUIBaseComponent::draw()
 #endif // end of bottom bar macro check
         } else {
             setShouldResizeTo(MurkaPoint(504, 267));
-        }
-        
-        if (processor->external_spatialmixer_active) {
-            // External Mixer detected!
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE+2);
-            
-            auto& monitorStateLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2, m.getSize().height()/2, 200, 80));
-            monitorStateLabel.label = "M1-MONITOR DEACTIVATED";
-            monitorStateLabel.alignment = TEXT_CENTER;
-            monitorStateLabel.enabled = false;
-            monitorStateLabel.highlighted = false;
-            monitorStateLabel.draw();
-            
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
-            
-            // TODO: Add more state messages if needed
-            auto& monitorStateDescLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2, m.getSize().height()/2 - 80, 200, 80));
-            monitorStateDescLabel.label = "EXTERNAL MIXER DETECTED";
-            monitorStateDescLabel.alignment = TEXT_CENTER;
-            monitorStateDescLabel.enabled = false;
-            monitorStateDescLabel.highlighted = false;
-            monitorStateDescLabel.draw();
-            
-        } else {
-            // External Mixer not detected!
-            
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
-            
-            /// YPR SLIDERS
-            auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
-            yawRadial.cursorHide = cursorHide;
-            yawRadial.cursorShow = cursorShow;
-            yawRadial.rangeFrom = 0.;
-            yawRadial.rangeTo = 360.;
-            yawRadial.defaultValue = 0.;
-            yawRadial.postfix = "º";
-            yawRadial.dataToControl = &monitorState->yaw;
-            yawRadial.enabled = true;
-            yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
-            yawRadial.draw();
-            
-            if (yawRadial.changed) {
-                double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw);
-                processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
-            }
-            
-            auto& pitchSlider = m.prepare<M1Slider>({ 465, 45, 160, 140 }).withLabel("PITCH")
-                .hasMovingLabel(true)
-                .withFontSize(DEFAULT_FONT_SIZE-2)
-                .drawHorizontal(false);
-            pitchSlider.cursorHide = cursorHide;
-            pitchSlider.cursorShow = cursorShow;
-            pitchSlider.rangeFrom = -90.;
-            pitchSlider.rangeTo = 90.;
-            pitchSlider.defaultValue = 0.0;
-            pitchSlider.postfix = "º";
-            pitchSlider.dataToControl = &monitorState->pitch;
-            if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
-                // Disabling pitch slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
-                pitchSlider.enabled = false;
-            } else {
-                pitchSlider.enabled = true;
-            }
-            pitchSlider.draw();
-            
-            if (pitchSlider.changed) {
-                double normalisedValue = ( processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch));
-                processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
-            }
-            
-            auto& rollSlider = m.prepare<M1Slider>({ 465, 180, 160, 160 }).withLabel("ROLL")
-                .hasMovingLabel(true)
-                .withFontSize(DEFAULT_FONT_SIZE-2)
-                .drawHorizontal(true);
-            rollSlider.cursorHide = cursorHide;
-            rollSlider.cursorShow = cursorShow;
-            rollSlider.rangeFrom = -90.;
-            rollSlider.rangeTo = 90.;
-            rollSlider.defaultValue = 0.0;
-            rollSlider.postfix = "º";
-            rollSlider.dataToControl = &monitorState->roll;
-            if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
-                // Disabling roll slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
-                rollSlider.enabled = false;
-            } else {
-                rollSlider.enabled = true;
-            }
-            rollSlider.draw();
-            
-            if (rollSlider.changed) {
-                double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll));
-                processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
-            }
-        }
-        
-        std::function<void()> deleteTheSettingsButton = [&]() {
-            // Temporary solution to delete the TextField:
-            // Searching for an id to delete the text field widget.
-            // To be redone after the UI library refactoring.
-            
-            imIdentifier idToDelete;
-            for (auto childTuple: m.imChildren) {
-                auto childIdTuple = childTuple.first;
-                if (std::get<1>(childIdTuple) == typeid(M1DropdownButton).name()) {
-                    idToDelete = childIdTuple;
-                }
-            }
-            m.imChildren.erase(idToDelete);
-        };
-        
-        /// SETTINGS BUTTON
-        m.setColor(ENABLED_PARAM);
-        float settings_button_height = 370;
-        if (showSettingsMenu) {
-            auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
-                120, 30 })
-            .withLabel("SETTINGS")
-            .withFontSize(DEFAULT_FONT_SIZE)
-            .withOutline(false);
-            showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
-            showSettingsWhileOpenedButton.draw();
-            
-            if (showSettingsWhileOpenedButton.pressed) {
-                showSettingsMenu = false;
-                deleteTheSettingsButton();
-            }
-        } else {
-            auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
-                120, 30 })
-            .withLabel("SETTINGS")
-            .withFontSize(DEFAULT_FONT_SIZE)
-            .withOutline(false);
-            showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
-            showSettingsWhileClosedButton.draw();
-            
-            if (showSettingsWhileClosedButton.pressed) {
-                showSettingsMenu = true;
-                deleteTheSettingsButton();
-            }
-        }
-        
-        // draw Settings button arrow
-        if (showSettingsMenu) {
-            // draw settings arrow indicator pointing up
-            m.enableFill();
-            m.setColor(LABEL_TEXT_COLOR);
-            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8};
-            std::vector<MurkaPoint3D> triangle;
-            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
-            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
-            triangle.push_back({triangleCenter.x , triangleCenter.y - 5, 0});
-            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
-            m.drawPath(triangle);
-        } else {
-            // draw settings arrow indicator pointing down
-            m.enableFill();
-            m.setColor(LABEL_TEXT_COLOR);
-            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8 - 5};
-            std::vector<MurkaPoint3D> triangle;
-            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
-            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
-            triangle.push_back({triangleCenter.x , triangleCenter.y + 5, 0});
-            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
-            m.drawPath(triangle);
         }
         
         // orientation button
