@@ -489,7 +489,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         smoothedChannelCoeffs[channel][1].setTargetValue(spatialMixerCoeffs[channel * 2 + 1]); // Right output coeffs
     }
     
-    juce::AudioBuffer<float> tempBuffer(std::max(buffer.getNumChannels()*2, monitorSettings.m1Decode.getFormatCoeffCount()), buffer.getNumSamples());
+    juce::AudioBuffer<float> tempBuffer((std::max)(buffer.getNumChannels()*2, monitorSettings.m1Decode.getFormatCoeffCount()), buffer.getNumSamples());
     tempBuffer.clear();
     
     float* outBufferL = buffer.getWritePointer(0);
