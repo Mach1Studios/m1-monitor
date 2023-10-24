@@ -5,7 +5,7 @@
 class Transport : public juce::Timer
 {
 public:
-	Transport(M1OrientationClient* osc_client);
+	Transport(M1OrientationClient* orientationClient);
 
 	// Offset timecode
 	int HH = 0, MM = 0, SS = 0, FS = 0;
@@ -20,9 +20,10 @@ public:
     }
 
 private:
+	M1OrientationClient* orientationClient = nullptr;
 
 	void updateCurrentTimeInfoFromHost();
-	void sendDataViaOsc();
+	void sendData();
 	void showConnectionErrorMessage(String msg);
 
 	double lastSentPositionValue;
@@ -34,8 +35,8 @@ private:
 
     juce::String reqResult;
 
-    juce::OSCSender sender;
-	int packetsSent = 0;
+ 	int packetsSent = 0;
+	int transportOffset = 0;
 
     juce::AudioProcessor* processor = nullptr;
 };
