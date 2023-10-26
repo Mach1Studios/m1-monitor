@@ -25,8 +25,8 @@
           file="Modules/m1_orientation_client/Resources/tech_support_icon.png"/>
     <FILE id="iPkZw2" name="usb_icon.png" compile="0" resource="1" file="Modules/m1_orientation_client/Resources/usb_icon.png"/>
     <FILE id="DE5EAX" name="wi-fi_icon.png" compile="0" resource="1" file="Modules/m1_orientation_client/Resources/wi-fi_icon.png"/>
-    <FILE id="LZ4a2M" name="AileronSemiBold.ttf" compile="0" resource="1"
-          file="Resources/AileronSemiBold.ttf"/>
+    <FILE id="LonBzt" name="InterRegular.ttf" compile="0" resource="1"
+          file="Resources/InterRegular.ttf"/>
     <GROUP id="{1A61DF24-6C83-F2B0-E219-82AEC738A757}" name="Source">
       <GROUP id="{65E6E8D1-0D3C-911A-6E1A-BA0D2285B921}" name="UI">
         <FILE id="SauLyZ" name="M1Radial.h" compile="0" resource="0" file="Source/UI/M1Radial.h"/>
