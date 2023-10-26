@@ -181,6 +181,11 @@ include(cmake/fetchM1SDK.cmake)
 target_link_libraries(${PLUGIN_NAME} PRIVATE ${MACH1DECODE_LIBRARY})
 target_sources(${PLUGIN_NAME} PRIVATE ${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp) # cpp file is the same for all targets, disregard the xcode path
 
+if(WIN32 OR MSVC OR MINGW)
+    message(STATUS "Adding windows OS flag for httplib")
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+endif()
+
 ### IDE Generator post-config ###
 # IDEs:  Move the "shared code" source group (main target) out of the "Targets" folder
 #        to the top level.
