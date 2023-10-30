@@ -90,7 +90,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     
     // Informs OrientationManager that this client is expected to calculate the final orientation and to count instances for error handling
     m1OrientationClient.setClientType("monitor"); // Needs to be set before the init() function
-    m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString(), true);
+    m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString());
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 }
 
