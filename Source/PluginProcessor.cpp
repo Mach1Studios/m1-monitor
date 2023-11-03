@@ -92,6 +92,22 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1OrientationClient.setClientType("monitor"); // Needs to be set before the init() function
     m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString());
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
+    
+    monitorOSC.AddListener([&](juce::OSCMessage msg) {
+        if (msg.getAddressPattern() == "/m1-activate-client") {
+            DBG("[OSC] Recieved msg | Activate: "+std::to_string(msg[0].getInt32()));
+            // Capturing monitor mode
+            int active = msg[0].getInt32();
+            if (active == 1) {
+                monitorOSC.setAsActiveMonitor(true);
+            } else if (active == 0) {
+                monitorOSC.setAsActiveMonitor(false);
+            }
+        }
+    });
+
+    // monitorOSC update timer loop
+    startTimer(200);
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
@@ -462,10 +478,10 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         (monitorSettings.rollActive) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
     }
     
-    if (m1OrientationClient.isConnectedToServer() && m1OrientationClient.client_active) {
+    if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor()) {
         // update the server and panners of final calculated orientation
         // sending un-normalized full range values in degrees
-        m1OrientationClient.command_setMonitoringMode(monitorSettings.monitor_mode);
+        monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
         
         // calculate normalized signed offset and send to server
         M1OrientationYPR offset;
@@ -473,7 +489,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         offset.yaw_min = 0.0f; offset.pitch_max = 0.0f; offset.roll_max = 0.0f;
         offset = currentOrientation - previousOrientation;
         
-        m1OrientationClient.command_setMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
+        monitorOSC.sendMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
         // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
 
@@ -633,6 +649,12 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
         }
     // TODO: implement stereo downmix for 32,36,48,60
     }
+}
+
+//==============================================================================
+void M1MonitorAudioProcessor::timerCallback() {
+    // Added if we need to move the OSC stuff from the processorblock
+    monitorOSC.update(); // test for connection
 }
 
 //==============================================================================

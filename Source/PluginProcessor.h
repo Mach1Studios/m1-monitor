@@ -13,11 +13,12 @@
 #include "Config.h"
 #include "TypesForDataExchange.h"
 #include "Transport.h"
+#include "MonitorOSC.h"
 
 //==============================================================================
 /**
 */
-class M1MonitorAudioProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener
+class M1MonitorAudioProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener, public juce::Timer
 {
 public:
     //==============================================================================
@@ -124,7 +125,9 @@ public:
     // normalize first value
     M1OrientationYPR previous_external_orientation;
 
-    // Transport
+    // Communication to Player and the rest of the M1SpatialSystem
+    void timerCallback() override;
+    MonitorOSC monitorOSC;
     ScopedPointer<Transport> transport; // TODO: use std::unique_ptr
     
     // TODO: change this when implmenting external mixer
