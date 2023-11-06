@@ -173,7 +173,7 @@ void MonitorUIBaseComponent::draw()
     m.setColor(BACKGROUND_GREY);
     m.clear();
     
-    if (processor->m1OrientationClient.client_active) {
+    if (processor->monitorOSC.IsActiveMonitor()) {
         // Monitor plugin is marked as active, this is used to disable monitor plugin instances when more than 1 is discovered via the OSC messaging
         
         if (processor->external_spatialmixer_active) {
@@ -377,6 +377,8 @@ void MonitorUIBaseComponent::draw()
                 modeDropdown.draw();
                 if (modeDropdown.changed || !modeDropdown.opened) {
                     monitorState->monitor_mode = modeDropdown.selectedOption;
+                    double normalisedValue = processor->parameters.getParameter(processor->paramMonitorMode)->convertTo0to1(monitorState->monitor_mode);
+                    processor->parameters.getParameter(processor->paramMonitorMode)->setValueNotifyingHost(normalisedValue);
                     showMonitorModeDropdown = false;
                     modeDropdown.close();
                 }
