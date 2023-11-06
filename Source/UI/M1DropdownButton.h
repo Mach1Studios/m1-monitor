@@ -24,9 +24,9 @@ public:
         }
 
         m.setColor(LABEL_TEXT_COLOR);
-        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, (int)fontSize);
         // interior text
-        m.prepare<murka::Label>({0, shape.size.y/3, shape.size.x, shape.size.y}).withAlignment(textAlignment).text(label).draw();
+        m.prepare<murka::Label>({0, shape.size.y/heightDivisor, shape.size.x, shape.size.y}).withAlignment(textAlignment).text(label).draw();
 
         pressed = false;
         if ((isHovered()) && (mouseDownPressed(0))) {
@@ -38,10 +38,11 @@ public:
     
     std::string label = "";
     bool pressed = false;
-    double fontSize = 10;
+    float fontSize = 10;
     bool outlineEnabled = false;
     TextAlignment textAlignment = TEXT_CENTER;
-    
+    int heightDivisor = 3;
+
     operator bool() {
         return pressed;
     }
