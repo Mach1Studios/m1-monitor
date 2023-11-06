@@ -94,16 +94,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
     
     monitorOSC.AddListener([&](juce::OSCMessage msg) {
-        if (msg.getAddressPattern() == "/m1-activate-client") {
-            DBG("[OSC] Recieved msg | Activate: "+std::to_string(msg[0].getInt32()));
-            // Capturing monitor mode
-            int active = msg[0].getInt32();
-            if (active == 1) {
-                monitorOSC.setAsActiveMonitor(true);
-            } else if (active == 0) {
-                monitorOSC.setAsActiveMonitor(false);
-            }
-        }
+
     });
 
     // monitorOSC update timer loop
@@ -300,7 +291,24 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         monitorSettings.roll = parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue());
     } else if (parameterID == paramMonitorMode) {
         monitorSettings.monitor_mode = (int)parameters.getParameter(paramMonitorMode)->convertFrom0to1(parameters.getParameter(paramMonitorMode)->getValue());
+        
+        // update gui on other plugins
+        if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor()) {
+            monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
+        }
     }
+    
+    // update the gui on other plugins for any changes to YPR
+    if (parameterID == paramYaw || parameterID == paramPitch || parameterID == paramRoll) {
+        if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor()) {
+            // update the server and panners of final calculated orientation
+            // sending un-normalized full range values in degrees
+            monitorOSC.sendMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
+        }
+    }
+
+    // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
+
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -476,21 +484,6 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         (monitorSettings.yawActive) ? currentOrientation.yaw = parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
         (monitorSettings.pitchActive) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.5f;
         (monitorSettings.rollActive) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
-    }
-    
-    if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor()) {
-        // update the server and panners of final calculated orientation
-        // sending un-normalized full range values in degrees
-        monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
-        
-        // calculate normalized signed offset and send to server
-        M1OrientationYPR offset;
-        offset.angleType = M1OrientationYPR::UNSIGNED_NORMALLED;
-        offset.yaw_min = 0.0f; offset.pitch_max = 0.0f; offset.roll_max = 0.0f;
-        offset = currentOrientation - previousOrientation;
-        
-        monitorOSC.sendMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(offset.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(offset.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(offset.roll));
-        // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
     }
 
     // Mach1Decode processing loop
@@ -675,9 +668,9 @@ juce::AudioProcessorEditor* M1MonitorAudioProcessor::createEditor()
 }
 
 //==============================================================================
-void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode) {
-
-    monitorSettings.m1Decode.setDecodeAlgoType(inputMode);
+void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeAlgoType decodeMode)
+{
+    monitorSettings.m1Decode.setDecodeAlgoType(decodeMode);
     auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
     smoothedChannelCoeffs.resize(inputChannelsCount);
 
