@@ -14,11 +14,8 @@ class M1DropdownMenu : public murka::View<M1DropdownMenu> {
     
 enum closingModeTypes {modeUnknown, modeMouseUp, modeMouseDown};
 closingModeTypes closingMode = closingModeTypes::modeUnknown;
-    
-int mouseKeptDownFrames = 0;
-bool mouseUpClosingMode = false;
 
-double openedPhase = 0;
+int mouseKeptDownFrames = 0;
     
 public:
     void internalDraw(Murka & m) {
@@ -72,7 +69,8 @@ public:
                 } else {
                     m.setColor(LABEL_TEXT_COLOR);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + (optionHeight/3), shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
+                    m.prepare<murka::Label>({0, optionHeight * i + (optionHeight/3),
+                        shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                 }
                 
                 // Closing if pressed/released outside of the menu

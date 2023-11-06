@@ -294,6 +294,7 @@ void MonitorUIBaseComponent::draw()
             .withFontSize(DEFAULT_FONT_SIZE)
             .withOutline(false);
             showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
+            showSettingsWhileOpenedButton.heightDivisor = 3;
             showSettingsWhileOpenedButton.draw();
             
             if (showSettingsWhileOpenedButton.pressed) {
@@ -307,6 +308,7 @@ void MonitorUIBaseComponent::draw()
             .withFontSize(DEFAULT_FONT_SIZE)
             .withOutline(false);
             showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
+            showSettingsWhileClosedButton.heightDivisor = 3;
             showSettingsWhileClosedButton.draw();
             
             if (showSettingsWhileClosedButton.pressed) {
@@ -366,8 +368,10 @@ void MonitorUIBaseComponent::draw()
             modeDropdown.optionHeight = 40;
             
             if (!showMonitorModeDropdown) {
-                auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).draw();
+                auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true);
                 dropdownInit.textAlignment = TEXT_LEFT;
+                dropdownInit.heightDivisor = 3;
+                dropdownInit.draw();
                 
                 if (dropdownInit.pressed) {
                     showMonitorModeDropdown = true;
@@ -441,8 +445,8 @@ void MonitorUIBaseComponent::draw()
             // Remove bottom bar for CUSTOM_CHANNEL_LAYOUT macro
 #else
             
-            int dropdownItemHeight = 40;
-            
+            int dropdownItemHeight = 20;
+
             if (!processor->hostType.isProTools() || // is not PT
                 (processor->hostType.isProTools() && // or has an output dropdown in PT
                  (processor->getMainBusNumInputChannels() == 8 || processor->getMainBusNumInputChannels() == 16 || processor->getMainBusNumInputChannels() == 36 || processor->getMainBusNumInputChannels() == 64))) {
@@ -478,10 +482,11 @@ void MonitorUIBaseComponent::draw()
                 outputLabel.highlighted = false;
                 outputLabel.draw();
                 
-                auto& outputDropdownButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 + 20, m.getSize().height() - 33, 80, 30 })
+                auto& outputDropdownButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 + 20, m.getSize().height() - 28, 80, 20 })
                     .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount()))
-                    .withOutline(true)
-                    .draw();
+                    .withOutline(true);
+                outputDropdownButton.heightDivisor = 8;
+                outputDropdownButton.draw();
                 std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
                 if (processor->hostType.isProTools()) {
                     // more selective assignment in PT only
@@ -511,7 +516,7 @@ void MonitorUIBaseComponent::draw()
                 }
                 
                 auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({  m.getSize().width()/2 + 20,
-                    m.getSize().height() - 33 - output_options.size() * dropdownItemHeight,
+                    m.getSize().height() - 28 - output_options.size() * dropdownItemHeight,
                     120, output_options.size() * dropdownItemHeight })
                 .withOptions(output_options);
                 if (outputDropdownButton.pressed) {
@@ -592,9 +597,9 @@ void MonitorUIBaseComponent::draw()
     
     m.setColor(200, 255);
 #ifdef CUSTOM_CHANNEL_LAYOUT
-    m.drawImage(m1logo, 30, m.getSize().height() - 30, 161 / 3, 39 / 3);
+    m.drawImage(m1logo, 25, m.getSize().height() - 30, 161 / 3, 39 / 3);
 #else
-    m.drawImage(m1logo, 30, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
+    m.drawImage(m1logo, 25, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
 }
 
