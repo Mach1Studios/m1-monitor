@@ -93,8 +93,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString());
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
     
+    // TODO: refactor this
+    // setup the listener
     monitorOSC.AddListener([&](juce::OSCMessage msg) {
-
     });
 
     // monitorOSC update timer loop

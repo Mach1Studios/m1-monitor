@@ -95,6 +95,9 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
             } else if (active == 0) {
                 setAsActiveMonitor(false);
             }
+        } else if (msg.getAddressPattern() == "/m1-reconnect-req") {
+            disconnectToHelper();
+            isConnected = false;
         } else {
             messageReceived(msg);
         }
