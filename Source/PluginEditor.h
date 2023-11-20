@@ -29,10 +29,6 @@ public:
 
 private:
     MurImage m1logo;
-
-    M1OrientationClientWindow orientationControlWindow;
-    bool showOrientationControlMenu = false;
-    bool showedOrientationControlBefore = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (M1MonitorAudioProcessorEditor)
 };
