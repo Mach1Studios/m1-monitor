@@ -420,7 +420,7 @@ void MonitorUIBaseComponent::draw()
             m.drawRectangle(rightSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
             
             m.setColor(ENABLED_PARAM);
-            auto& hhfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->HH);
+            auto& hhfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
             hhfield.widgetBgColor.a = 0;
             hhfield.drawBounds = false;
             hhfield.draw();
@@ -429,7 +429,7 @@ void MonitorUIBaseComponent::draw()
             
             m.prepare<murka::Label>({rightSide_LeftBound_x + 35, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& mmfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->MM);
+            auto& mmfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
             if (processor->transport->MM > 100) processor->transport->MM = 99;
             mmfield.widgetBgColor.a = 0;
@@ -438,7 +438,7 @@ void MonitorUIBaseComponent::draw()
             
             m.prepare<murka::Label>({rightSide_LeftBound_x + 80, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& ssfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->SS);
+            auto& ssfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
             if (processor->transport->SS > 100) processor->transport->SS = 99;
             ssfield.widgetBgColor.a = 0;
@@ -447,7 +447,7 @@ void MonitorUIBaseComponent::draw()
             
             m.prepare<murka::Label>({rightSide_LeftBound_x + 125, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& fsfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).controlling(&processor->transport->FS);
+            auto& fsfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
             if (processor->transport->FS > 100) processor->transport->FS = 99;
             fsfield.widgetBgColor.a = 0;
