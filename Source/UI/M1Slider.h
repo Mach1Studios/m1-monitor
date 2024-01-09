@@ -72,15 +72,19 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
 
+            float labelWidth = 40;
+            float labelHeight = 30;
             if (movingLabel) {
-                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, shape.size.y/2 - 35, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({reticlePositionNorm * (shape.size.x * 0.8 - ellipseSize) - 16 + shape.size.x * 0.1, shape.size.y/2 + 25, 40, 30})
-                    .withAlignment(TEXT_CENTER).text(valueText).draw();
+                float posX = reticlePositionNorm * (shape.size.x - 2 * ellipseSize) + ellipseSize - labelWidth / 2;
+                posX = (std::max)(0.0f, (std::min)(shape.size.x - labelWidth, posX));
+
+                m.prepare<murka::Label>({ posX, shape.size.y/2 - 35, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ posX, shape.size.y/2 + 25, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
-                m.prepare<murka::Label>({ shape.size.x / 2 - 40/2, shape.size.y - 30,
-                                        40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({ shape.size.x / 2 - 40/2, shape.size.y + 30,
-                                        40, 30}).withAlignment(TEXT_CENTER).text(valueText).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - labelWidth /2, shape.size.y - labelHeight,
+                                        labelWidth, 30}).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - labelWidth /2, shape.size.y + labelHeight,
+                                        labelWidth, 30}).withAlignment(TEXT_CENTER).text(valueText).draw();
             }
             
             // Draw reticle circle
@@ -89,7 +93,7 @@ public:
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(reticlePositionNorm * (shape.size.x - ellipseSize), shape.size.y/2 , ellipseSize);
+            m.drawCircle(reticlePositionNorm * (shape.size.x - 2 * ellipseSize) + ellipseSize, shape.size.y/2 , ellipseSize);
             
         } else { // draw verically
             m.setColor(133 + 20 * A(reticleHover));
@@ -98,17 +102,21 @@ public:
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
             m.setColor(REF_LABEL_TEXT_COLOR);
             
+            
+            float labelWidth = 40;
+            float labelHeight = 30;
             if (movingLabel){
-                m.prepare<murka::Label>({ shape.size.x / 2 - 60, reticlePositionNorm * shape.size.y - 9, 40, 30}).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({ shape.size.x / 2 + 15,
-                    reticlePositionNorm * shape.size.y - 9, 40, 30})
-                    .withAlignment(TEXT_CENTER).text(valueText).draw();
+                float posY = reticlePositionNorm * (shape.size.y - 2 * ellipseSize) + ellipseSize - m.getCurrentFont()->getLineHeight() / 2;
+                posY = (std::max)(0.0f, (std::min)(shape.size.y - m.getCurrentFont()->getLineHeight(), posY));
+                
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, posY, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 + 15, posY, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
                 m.prepare<murka::Label>({ shape.size.x / 2 - 60, shape.size.y / 2 - 9,
-                                        40, 30})
+                                        labelWidth, labelHeight })
                                         .withAlignment(TEXT_CENTER).text(label).draw();
                 m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 9,
-                                        40, 30})
+                                        labelWidth, labelHeight })
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
             }
             
@@ -118,7 +126,7 @@ public:
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(shape.size.x/2, reticlePositionNorm * (shape.size.y - ellipseSize), ellipseSize);
+            m.drawCircle(shape.size.x/2, reticlePositionNorm * (shape.size.y - 2 * ellipseSize) + ellipseSize, ellipseSize);
         }
         m.popStyle();
     
