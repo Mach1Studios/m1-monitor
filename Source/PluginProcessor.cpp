@@ -345,69 +345,34 @@ void M1MonitorAudioProcessor::fillChannelOrderArray(int numM1InputChannels) {
     juce::AudioChannelSet chanset = getBus(true, 0)->getCurrentLayout();
     int numHostInputChannels = getBus(true, 0)->getNumberOfChannels();
     
-    // sets the maximum channels of the current selected m1 input format
-    orderOfChans.resize(numM1InputChannels);
+    // sets the maximum channels of the current selected m1 input layout
+    std::vector<juce::AudioChannelSet::ChannelType> chan_types;
+    chan_types.resize(numM1InputChannels);
     input_channel_indices.resize(numM1InputChannels);
-        
+
     if(!chanset.isDiscreteLayout()) { // Check for DAW specific instructions
-        // Layout for Pro Tools
-        if (hostType.isProTools()){
-            // TODO: expand this for other surround configs on PT
-            if (numHostInputChannels == 4 && chanset.getDescription().contains(juce::String("Quad"))) {
-                // In PT reorder channels for quad bus
-                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-                orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
-                orderOfChans[2] = juce::AudioChannelSet::ChannelType::rightSurround;
-                orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurround;
-            } else if (numHostInputChannels == 8 && chanset.getDescription().contains(juce::String("7.1 Surround"))) {
-                // In PT reorder channels for 7.1 bus
-                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-                orderOfChans[1] = juce::AudioChannelSet::ChannelType::centre;
-                orderOfChans[2] = juce::AudioChannelSet::ChannelType::right;
-                orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
-                orderOfChans[4] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
-                orderOfChans[5] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
-                orderOfChans[6] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
-                orderOfChans[7] = juce::AudioChannelSet::ChannelType::LFE;
-            } else if (chanset.getAmbisonicOrder() > 1) {
-                // 2nd order ambisonic or higher, sets channel index for host
-                int start_index = getChannelIndexInProcessBlockBuffer(true, 0, 0);
-                for (int i = 0; i < numHostInputChannels; i ++) {
-                    orderOfChans[i] = chanset.getTypeOfChannel(start_index+i);
-                }
-            } else {
-                // set the order index for plugins instantiated on buses that are higher channel counts than the decode is currently set to
-                for (int i = 0; i < numHostInputChannels; i ++) {
-                    orderOfChans[i] = chanset.getTypeOfChannel(i);
-                }
-            }
+        if (hostType.isProTools() && chanset.size() == 8 && chanset.getDescription().contains(juce::String("7.1 Surround"))){
+            // TODO: Remove this and figure out why we cannot use what is in "else" on PT 7.1
+            chan_types[0] = juce::AudioChannelSet::ChannelType::left;
+            chan_types[1] = juce::AudioChannelSet::ChannelType::centre;
+            chan_types[2] = juce::AudioChannelSet::ChannelType::right;
+            chan_types[3] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
+            chan_types[4] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
+            chan_types[5] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
+            chan_types[6] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
+            chan_types[7] = juce::AudioChannelSet::ChannelType::LFE;
         } else {
-            if (numHostInputChannels == 4 && chanset.getDescription().contains(juce::String("Quad"))) {
-                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-                orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
-                orderOfChans[2] = juce::AudioChannelSet::ChannelType::leftSurround;
-                orderOfChans[3] = juce::AudioChannelSet::ChannelType::rightSurround;
-            } else if (numHostInputChannels == 8 && chanset.getDescription().contains(juce::String("7.1 Surround"))) {
-                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-                orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
-                orderOfChans[2] = juce::AudioChannelSet::ChannelType::centre;
-                orderOfChans[3] = juce::AudioChannelSet::ChannelType::LFE;
-                orderOfChans[4] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
-                orderOfChans[5] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
-                orderOfChans[6] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
-                orderOfChans[7] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
+            // Get the index of each channel supplied via JUCE
+            for (int i = 0; i < numM1InputChannels; i ++) {
+                chan_types[i] = chanset.getTypeOfChannel(i);
             }
         }
-        
-        // Apply orderOfChans
-        for (int i = 0; i < numHostInputChannels; i ++) {
-            input_channel_indices[i] = chanset.getChannelIndexForType(orderOfChans[i]);
+        // Apply the index
+        for (int i = 0; i < numM1InputChannels; i ++) {
+            input_channel_indices[i] = chanset.getChannelIndexForType(chan_types[i]);
         }
-        
-    // is a discrete channel layout
-    } else {
-        for (int i = 0; i < numHostInputChannels; ++i){
-            orderOfChans[i] = juce::AudioChannelSet::ChannelType::discreteChannel0;
+    } else { // is a discrete channel layout
+        for (int i = 0; i < numM1InputChannels; ++i){
             input_channel_indices[i] = i;
         }
     }
