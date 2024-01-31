@@ -207,38 +207,12 @@ void M1MonitorAudioProcessor::createLayout(){
                 } else if (getBus(true, 0)->getCurrentLayout().size() == 8) {
                     monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
                     m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
-                } else if (getBus(true, 0)->getCurrentLayout().size() == 16) {
-                    if ((monitorSettings.m1Decode.getFormatChannelCount() != 4) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 8) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 12) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 14)) {
-                            monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                            m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                    }
-                } else if (getBus(true, 0)->getCurrentLayout().size() == 36) {
-                    if ((monitorSettings.m1Decode.getFormatChannelCount() != 4) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 8) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 12) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 14)/* ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 32) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 36)*/) {
-                            // Note: Change init output to max bus size when new formats are introduced
-                            monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                            m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                    }
-                } else if (getBus(true, 0)->getCurrentLayout().size() == 64) {
-                    if ((monitorSettings.m1Decode.getFormatChannelCount() != 4) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 8) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 12) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 14) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 32)/* ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 36) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 48) ||
-                        (monitorSettings.m1Decode.getFormatChannelCount() != 60)*/) {
-                            // Note: Change init output to max bus size when new formats are introduced
-                            monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                            m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                    }
+                } else if (getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() == 2) { // if an ambisonic 2nd order
+                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
+                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
+                } else if (getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() > 2) { // if an ambisonic bus higher than 2nd order
+                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
+                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
                 } else {
                     // an unsupported format
                 }
