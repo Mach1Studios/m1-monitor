@@ -510,32 +510,13 @@ void MonitorUIBaseComponent::draw()
                     } else if (processor->getMainBusNumInputChannels() == 36) {
                         output_options.push_back("M1Spatial-12");
                         output_options.push_back("M1Spatial-14");
-                        // Note: Uncomment dropdown size when new formats are introduced
-                        /*
-                        output_options.push_back("M1Spatial-32");
-                        output_options.push_back("M1Spatial-36");
-                         */
                     } else if (processor->getMainBusNumInputChannels() == 64) {
                         output_options.push_back("M1Spatial-12");
                         output_options.push_back("M1Spatial-14");
-                        // Note: Uncomment dropdown size when new formats are introduced
-                        /*
-                        output_options.push_back("M1Spatial-32");
-                        output_options.push_back("M1Spatial-36");
-                        output_options.push_back("M1Spatial-48");
-                        output_options.push_back("M1Spatial-60");
-                         */
                     }
                 } else {
                     if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 12) output_options.push_back("M1Spatial-12");
                     if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 14) output_options.push_back("M1Spatial-14");
-                    // Note: Uncomment dropdown size when new formats are introduced
-                    /*
-                    if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 32) output_options.push_back("M1Spatial-32");
-                    if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 36) output_options.push_back("M1Spatial-36");
-                    if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 48) output_options.push_back("M1Spatial-48");
-                    if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 60) output_options.push_back("M1Spatial-60");
-                     */
                 }
                 
                 auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({  m.getSize().width()/2 + 20,
@@ -559,14 +540,6 @@ void MonitorUIBaseComponent::draw()
                         processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_12);
                     } else if (outputDropdownMenu.selectedOption == 3) {
                         processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_14);
-                    } else if (outputDropdownMenu.selectedOption == 4) {
-                        processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_32);
-                    } else if (outputDropdownMenu.selectedOption == 5) {
-                        processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_36);
-                    } else if (outputDropdownMenu.selectedOption == 6) {
-                        processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_48);
-                    } else if (outputDropdownMenu.selectedOption == 7) {
-                        processor->m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_60);
                     }
                 }
             } else {
