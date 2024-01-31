@@ -340,58 +340,73 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
 }
 #endif
 
-void M1MonitorAudioProcessor::fillChannelOrderArray(int numInputChannels) {
-    orderOfChans.resize(numInputChannels);
-    input_channel_indices.resize(numInputChannels);
-    
+void M1MonitorAudioProcessor::fillChannelOrderArray(int numM1InputChannels) {
+    // sets the maximum channels of the current host layout
     juce::AudioChannelSet chanset = getBus(true, 0)->getCurrentLayout();
+    int numHostInputChannels = getBus(true, 0)->getNumberOfChannels();
     
-    if(!chanset.isDiscreteLayout() && numInputChannels == 8) {
+    // sets the maximum channels of the current selected m1 input format
+    orderOfChans.resize(numM1InputChannels);
+    input_channel_indices.resize(numM1InputChannels);
+        
+    if(!chanset.isDiscreteLayout()) { // Check for DAW specific instructions
         // Layout for Pro Tools
         if (hostType.isProTools()){
-            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-            orderOfChans[1] = juce::AudioChannelSet::ChannelType::centre;
-            orderOfChans[2] = juce::AudioChannelSet::ChannelType::right;
-            orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
-            orderOfChans[4] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
-            orderOfChans[5] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
-            orderOfChans[6] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
-            orderOfChans[7] = juce::AudioChannelSet::ChannelType::LFE;
+            // TODO: expand this for other surround configs on PT
+            if (numHostInputChannels == 4 && chanset.getDescription().contains(juce::String("Quad"))) {
+                // In PT reorder channels for quad bus
+                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+                orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
+                orderOfChans[2] = juce::AudioChannelSet::ChannelType::rightSurround;
+                orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurround;
+            } else if (numHostInputChannels == 8 && chanset.getDescription().contains(juce::String("7.1 Surround"))) {
+                // In PT reorder channels for 7.1 bus
+                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+                orderOfChans[1] = juce::AudioChannelSet::ChannelType::centre;
+                orderOfChans[2] = juce::AudioChannelSet::ChannelType::right;
+                orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
+                orderOfChans[4] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
+                orderOfChans[5] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
+                orderOfChans[6] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
+                orderOfChans[7] = juce::AudioChannelSet::ChannelType::LFE;
+            } else if (chanset.getAmbisonicOrder() > 1) {
+                // 2nd order ambisonic or higher, sets channel index for host
+                int start_index = getChannelIndexInProcessBlockBuffer(true, 0, 0);
+                for (int i = 0; i < numHostInputChannels; i ++) {
+                    orderOfChans[i] = chanset.getTypeOfChannel(start_index+i);
+                }
+            } else {
+                // set the order index for plugins instantiated on buses that are higher channel counts than the decode is currently set to
+                for (int i = 0; i < numHostInputChannels; i ++) {
+                    orderOfChans[i] = chanset.getTypeOfChannel(i);
+                }
+            }
         } else {
-            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-            orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
-            orderOfChans[2] = juce::AudioChannelSet::ChannelType::centre;
-            orderOfChans[3] = juce::AudioChannelSet::ChannelType::LFE;
-            orderOfChans[4] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
-            orderOfChans[5] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
-            orderOfChans[6] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
-            orderOfChans[7] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
-        }
-        if (chanset.size() >= 8) {
-            for (int i = 0; i < numInputChannels; i ++) {
-                input_channel_indices[i] = chanset.getChannelIndexForType(orderOfChans[i]);
+            if (numHostInputChannels == 4 && chanset.getDescription().contains(juce::String("Quad"))) {
+                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+                orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
+                orderOfChans[2] = juce::AudioChannelSet::ChannelType::leftSurround;
+                orderOfChans[3] = juce::AudioChannelSet::ChannelType::rightSurround;
+            } else if (numHostInputChannels == 8 && chanset.getDescription().contains(juce::String("7.1 Surround"))) {
+                orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
+                orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
+                orderOfChans[2] = juce::AudioChannelSet::ChannelType::centre;
+                orderOfChans[3] = juce::AudioChannelSet::ChannelType::LFE;
+                orderOfChans[4] = juce::AudioChannelSet::ChannelType::leftSurroundSide;
+                orderOfChans[5] = juce::AudioChannelSet::ChannelType::rightSurroundSide;
+                orderOfChans[6] = juce::AudioChannelSet::ChannelType::leftSurroundRear;
+                orderOfChans[7] = juce::AudioChannelSet::ChannelType::rightSurroundRear;
             }
         }
-    } else if (!chanset.isDiscreteLayout() && numInputChannels == 4){
-        // Layout for Pro Tools
-        if (hostType.isProTools()) {
-            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-            orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
-            orderOfChans[2] = juce::AudioChannelSet::ChannelType::rightSurround;
-            orderOfChans[3] = juce::AudioChannelSet::ChannelType::leftSurround;
-        } else {
-            orderOfChans[0] = juce::AudioChannelSet::ChannelType::left;
-            orderOfChans[1] = juce::AudioChannelSet::ChannelType::right;
-            orderOfChans[2] = juce::AudioChannelSet::ChannelType::leftSurround;
-            orderOfChans[3] = juce::AudioChannelSet::ChannelType::rightSurround;
+        
+        // Apply orderOfChans
+        for (int i = 0; i < numHostInputChannels; i ++) {
+            input_channel_indices[i] = chanset.getChannelIndexForType(orderOfChans[i]);
         }
-        if (chanset.size() >= 4) {
-            for (int i = 0; i < numInputChannels; i ++) {
-                input_channel_indices[i] = chanset.getChannelIndexForType(orderOfChans[i]);
-            }
-        }
+        
+    // is a discrete channel layout
     } else {
-        for (int i = 0; i < numInputChannels; ++i){
+        for (int i = 0; i < numHostInputChannels; ++i){
             orderOfChans[i] = juce::AudioChannelSet::ChannelType::discreteChannel0;
             input_channel_indices[i] = i;
         }
@@ -469,7 +484,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
     monitorSettings.m1Decode.endBuffer();
-        
+    
     // Update spatial mixer coeffs from Mach1Decode for a smoothed value
     for (int channel = 0; channel < monitorSettings.m1Decode.getFormatChannelCount(); ++channel) {
         smoothedChannelCoeffs[channel][0].setTargetValue(spatialMixerCoeffs[channel * 2    ]); // Left output coeffs
@@ -485,37 +500,16 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     if (getMainBusNumInputChannels() >= monitorSettings.m1Decode.getFormatChannelCount()){
         // TODO: Setup an else case for streaming input or error message
   
+        // Internally downmix a stereo output stream and end the processBlock()
         if (monitorSettings.monitor_mode == 2) {
-            // TODO: add stereo downmix dsp for 32ch and higher
             processStereoDownmix(buffer);
             return;
         }
         
-        // Setup buffers for Left & Right outputs, correct for PT 7.1 buss
-        if (getMainBusNumInputChannels() == 8 && hostType.isProTools()){
-            AudioChannelSet inputChannelSet = getBus(true, 0)->getCurrentLayout();
-            tempBuffer.copyFrom(0, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(1, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::left), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(2, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(3, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::centre), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(4, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(5, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::right), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(6, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(7, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundSide), 0, buffer.getNumSamples());
-            
-            tempBuffer.copyFrom(8, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(9, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundSide), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(10, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(11, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::leftSurroundRear), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(12, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(13, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::rightSurroundRear), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(14, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
-            tempBuffer.copyFrom(15, 0, buffer, inputChannelSet.getChannelIndexForType(AudioChannelSet::ChannelType::LFE), 0, buffer.getNumSamples());
-        } else {
-            for (auto channel = 0; channel < numInputChannels; ++channel){
-                tempBuffer.copyFrom(channel * 2    , 0, buffer, channel, 0, buffer.getNumSamples());
-                tempBuffer.copyFrom(channel * 2 + 1, 0, buffer, channel, 0, buffer.getNumSamples());
-            }
+        // Setup buffers for Left & Right outputs
+        for (auto channel = 0; channel < numInputChannels; ++channel){
+            tempBuffer.copyFrom(channel * 2    , 0, buffer, channel, 0, buffer.getNumSamples());
+            tempBuffer.copyFrom(channel * 2 + 1, 0, buffer, channel, 0, buffer.getNumSamples());
         }
         
         for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
@@ -526,8 +520,12 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         
         for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
             for (int input_channel = 0; input_channel < monitorSettings.m1Decode.getFormatChannelCount(); input_channel++) {
-                outBufferL[sample] += tempBuffer.getReadPointer(input_channel * 2    )[sample] * smoothedChannelCoeffs[input_channel][0].getNextValue();
-                outBufferR[sample] += tempBuffer.getReadPointer(input_channel * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel][1].getNextValue();
+                // We apply a channel re-ordering for DAW canonical specific Input channel configrations via fillChannelOrder() and `input_channel_reordered`
+                // Input channel reordering from fillChannelOrder()
+                int input_channel_reordered = input_channel_indices[input_channel];
+                
+                outBufferL[sample] += tempBuffer.getReadPointer(input_channel * 2    )[sample] * smoothedChannelCoeffs[input_channel_reordered][0].getNextValue();
+                outBufferR[sample] += tempBuffer.getReadPointer(input_channel * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel_reordered][1].getNextValue();
             }
         }
     } else {
@@ -653,7 +651,7 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeAlgoType decode
     smoothedChannelCoeffs.resize(inputChannelsCount);
 
     // Checks if input bus is non DISCRETE layout and fixes host specific channel ordering issues
-    fillChannelOrderArray(inputChannelsCount);
+    fillChannelOrderArray(monitorSettings.m1Decode.getFormatChannelCount());
 
     for (int input_channel = 0; input_channel < inputChannelsCount; input_channel++) {
         smoothedChannelCoeffs[input_channel].resize(2);
