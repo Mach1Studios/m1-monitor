@@ -101,14 +101,12 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                 // Capturing Player's Yaw mouse offset
                 if (msg[0].isFloat32()){
                     float yaw = msg[0].getFloat32();
-                    // manual version of modulo for the endless yaw radial
+                    // add the offset to the current orientation
                     yaw += parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw);
-                    if (yaw < 0.0f) {
-                        yaw += 1.0f;
-                    }
-                    if (yaw > 1.0f) {
-                        yaw -= 1.0f;
-                    }
+                    // manual version of modulo for the endless yaw radial
+                    if (yaw < 0.0f) yaw += 1.0f;
+                    if (yaw > 1.0f) yaw -= 1.0f;
+                    // apply if yaw is active
                     (monitorSettings.yawActive) ? currentOrientation.yaw = yaw : currentOrientation.yaw = 0.0f;
                     parameters.getParameter(paramYaw)->setValueNotifyingHost(currentOrientation.yaw);
                 }
