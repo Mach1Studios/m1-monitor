@@ -97,42 +97,43 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     // setup the listener
     monitorOSC.AddListener([&](juce::OSCMessage msg) {
         if (msg.getAddressPattern() == "/YPR-Offset") {
-            DBG("[OSC] Recieved msg | Y: "+std::to_string(msg[0].getFloat32())+", P: "+std::to_string(msg[1].getFloat32()));
-
             if (msg.size() >= 1) {
-                // Capturing offset Player's Yaw
+                // Capturing Player's Yaw mouse offset
                 if (msg[0].isFloat32()){
                     float yaw = msg[0].getFloat32();
-                    (monitorSettings.yawActive) ? currentOrientation.yaw = yaw + parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw) : currentOrientation.yaw = 0.0f;
                     // manual version of modulo for the endless yaw radial
-                    if (currentOrientation.yaw < 0.0f) {
-                        currentOrientation.yaw += 1.0f;
+                    yaw += parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw);
+                    if (yaw < 0.0f) {
+                        yaw += 1.0f;
                     }
-                    if (currentOrientation.yaw > 1.0f) {
-                        currentOrientation.yaw -= 1.0f;
+                    if (yaw > 1.0f) {
+                        yaw -= 1.0f;
                     }
+                    (monitorSettings.yawActive) ? currentOrientation.yaw = yaw : currentOrientation.yaw = 0.0f;
                     parameters.getParameter(paramYaw)->setValueNotifyingHost(currentOrientation.yaw);
                 }
+                DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", Y: "+std::to_string(msg[0].getFloat32()));
             }
             if (msg.size() >= 2) {
-                // Capturing offset Player's Pitch
+                // Capturing Player's Pitch mouse offset
                 if (msg[1].isFloat32()){
                     float pitch = msg[1].getFloat32();
                     (monitorSettings.pitchActive) ? currentOrientation.pitch = pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.0f;
-                    // manual version of modulo for the endless yaw radial
-                    if (currentOrientation.pitch < 0.0f) {
-                        currentOrientation.pitch += 1.0f;
-                    }
-                    if (currentOrientation.pitch > 1.0f) {
-                        currentOrientation.pitch -= 1.0f;
-                    }
                     parameters.getParameter(paramPitch)->setValueNotifyingHost(currentOrientation.pitch);
                 }
+                DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", P: "+std::to_string(msg[1].getFloat32()));
             }
         } else {
             // display a captured unexpected osc message
             if (msg.size() > 0) {
-                DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + msg[0].getString());
+                DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString());
+                if (msg[0].isFloat32()) {
+                    DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + std::to_string(msg[0].getFloat32()));
+                } else if (msg[0].isInt32()) {
+                    DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + std::to_string(msg[0].getInt32()));
+                } else if (msg[0].isString()) {
+                    DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + msg[0].getString());
+                }
             }
         }
     });
@@ -619,7 +620,6 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
                 + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(numInputChannels/2);
         }
-    // TODO: implement stereo downmix for 32,36,48,60
     }
 }
 
