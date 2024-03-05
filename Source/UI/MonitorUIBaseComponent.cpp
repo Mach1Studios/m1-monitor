@@ -298,63 +298,7 @@ void MonitorUIBaseComponent::draw()
             m.imChildren.erase(idToDelete);
         };
         
-        /// SETTINGS BUTTON
-        m.setColor(ENABLED_PARAM);
-        float settings_button_height = 370;
-        if (showSettingsMenu) {
-            auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
-                120, 30 })
-            .withLabel("SETTINGS")
-            .withFontSize(DEFAULT_FONT_SIZE)
-            .withOutline(false);
-            showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
-            showSettingsWhileOpenedButton.heightDivisor = 3;
-            showSettingsWhileOpenedButton.draw();
-            
-            if (showSettingsWhileOpenedButton.pressed) {
-                showSettingsMenu = false;
-                deleteTheSettingsButton();
-            }
-        } else {
-            auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
-                120, 30 })
-            .withLabel("SETTINGS")
-            .withFontSize(DEFAULT_FONT_SIZE)
-            .withOutline(false);
-            showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
-            showSettingsWhileClosedButton.heightDivisor = 3;
-            showSettingsWhileClosedButton.draw();
-            
-            if (showSettingsWhileClosedButton.pressed) {
-                showSettingsMenu = true;
-                deleteTheSettingsButton();
-            }
-        }
         
-        // draw Settings button arrow
-        if (showSettingsMenu) {
-            // draw settings arrow indicator pointing up
-            m.enableFill();
-            m.setColor(LABEL_TEXT_COLOR);
-            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8};
-            std::vector<MurkaPoint3D> triangle;
-            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
-            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
-            triangle.push_back({triangleCenter.x , triangleCenter.y - 5, 0});
-            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
-            m.drawPath(triangle);
-        } else {
-            // draw settings arrow indicator pointing down
-            m.enableFill();
-            m.setColor(LABEL_TEXT_COLOR);
-            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8 - 5};
-            std::vector<MurkaPoint3D> triangle;
-            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
-            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
-            triangle.push_back({triangleCenter.x , triangleCenter.y + 5, 0});
-            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
-            m.drawPath(triangle);
-        }
         
         if (showSettingsMenu) {
             // Settings rendering
@@ -549,6 +493,64 @@ void MonitorUIBaseComponent::draw()
 #endif // end of bottom bar macro check
         } else {
             setShouldResizeTo(MurkaPoint(504, 267));
+        }
+        
+        /// SETTINGS BUTTON
+        m.setColor(ENABLED_PARAM);
+        float settings_button_height = 370;
+        if (showSettingsMenu) {
+            auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
+                120, 30 })
+            .withLabel("SETTINGS")
+            .withFontSize(DEFAULT_FONT_SIZE)
+            .withOutline(false);
+            showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
+            showSettingsWhileOpenedButton.heightDivisor = 3;
+            showSettingsWhileOpenedButton.draw();
+            
+            if (showSettingsWhileOpenedButton.pressed) {
+                showSettingsMenu = false;
+                deleteTheSettingsButton();
+            }
+        } else {
+            auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
+                120, 30 })
+            .withLabel("SETTINGS")
+            .withFontSize(DEFAULT_FONT_SIZE)
+            .withOutline(false);
+            showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
+            showSettingsWhileClosedButton.heightDivisor = 3;
+            showSettingsWhileClosedButton.draw();
+            
+            if (showSettingsWhileClosedButton.pressed) {
+                showSettingsMenu = true;
+                deleteTheSettingsButton();
+            }
+        }
+        
+        // draw Settings button arrow
+        if (showSettingsMenu) {
+            // draw settings arrow indicator pointing up
+            m.enableFill();
+            m.setColor(LABEL_TEXT_COLOR);
+            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8};
+            std::vector<MurkaPoint3D> triangle;
+            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
+            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
+            triangle.push_back({triangleCenter.x , triangleCenter.y - 5, 0});
+            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
+            m.drawPath(triangle);
+        } else {
+            // draw settings arrow indicator pointing down
+            m.enableFill();
+            m.setColor(LABEL_TEXT_COLOR);
+            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8 - 5};
+            std::vector<MurkaPoint3D> triangle;
+            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
+            triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
+            triangle.push_back({triangleCenter.x , triangleCenter.y + 5, 0});
+            triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
+            m.drawPath(triangle);
         }
         
         // orientation button
