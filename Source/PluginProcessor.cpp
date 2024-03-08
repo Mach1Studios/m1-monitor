@@ -56,7 +56,6 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
 	monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
     
-    // TODO: ensure we call the changedecode function when we introduce a dropdown menu changer
     smoothedChannelCoeffs.resize(monitorSettings.m1Decode.getFormatChannelCount());
     for (int input_channel = 0; input_channel < monitorSettings.m1Decode.getFormatChannelCount(); input_channel++) {
         smoothedChannelCoeffs[input_channel].resize(2);
