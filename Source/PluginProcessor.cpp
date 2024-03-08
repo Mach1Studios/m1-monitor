@@ -93,12 +93,49 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString());
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
     
-    // TODO: refactor this
     // setup the listener
     monitorOSC.AddListener([&](juce::OSCMessage msg) {
+        if (msg.getAddressPattern() == "/YPR-Offset") {
+            if (msg.size() >= 1) {
+                // Capturing Player's Yaw mouse offset
+                if (msg[0].isFloat32()){
+                    float yaw = msg[0].getFloat32();
+                    // add the offset to the current orientation
+                    yaw += parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw);
+                    // manual version of modulo for the endless yaw radial
+                    if (yaw < 0.0f) yaw += 1.0f;
+                    if (yaw > 1.0f) yaw -= 1.0f;
+                    // apply if yaw is active
+                    (monitorSettings.yawActive) ? currentOrientation.yaw = yaw : currentOrientation.yaw = 0.0f;
+                    parameters.getParameter(paramYaw)->setValueNotifyingHost(currentOrientation.yaw);
+                }
+                DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", Y: "+std::to_string(msg[0].getFloat32()));
+            }
+            if (msg.size() >= 2) {
+                // Capturing Player's Pitch mouse offset
+                if (msg[1].isFloat32()){
+                    float pitch = msg[1].getFloat32();
+                    (monitorSettings.pitchActive) ? currentOrientation.pitch = pitch + parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch) : currentOrientation.pitch = 0.0f;
+                    parameters.getParameter(paramPitch)->setValueNotifyingHost(currentOrientation.pitch);
+                }
+                DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", P: "+std::to_string(msg[1].getFloat32()));
+            }
+        } else {
+            // display a captured unexpected osc message
+            if (msg.size() > 0) {
+                DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString());
+                if (msg[0].isFloat32()) {
+                    DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + std::to_string(msg[0].getFloat32()));
+                } else if (msg[0].isInt32()) {
+                    DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + std::to_string(msg[0].getInt32()));
+                } else if (msg[0].isString()) {
+                    DBG("[OSC] Recieved unexpected msg | " + msg.getAddressPattern().toString() + ", " + msg[0].getString());
+                }
+            }
+        }
     });
 
-    // monitorOSC update timer loop
+    // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
 }
 
@@ -580,7 +617,6 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
                 + tempBuffer.getReadPointer(mixMapL[7])[i]/std::sqrt(2)/2
                 + tempBuffer.getReadPointer(mixMapL[8])[i]/std::sqrt(2)/2)/std::sqrt(2)/(numInputChannels/2);
         }
-    // TODO: implement stereo downmix for 32,36,48,60
     }
 }
 
