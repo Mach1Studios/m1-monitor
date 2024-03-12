@@ -356,6 +356,7 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
     } else if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo() && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo()) {
         // RETURN TRUE FOR EXTERNAL STREAMING MODE
         // hard set {2,2} for streaming use case
+        // TODO: Add a check for Reaper + EXTERNAL STREAMING MODE
         return true;
     } else {
         // Test for all available Mach1Encode configs
