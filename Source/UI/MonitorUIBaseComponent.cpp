@@ -298,8 +298,6 @@ void MonitorUIBaseComponent::draw()
             m.imChildren.erase(idToDelete);
         };
         
-        
-        
         if (showSettingsMenu) {
             // Settings rendering
             float leftSide_LeftBound_x = 18;

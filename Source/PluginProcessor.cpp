@@ -317,7 +317,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor()) {
             // update the server and panners of final calculated orientation
             // sending un-normalized full range values in degrees
-            monitorOSC.sendMasterYPR(parameters.getParameter(paramYaw)->convertFrom0to1(currentOrientation.yaw), parameters.getParameter(paramPitch)->convertFrom0to1(currentOrientation.pitch), parameters.getParameter(paramRoll)->convertFrom0to1(currentOrientation.roll));
+            monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
         }
     }
 
