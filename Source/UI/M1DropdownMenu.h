@@ -34,11 +34,38 @@ public:
             
             bool hoveredAnything = false;
             
+            // Scrolbar calculations
+            
+            bool drawScrollbar = (options.size() * optionHeight) > shape.size.y; // draw scrollbar if there's too many options
+            if (drawScrollbar) {
+                maxScrollbarOffset = (options.size() * optionHeight) - shape.size.y;
+            }
+            
+            int scrollbarWidth = 15;
+            float scrollbarHeightRatio = shape.size.y / (options.size() * optionHeight);
+            float scrollbarHeight = scrollbarHeightRatio * shape.size.y;
+            float scrollbarPositionY = (scrollbarOffsetInPixels / maxScrollbarOffset) * (shape.size.y - scrollbarHeight);
+            
+            MurkaShape scrollbarShape = MurkaShape(shape.size.x - scrollbarWidth, scrollbarPositionY, scrollbarWidth, scrollbarHeight);
+            bool preciseHoveredScrollbar = scrollbarShape.inside(mousePosition());
+            
+            if (!drawScrollbar) {
+                scrollbarOffsetInPixels = 0;
+            }
+            
+            
+            bool coarseHoveredScrollbar = (drawScrollbar ? mousePosition().x > shape.size.x - scrollbarWidth : false);
+            
+            // Drawing the options
+
             for (int i = 0; i < options.size(); i++) {
                 
                 bool hoveredAnOption = (mousePosition().y > i * optionHeight) && (mousePosition().y < (i + 1) * optionHeight) && inside();
                 
+                hoveredAnOption *= !coarseHoveredScrollbar; // If we hovered scrollbar section, we're not going to press any element
+                
                 hoveredAnything += hoveredAnOption; // Setting to true if any of those are true
+                
                 
                 if (hoveredAnOption) {
                     m.setColor(ENABLED_PARAM);
@@ -85,6 +112,13 @@ public:
                 }
             }
             
+            if (drawScrollbar) {
+                if (preciseHoveredScrollbar) m.setColor(180, 180, 180);
+                else m.setColor(120, 120, 120);
+                
+                m.drawRectangle(scrollbarShape);
+            }
+            
         } else {
             changed = false;
         }
@@ -102,6 +136,10 @@ public:
         mouseKeptDownFrames = 0;
         closingMode = closingModeTypes::modeUnknown;
     }
+    
+    float scrollbarOffsetInPixels = 0;
+    float maxScrollbarOffset = 0;
+    bool grabbedScrollbar = false;
     
     bool changed = false;
     bool opened = false;
