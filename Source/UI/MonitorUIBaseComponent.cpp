@@ -80,67 +80,14 @@ void MonitorUIBaseComponent::draw_orientation_client(murka::Murka &m, M1Orientat
         });
     }
     
-        // trigger a server side refresh for listed devices while menu is open
-        m1OrientationClient.command_refresh();
-        
-        bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
+    // trigger a server side refresh for listed devices while menu is open
+    m1OrientationClient.command_refresh();
     
-        orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ 400 , 400, 218, 210 + 130 * showOrientationSettingsPanelInsideWindow })
-            .withDeviceList(slots)
-            .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
-            .withOscSettingsEnabled((m1OrientationClient.getCurrentDevice().getDeviceType() == M1OrientationManagerDeviceTypeOSC))
-            .withSupperwareSettingsEnabled(m1OrientationClient.getCurrentDevice().getDeviceName().find("Supperware HT IMU") != std::string::npos)
-            .onOscSettingsChanged([&](int requested_osc_port, std::string requested_osc_msg_address) {
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_add="+requested_osc_msg_address);
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_p="+std::to_string(requested_osc_port));
-            })
-            .onSupperwareSettingsChanged([&](bool isRightEarChirality) {
-                std::string chir_cmd;
-                if (isRightEarChirality) {
-                    chir_cmd = "1";
-                } else {
-                    chir_cmd = "0";
-                }
-                m1OrientationClient.command_setAdditionalDeviceSettings("sw_chir="+chir_cmd);
-            })
-            .onDisconnectClicked([&]() {
-                m1OrientationClient.command_disconnect();
-            })
-			.onRecenterClicked([&]() {
-                m1OrientationClient.command_recenter();
-            })
-            .onOscSettingsChanged([&](int requested_osc_port, std::string requested_osc_msg_address) {
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_add="+requested_osc_msg_address);
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_p="+std::to_string(requested_osc_port));
-            })
-            .onYPRSwitchesClicked([&](int whichone) {
-                if (whichone == 0)
-                    // yaw clicked
-                    monitorState->yawActive = !monitorState->yawActive;
-                    m1OrientationClient.command_setTrackingYawEnabled(monitorState->yawActive);
-                if (whichone == 1)
-                    // pitch clicked
-                    monitorState->pitchActive = !monitorState->pitchActive;
-                    m1OrientationClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
-                if (whichone == 2)
-                    // roll clicked
-                    monitorState->rollActive = !monitorState->rollActive;
-                    m1OrientationClient.command_setTrackingRollEnabled(monitorState->rollActive);
-            })
-            .withYPRTrackingSettings(
-                                     m1OrientationClient.getTrackingYawEnabled(),
-                                     m1OrientationClient.getTrackingPitchEnabled(),
-                                     m1OrientationClient.getTrackingRollEnabled(),
-                                     std::pair<int, int>(0, 180),
-                                     std::pair<int, int>(0, 180),
-                                     std::pair<int, int>(0, 180)
-            )
-            .withYPR(
-                     m1OrientationClient.getOrientation().getYPRasDegrees().yaw,
-                     m1OrientationClient.getOrientation().getYPRasDegrees().pitch,
-                     m1OrientationClient.getOrientation().getYPRasDegrees().roll
-            ));
-            orientationControlWindow->draw();
+//    bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
+
+    orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ 400 , 400, 218, 210 + 130})
+                                 .withOrientationClient(m1OrientationClient));
+    orientationControlWindow->draw();
 }
 
 void MonitorUIBaseComponent::draw()
@@ -302,10 +249,7 @@ void MonitorUIBaseComponent::draw()
                 auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).withBackgroundColor(MurkaColor(BACKGROUND_GREY)).withOutlineColor(MurkaColor(ENABLED_PARAM));
                 dropdownInit.textAlignment = TEXT_LEFT;
                 dropdownInit.heightDivisor = 3;
-                m.addOverlay([&](){
-                    dropdownInit.draw();
-                }, &dropdownInit);
-//                dropdownInit.draw();
+                dropdownInit.draw();
                 
                 if (dropdownInit.pressed) {
                     showMonitorModeDropdown = true;
