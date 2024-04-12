@@ -430,6 +430,12 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     
     // m1_orientation_client update
     if (m1OrientationClient.isConnectedToServer()) {
+		if (!isMonitorOSCConnected) {
+			isMonitorOSCConnected = true;
+
+			monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
+			monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+		}
         // update the external orientation normalised
         external_orientation = m1OrientationClient.getOrientation().getYPRasUnsignedNormalled();
         
@@ -479,6 +485,8 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         (monitorSettings.yawActive) ? currentOrientation.yaw = parameters.getParameter(paramYaw)->getValue() : currentOrientation.yaw = 0.0f;
         (monitorSettings.pitchActive) ? currentOrientation.pitch = parameters.getParameter(paramPitch)->getValue() : currentOrientation.pitch = 0.5f;
         (monitorSettings.rollActive) ? currentOrientation.roll = parameters.getParameter(paramRoll)->getValue() : currentOrientation.roll = 0.5f;
+
+		isMonitorOSCConnected = false; 
     }
 
     // Mach1Decode processing loop
