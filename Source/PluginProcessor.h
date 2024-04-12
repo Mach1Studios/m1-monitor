@@ -131,7 +131,9 @@ public:
     
     // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer
-        
+       
+	bool isMonitorOSCConnected = false;
+
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
 
