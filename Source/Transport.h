@@ -2,41 +2,41 @@
 
 #include <JuceHeader.h>
 
+#include "m1_orientation_client/M1OrientationClient.h"
+
 class Transport : public juce::Timer
 {
 public:
-	Transport(M1OrientationClient* orientationClient);
 
-	// Offset timecode
-	int HH = 0, MM = 0, SS = 0, FS = 0;
+    Transport(M1OrientationClient* orientationClient);
 
-	void update();
-	void setProcessor(AudioProcessor* processor);
+    void setOffset(int hh, int mm, int ss, int fs);
 
-	void updateOffset(int hh, int mm, int ss, int fs);
-    
-    double getTimeInSeconds() {
-        return correctTimeInSeconds;
-    }
+    double getTimeInSeconds() const;
+
+    void setTimeInSeconds(double time_in_seconds);
+
+    bool getIsPlaying() const;
+
+    void setIsPlaying( bool is_playing);
+
+    void sendData();
+
+    void timerCallback() override;
+
+public:
+
+    int HH = 0;
+    int MM = 0;
+    int SS = 0;
+    int FS = 0;
 
 private:
-	M1OrientationClient* orientationClient = nullptr;
+	M1OrientationClient* m_orientation_client = nullptr;
 
-	void updateCurrentTimeInfoFromHost();
-	void sendData();
-	void showConnectionErrorMessage(String msg);
+    double m_transport_offset = 0;
 
-	double lastSentPositionValue;
+	double m_correct_time_in_seconds = 0;
 
-	void timerCallback() override;
-
-	juce::AudioPlayHead::CurrentPositionInfo lastPosInfo;
-	double correctTimeInSeconds;
-
-    juce::String reqResult;
-
- 	int packetsSent = 0;
-	int transportOffset = 0;
-
-    juce::AudioProcessor* processor = nullptr;
+    bool m_is_playing = true;
 };
