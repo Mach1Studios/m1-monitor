@@ -138,6 +138,9 @@ public:
     juce::AudioProcessorValueTreeState parameters;
 
 private:
+
+    void updateTransportWithPlayhead();
+
     void createLayout();
 
     std::vector<std::vector<float>> audioDataIn;

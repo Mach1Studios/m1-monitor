@@ -62,8 +62,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     }
 
     transport = new Transport(&m1OrientationClient);
-    transport->setProcessor(this);
-    
+
     // normalize initial external orientation values for comparisons
     external_orientation.yaw = 0.0f, external_orientation.pitch = 0.0f, external_orientation.roll = 0.0f; // set first default value so connection does not apply to monitor
     external_orientation.angleType = M1OrientationYPR::AngleType::UNSIGNED_NORMALLED;
@@ -426,8 +425,8 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         buffer.clear(channel, 0, buffer.getNumSamples());
     
     // transport
-    transport->update();
-    
+    updateTransportWithPlayhead();
+
     // m1_orientation_client update
     if (m1OrientationClient.isConnectedToServer()) {
 		if (!isMonitorOSCConnected) {
@@ -688,6 +687,27 @@ void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInB
     if (tree.isValid()) {
         parameters.state = tree;
     }
+}
+
+void M1MonitorAudioProcessor::updateTransportWithPlayhead() {
+    AudioPlayHead* ph = getPlayHead();
+
+    if (ph == nullptr)
+    {
+        return;
+    }
+
+    auto play_head_position = ph->getPosition();
+
+    if (!play_head_position.hasValue()) {
+        return;
+    }
+
+    if (play_head_position->getTimeInSeconds().hasValue()) {
+        transport->setTimeInSeconds(*play_head_position->getTimeInSeconds());
+    }
+
+    transport->setIsPlaying(play_head_position->getIsPlaying());
 }
 
 //==============================================================================
