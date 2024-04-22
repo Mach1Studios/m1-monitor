@@ -60,7 +60,7 @@ public:
 
             for (int i = 0; i < options.size(); i++) {
                 
-                bool hoveredAnOption = (mousePosition().y > i * optionHeight) && (mousePosition().y < (i + 1) * optionHeight) && inside();
+                bool hoveredAnOption = (mousePosition().y > i * optionHeight - scrollbarOffsetInPixels) && (mousePosition().y < (i + 1) * optionHeight - scrollbarOffsetInPixels) && inside();
                 
                 hoveredAnOption *= !coarseHoveredScrollbar; // If we hovered scrollbar section, we're not going to press any element
                 
@@ -69,10 +69,10 @@ public:
                 
                 if (hoveredAnOption) {
                     m.setColor(ENABLED_PARAM);
-                    m.drawRectangle(1, i * optionHeight, shape.size.x - 2, optionHeight);
+                    m.drawRectangle(1, i * optionHeight - scrollbarOffsetInPixels, shape.size.x - 2, optionHeight);
                     m.setColor(BACKGROUND_GREY);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3),
+                    m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels,
                         shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                     
                     if (closingMode == modeMouseDown) {
@@ -96,11 +96,11 @@ public:
                 } else {
                     m.setColor(LABEL_TEXT_COLOR);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3), shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
+                    m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels, shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                 }
                 
                 // Closing if pressed/released outside of the menu
-                if (!inside() && !hoveredAnything) {
+                if (!inside() && !hoveredAnything && !holdingScrollbar) {
                     if ((closingMode == modeMouseDown) && (mouseDownPressed(0))) {
                         opened = false;
                         changed = false;
@@ -119,10 +119,28 @@ public:
                 m.drawRectangle(scrollbarShape);
             }
             
+            if (preciseHoveredScrollbar && mouseDownPressed(0)) {
+                holdingScrollbar = true;
+            }
+            
+            if (holdingScrollbar) {
+                scrollbarOffsetInPixels -= mouseDelta().y * m.getScreenScale();
+                
+                if (scrollbarOffsetInPixels > maxScrollbarOffset) scrollbarOffsetInPixels = maxScrollbarOffset;
+                if (scrollbarOffsetInPixels < 0) scrollbarOffsetInPixels = 0;
+
+            }
+            
+            if (holdingScrollbar && !mouseDown(0)) {
+                holdingScrollbar = false;
+            }
+            
         } else {
             changed = false;
         }
     }
+    
+    bool holdingScrollbar = false;
     
     void close() {
         opened = false;
