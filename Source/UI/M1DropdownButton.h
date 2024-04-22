@@ -15,17 +15,20 @@ public:
     void internalDraw(Murka & m) {
         if (outlineEnabled) {
             // outline border
-            m.setColor(ENABLED_PARAM);
-            m.drawRectangle(0, 0,
-                            shape.size.x, shape.size.y);
-            m.setColor(BACKGROUND_GREY);
+//            m.enableFill();
+//            m.setColor(BACKGROUND_GREY);
+//            m.drawRectangle(0, 0,
+//                            shape.size.x, shape.size.y);
+            
+            m.disableFill();
+            m.setColor(outlineColor);
             m.drawRectangle(1, 1,
                             shape.size.x - 2, shape.size.y - 2);
         }
         
         if (drawTriangle) {
             m.enableFill();
-            m.setColor(LABEL_TEXT_COLOR);
+            m.setColor(outlineColor);
             MurkaPoint triangleCenter = {m.getSize().width() - 15, 15};
             std::vector<MurkaPoint3D> triangle;
             triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
@@ -35,7 +38,11 @@ public:
             m.drawPath(triangle);
         }
         
-        m.setColor(LABEL_TEXT_COLOR);
+        if (outlineEnabled) {
+            m.setColor(outlineColor);
+        } else {
+            m.setColor(LABEL_TEXT_COLOR);
+        }
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, (int)fontSize);
         // interior text
         m.prepare<murka::Label>({0, shape.size.y/heightDivisor, shape.size.x, shape.size.y}).withAlignment(textAlignment).text(label).draw();

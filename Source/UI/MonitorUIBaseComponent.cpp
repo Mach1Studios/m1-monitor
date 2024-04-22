@@ -85,8 +85,8 @@ void MonitorUIBaseComponent::draw_orientation_client(murka::Murka &m, M1Orientat
     
 //    bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
 
-    orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ 400 , 400, 218, 210 + 130})
-                                 .withOrientationClient(m1OrientationClient));
+    orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ 400 , 378, 290, 400}));
+    orientationControlWindow->withOrientationClient(m1OrientationClient);
     orientationControlWindow->draw();
 }
 
@@ -223,20 +223,20 @@ void MonitorUIBaseComponent::draw()
             // Settings rendering
             float leftSide_LeftBound_x = 18;
             float rightSide_LeftBound_x = 380;
-            float bottomSettings_topBound_y = 380;
+            float bottomSettings_topBound_y = 382;
             
             setShouldResizeTo(MurkaPoint(504, 467));
             
             /// LEFT SIDE
             m.setColor(ENABLED_PARAM);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
-            m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y, 150, 20})
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y, 150, 20})
                 .withAlignment(TEXT_LEFT).text("MONITOR MODE")
                 .draw();
             
             m.setColor(BACKGROUND_COMPONENT);
             m.enableFill();
-            m.drawRectangle(20, bottomSettings_topBound_y + 20, 310, 40);
+            m.drawRectangle(20, bottomSettings_topBound_y + 25, 310, 40);
             m.setColor(ENABLED_PARAM);
             
             std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
@@ -246,7 +246,8 @@ void MonitorUIBaseComponent::draw()
             
             if (!showMonitorModeDropdown) {
                 
-                auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).withBackgroundColor(MurkaColor(BACKGROUND_GREY)).withOutlineColor(MurkaColor(ENABLED_PARAM));
+                auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 25, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).withBackgroundColor(MurkaColor(BACKGROUND_GREY)).withOutlineColor(MurkaColor(ENABLED_PARAM))
+                    .withTriangle(true);
                 dropdownInit.textAlignment = TEXT_LEFT;
                 dropdownInit.heightDivisor = 3;
                 dropdownInit.draw();
@@ -294,6 +295,8 @@ void MonitorUIBaseComponent::draw()
             // Timecode ofset
             
             auto settings_LeftBound_x = 20;
+            
+            m.setColor(ENABLED_PARAM);
 
             m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
 
@@ -303,7 +306,7 @@ void MonitorUIBaseComponent::draw()
             m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
             m.setColor(BACKGROUND_COMPONENT);
             m.enableFill();
-            m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
+            m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 30);
             
             m.setColor(ENABLED_PARAM);
             auto& hhfield = m.prepare<murka::TextField>({settings_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
