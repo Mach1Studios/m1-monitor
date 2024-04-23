@@ -10,14 +10,29 @@ public:
 
     Transport(M1OrientationClient* orientationClient);
 
+    /**
+     * @brief Get the current time in the transport in seconds
+     */
     double getTimeInSeconds() const;
 
+    /**
+     * @brief Set the current time in the transport in seconds
+     */
     void setTimeInSeconds(double time_in_seconds);
 
+    /**
+     * @brief Get whether playback is current active
+     */
     bool getIsPlaying() const;
 
+    /**
+     * @brief Set whether playback is current active
+     */
     void setIsPlaying(bool is_playing);
 
+    /**
+     * @brief Send over the current state of this Transport via its M1OrientationClient.
+     */
     void sendData();
 
     void timerCallback() override;
