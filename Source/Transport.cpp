@@ -1,7 +1,9 @@
 
 #include "Transport.h"
 
-//==============================================================================
+// TODO: If possible, make public members private, rename them, create get/setters for them, and recalculate
+//  m_transport_offset in said setters. This would cut down on amount of operations performed per 50 ms.
+
 Transport::Transport(M1OrientationClient* orientationClient) : m_orientation_client(orientationClient)
 {
     startTimer(50);
