@@ -22,6 +22,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # IDEs:  Create a folder in the IDE with the JUCE Module code.
 option(JUCE_ENABLE_MODULE_SOURCE_GROUPS "Show all module sources in IDE projects" ON)
 
+# Adds the Mach1 math
+# (Please ensure this is added before the `m1_orientation_client` JUCE module)
+add_subdirectory(Modules/m1_orientation_client/libs/m1-mathematics)
+
 # add JUCE
 add_subdirectory(JUCE)
 # add custom modules
@@ -169,7 +173,26 @@ set_target_properties(Resources PROPERTIES FOLDER "Targets")
 # add required flags
 juce_generate_juce_header(${PLUGIN_NAME})
 
-target_link_libraries(${PLUGIN_NAME} PRIVATE juce::juce_audio_basics juce::juce_audio_devices juce::juce_audio_formats juce::juce_audio_plugin_client juce::juce_audio_processors juce::juce_audio_utils juce::juce_core juce::juce_cryptography juce::juce_data_structures juce::juce_dsp juce::juce_events juce::juce_graphics juce::juce_gui_basics juce::juce_gui_extra juce::juce_opengl juce::juce_osc juce::juce_product_unlocking juce_murka m1_orientation_client)
+target_link_libraries(${PLUGIN_NAME} PRIVATE 
+    juce::juce_audio_basics 
+    juce::juce_audio_devices 
+    juce::juce_audio_formats 
+    juce::juce_audio_plugin_client 
+    juce::juce_audio_processors 
+    juce::juce_audio_utils 
+    juce::juce_core 
+    juce::juce_data_structures 
+    juce::juce_dsp 
+    juce::juce_events 
+    juce::juce_graphics 
+    juce::juce_gui_basics 
+    juce::juce_gui_extra 
+    juce::juce_opengl 
+    juce::juce_osc 
+    juce_murka 
+    m1_orientation_client
+    m1_mathematics
+    )
 target_link_libraries(${PLUGIN_NAME} PRIVATE Resources PUBLIC juce::juce_recommended_warning_flags juce::juce_recommended_config_flags juce::juce_recommended_lto_flags)
 
 # definitions to replace the `JucePluginDefines.h`
