@@ -166,7 +166,7 @@ void MonitorOSC::setAsActiveMonitor(bool is_active)
 
 bool MonitorOSC::sendMonitoringMode(int mode)
 {
-    if (port > 0) {
+    if (isConnected && port > 0) {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitoringMode"));
         m.addInt32(mode);  // int of monitor mode
         return juce::OSCSender::send(m); // check to update isConnected for error catching;
@@ -176,7 +176,7 @@ bool MonitorOSC::sendMonitoringMode(int mode)
 
 bool MonitorOSC::sendMasterYPR(float yaw, float pitch, float roll)
 {
-    if (port > 0) {
+    if (isConnected && port > 0) {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMasterYPR"));
         m.addFloat32(yaw);   // expected degrees -180->180
         m.addFloat32(pitch); // expected degrees -90->90

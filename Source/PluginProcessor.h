@@ -117,12 +117,10 @@ public:
     // Orientation Manager/Client
     void setStatus(bool success, std::string message);
     M1OrientationClient m1OrientationClient;
-    M1OrientationYPR currentOrientation; // TODO: use Orientation class instead
-    M1OrientationYPR previousOrientation;
-    // normalize first value
-    M1OrientationYPR external_orientation;
-    // normalize first value
-    M1OrientationYPR previous_external_orientation;
+    Mach1::Orientation currentOrientation;
+    Mach1::Orientation previousOrientation;
+    Mach1::Orientation external_orientation;
+    Mach1::Orientation previous_external_orientation;
 
     // Communication to Player and the rest of the M1SpatialSystem
     void timerCallback() override;
@@ -131,16 +129,12 @@ public:
     
     // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer
-       
-	bool isMonitorOSCConnected = false;
 
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
 
 private:
-
     void updateTransportWithPlayhead();
-
     void createLayout();
 
     std::vector<std::vector<float>> audioDataIn;
