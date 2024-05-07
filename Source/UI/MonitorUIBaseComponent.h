@@ -64,7 +64,7 @@ public:
     void timerCallback() override;
     
 private:
-    bool showSettingsMenu = true;
+    bool showSettingsMenu = false;
     bool recenterButtonActive = false;
     
 	MurImage m1logo;
