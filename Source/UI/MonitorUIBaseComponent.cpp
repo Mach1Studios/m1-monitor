@@ -244,7 +244,6 @@ void MonitorUIBaseComponent::draw()
             modeDropdown.optionHeight = 40;
             
             if (!showMonitorModeDropdown) {
-                
                 auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 25, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).withBackgroundColor(MurkaColor(BACKGROUND_GREY)).withOutlineColor(MurkaColor(ENABLED_PARAM))
                     .withTriangle(true);
                 dropdownInit.textAlignment = TEXT_LEFT;
@@ -267,28 +266,27 @@ void MonitorUIBaseComponent::draw()
                     modeDropdown.close();
                 }
             }
-        
-            // Timecode offset
-            auto settings_LeftBound_x = 20;
-            m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
 
-            //Timecode offset rect
-            m.setColor(GRID_LINES_1_RGBA);
+            //Timecode offset
             m.setColor(ENABLED_PARAM);
-            m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y + 77, 150, 20})
+                .withAlignment(TEXT_LEFT).text("TIME CODE OFFSET")
+                .draw();
+            
             m.setColor(BACKGROUND_COMPONENT);
             m.enableFill();
             m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
             
             m.setColor(ENABLED_PARAM);
-            auto& hhfield = m.prepare<murka::TextField>({settings_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
+            auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
             hhfield.widgetBgColor.a = 0;
             hhfield.drawBounds = false;
             hhfield.draw();
             if (processor->transport->HH < 0) processor->transport->HH = 0;
             if (processor->transport->HH > 100) processor->transport->HH = 99;
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 35, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 33, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
             auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
@@ -297,18 +295,18 @@ void MonitorUIBaseComponent::draw()
             mmfield.drawBounds = false;
             mmfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 80, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 78, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& ssfield = m.prepare<murka::TextField>({settings_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
+            auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
             if (processor->transport->SS > 100) processor->transport->SS = 99;
             ssfield.widgetBgColor.a = 0;
             ssfield.drawBounds = false;
             ssfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 125, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 123, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& fsfield = m.prepare<murka::TextField>({settings_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
+            auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
             if (processor->transport->FS > 100) processor->transport->FS = 99;
             fsfield.widgetBgColor.a = 0;
