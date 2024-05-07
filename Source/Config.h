@@ -79,7 +79,7 @@
 #define ENABLED_PARAM 190, 190, 190
 #define DISABLED_PARAM 63, 63, 63
 #define BACKGROUND_COMPONENT 50, 50, 50
-#define BACKGROUND_GREY 26, 26, 26
+#define BACKGROUND_GREY 40, 40, 40
 
 #define GRID_LINES_1_RGBA 68, 68, 68, 51//0.2 opacity //small grid lines
 #define GRID_LINES_2 68, 68, 68

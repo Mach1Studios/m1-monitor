@@ -226,6 +226,7 @@ void MonitorUIBaseComponent::draw()
             setShouldResizeTo(MurkaPoint(504, 467));
             
             /// LEFT SIDE
+
             m.setColor(ENABLED_PARAM);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
             m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y, 150, 20})
@@ -266,45 +267,18 @@ void MonitorUIBaseComponent::draw()
                     modeDropdown.close();
                 }
             }
-            
-            /// RIGHT SIDE
-            
-            
-            
-            // Orientation menu
-            
-            // orientation client window
-            draw_orientation_client(m, processor->m1OrientationClient);
-            
-            /// LEFT SIDE
-
-            //            //Broadcast rect
-            //            m.setColor(DISABLED_PARAM);
-            //            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
-            //            m.prepare<murka::Label>({20 + 2,
-            //                                     bottomSettings_topBound_y + 120 + 20,
-            //                                     bottomSettings_topBound_y + 120 + 20,
-            //                                     150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
-            //            m.setColor(BACKGROUND_COMPONENT);
-            //            m.enableFill();
-            //            m.drawRectangle(20, bottomSettings_topBound_y + 20,
-            //                              310, 40);
-
-            // Timecode ofset
-            
+        
+            // Timecode offset
             auto settings_LeftBound_x = 20;
-            
-            m.setColor(ENABLED_PARAM);
-
             m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
 
-            //Timecode rect
+            //Timecode offset rect
             m.setColor(GRID_LINES_1_RGBA);
             m.setColor(ENABLED_PARAM);
             m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
             m.setColor(BACKGROUND_COMPONENT);
             m.enableFill();
-            m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 30);
+            m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
             
             m.setColor(ENABLED_PARAM);
             auto& hhfield = m.prepare<murka::TextField>({settings_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
@@ -340,6 +314,11 @@ void MonitorUIBaseComponent::draw()
             fsfield.widgetBgColor.a = 0;
             fsfield.drawBounds = false;
             fsfield.draw();
+
+            /// RIGHT SIDE       
+                        
+            // orientation client window
+            draw_orientation_client(m, processor->m1OrientationClient);
             
             /// Bottom bar
 #ifdef CUSTOM_CHANNEL_LAYOUT
