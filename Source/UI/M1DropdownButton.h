@@ -15,15 +15,9 @@ public:
     void internalDraw(Murka & m) {
         if (outlineEnabled) {
             // outline border
-//            m.enableFill();
-//            m.setColor(BACKGROUND_GREY);
-//            m.drawRectangle(0, 0,
-//                            shape.size.x, shape.size.y);
-            
             m.disableFill();
             m.setColor(outlineColor);
-            m.drawRectangle(1, 1,
-                            shape.size.x - 2, shape.size.y - 2);
+            m.drawRectangle(0, 0, shape.size.x, shape.size.y);
         }
         
         if (drawTriangle) {
@@ -38,11 +32,7 @@ public:
             m.drawPath(triangle);
         }
         
-        if (outlineEnabled) {
-            m.setColor(outlineColor);
-        } else {
-            m.setColor(LABEL_TEXT_COLOR);
-        }
+        m.setColor(LABEL_TEXT_COLOR);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, (int)fontSize);
         // interior text
         m.prepare<murka::Label>({0, shape.size.y/heightDivisor, shape.size.x, shape.size.y}).withAlignment(textAlignment).text(label).draw();
