@@ -269,7 +269,7 @@ void MonitorUIBaseComponent::draw()
             m.setColor(ENABLED_PARAM);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
             m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y + 77, 150, 20})
-                .withAlignment(TEXT_LEFT).text("TIME CODE OFFSET")
+                .withAlignment(TEXT_LEFT).text("TIMECODE OFFSET")
                 .draw();
             
             m.setColor(BACKGROUND_COMPONENT);
@@ -284,7 +284,7 @@ void MonitorUIBaseComponent::draw()
             if (processor->transport->HH < 0) processor->transport->HH = 0;
             if (processor->transport->HH > 100) processor->transport->HH = 99;
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 33, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
             auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
@@ -293,7 +293,7 @@ void MonitorUIBaseComponent::draw()
             mmfield.drawBounds = false;
             mmfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 78, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
             auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
@@ -302,7 +302,7 @@ void MonitorUIBaseComponent::draw()
             ssfield.drawBounds = false;
             ssfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 123, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
             auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
