@@ -567,6 +567,17 @@ void MonitorUIBaseComponent::draw()
         disabledLabel.enabled = false;
         disabledLabel.highlighted = false;
         disabledLabel.draw();
+        
+        /// "Enable this M1-Monitor" button
+        m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 150, m.getSize().height()/2 - 60, 300, 40))
+        .withText("ENABLE THIS M1-MONITOR").withTextAlignment(TEXT_CENTER).withVerticalTextOffset(10)
+        .withOnClickFlash()
+        .withBackgroundFill(MurkaColor(DISABLED_PARAM), MurkaColor(BACKGROUND_GREY))
+        .withStrokeBorder(MurkaColor(ENABLED_PARAM))
+        .withOnClickCallback([&](){
+            processor->monitorOSC.sendRequestToBecomeActive();
+        })
+        .draw();
     }
 
     /// Monitor label
