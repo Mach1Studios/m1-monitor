@@ -87,12 +87,12 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
             isConnected = true;
         } else if (msg.getAddressPattern() == "/m1-activate-client") {
             DBG("[OSC] Recieved msg | Activate: "+std::to_string(msg[0].getInt32()));
-            // Capturing monitor mode
+            // Capturing monitor active state
             int active = msg[0].getInt32();
             if (active == 1) {
-                setAsActiveMonitor(true);
+                setActiveState(true);
             } else if (active == 0) {
-                setAsActiveMonitor(false);
+                setActiveState(false);
             }
         } else if (msg.getAddressPattern() == "/m1-reconnect-req") {
             disconnectToHelper();
@@ -159,9 +159,19 @@ bool MonitorOSC::IsActiveMonitor()
     return isActiveMonitor;
 }
 
-void MonitorOSC::setAsActiveMonitor(bool is_active)
+void MonitorOSC::setActiveState(bool is_active)
 {
     isActiveMonitor = is_active;
+}
+
+bool MonitorOSC::sendRequestToBecomeActive()
+{
+    if (isConnected && port > 0) {
+        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitorActiveReq"));
+        m.addInt32(port);  // int of current monitor port to use for identification
+        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+    }
+    return false;
 }
 
 bool MonitorOSC::sendMonitoringMode(int mode)

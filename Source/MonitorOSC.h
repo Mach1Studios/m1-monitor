@@ -21,10 +21,14 @@ public:
 	void AddListener(std::function<void(juce::OSCMessage msg)> messageReceived);
 	bool Send(const juce::OSCMessage& msg);
 	bool IsConnected();
-    void setAsActiveMonitor(bool is_active);
+    
+    bool sendRequestToBecomeActive();
+    void setActiveState(bool is_active);
     bool IsActiveMonitor();
+    
     bool sendMonitoringMode(int input_mode);
     bool sendMasterYPR(float yaw, float pitch, float roll);
+    
     bool connectToHelper();
     bool disconnectToHelper();
 };
