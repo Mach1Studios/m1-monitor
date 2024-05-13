@@ -472,7 +472,6 @@ void MonitorUIBaseComponent::draw()
             m.drawPath(triangle);
         }
         
-        
     } else {
         // The monitor has been marked to be disabled
         
