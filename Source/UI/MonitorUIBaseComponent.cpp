@@ -46,7 +46,7 @@ void MonitorUIBaseComponent::timerCallback()
     }
 }
 
-void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M1OrientationClient &m1OrientationClient, M1OrientationClientWindow* orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore) {
+void MonitorUIBaseComponent::draw_orientation_client(murka::Murka &m, M1OrientationClient &m1OrientationClient) {
     std::vector<M1OrientationClientWindowDeviceSlot> slots;
     
     std::vector<M1OrientationDeviceInfo> devices = m1OrientationClient.getDevices();
@@ -69,106 +69,24 @@ void MonitorUIBaseComponent::update_orientation_client_window(murka::Murka &m, M
         }
         
         std::string name = devices[i].getDeviceName();
-        slots.push_back({ icon, name, name == m1OrientationClient.getCurrentDevice().getDeviceName(), i, [&](int idx)
+        slots.push_back({ icon, 
+            name,
+            name == m1OrientationClient.getCurrentDevice().getDeviceName(),
+            i, 
+            [&](int idx)
             {
                 m1OrientationClient.command_startTrackingUsingDevice(devices[idx]);
             }
         });
     }
     
-    auto& orientationControlButton = m.prepare<M1OrientationWindowToggleButton>({ m.getSize().width() - 40 - 5, 5, 40, 40 }).onClick([&](M1OrientationWindowToggleButton& b) {
-        showOrientationControlMenu = !showOrientationControlMenu;
-    })
-    .withInteractiveOrientationGimmick(m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone, m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees().GetYaw())
-        .draw();
-    
-    // TODO: move this to be to the left of the orientation client window button
-    if (std::holds_alternative<bool>(m1OrientationClient.getCurrentDevice().batteryPercentage)) {
-        // it's false, which means the battery percentage is unknown
-    } else {
-        // it has a battery percentage value
-        int battery_value = std::get<int>(m1OrientationClient.getCurrentDevice().batteryPercentage);
-        m.getCurrentFont()->drawString("Battery: " + std::to_string(battery_value), m.getWindowWidth() - 100, m.getWindowHeight() - 100);
-    }
-    
-    if (orientationControlButton.hovered && (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone)) {
-        std::string deviceReportString = "CONNECTED DEVICE: " + m1OrientationClient.getCurrentDevice().getDeviceName();
-        auto font = m.getCurrentFont();
-        auto bbox = font->getStringBoundingBox(deviceReportString, 0, 0);
-        //m.setColor(40, 40, 40, 200);
-        // TODO: fix this bounding box (doesnt draw the same place despite matching settings with Label.draw
-        //m.drawRectangle(     m.getSize().width() - 40 - 10 /* padding */ - bbox.width - 5, 5, bbox.width + 10, 40);
-        m.setColor(230, 230, 230);
-        m.prepare<M1Label>({ m.getSize().width() - 40 - 10 /* padding */ - bbox.width - 5, 5 + 10, bbox.width + 10, 40 }).text(deviceReportString).withTextAlignment(TEXT_CENTER).draw();
-    }
-    
-    if (showOrientationControlMenu) {
-        // trigger a server side refresh for listed devices while menu is open
-        m1OrientationClient.command_refresh();
-        
-        bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
-        orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ m.getSize().width() - 218 - 5 , 5, 218, 210 + 130 * showOrientationSettingsPanelInsideWindow })
-            .withDeviceList(slots)
-            .withSettingsPanelEnabled(showOrientationSettingsPanelInsideWindow)
-            .withOscSettingsEnabled((m1OrientationClient.getCurrentDevice().getDeviceType() == M1OrientationManagerDeviceTypeOSC))
-            .withSupperwareSettingsEnabled(m1OrientationClient.getCurrentDevice().getDeviceName().find("Supperware HT IMU") != std::string::npos)
-            .onClickOutside([&]() {
-                if (!orientationControlButton.hovered) { // Only switch showing the orientation control if we didn't click on the button
-                    showOrientationControlMenu = !showOrientationControlMenu;
-                }
-            })
-            .onOscSettingsChanged([&](int requested_osc_port, std::string requested_osc_msg_address) {
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_add="+requested_osc_msg_address);
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_p="+std::to_string(requested_osc_port));
-            })
-            .onSupperwareSettingsChanged([&](bool isRightEarChirality) {
-                std::string chir_cmd;
-                if (isRightEarChirality) {
-                    chir_cmd = "1";
-                } else {
-                    chir_cmd = "0";
-                }
-                m1OrientationClient.command_setAdditionalDeviceSettings("sw_chir="+chir_cmd);
-            })
-            .onDisconnectClicked([&]() {
-                m1OrientationClient.command_disconnect();
-            })
-			.onRecenterClicked([&]() {
-                m1OrientationClient.command_recenter();
-            })
-            .onOscSettingsChanged([&](int requested_osc_port, std::string requested_osc_msg_address) {
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_add="+requested_osc_msg_address);
-                m1OrientationClient.command_setAdditionalDeviceSettings("osc_p="+std::to_string(requested_osc_port));
-            })
-            .onYPRSwitchesClicked([&](int whichone) {
-                if (whichone == 0)
-                    // yaw clicked
-                    monitorState->yawActive = !monitorState->yawActive;
-                    m1OrientationClient.command_setTrackingYawEnabled(monitorState->yawActive);
-                if (whichone == 1)
-                    // pitch clicked
-                    monitorState->pitchActive = !monitorState->pitchActive;
-                    m1OrientationClient.command_setTrackingPitchEnabled(monitorState->pitchActive);
-                if (whichone == 2)
-                    // roll clicked
-                    monitorState->rollActive = !monitorState->rollActive;
-                    m1OrientationClient.command_setTrackingRollEnabled(monitorState->rollActive);
-            })
-            .withYPRTrackingSettings(
-                                     m1OrientationClient.getTrackingYawEnabled(),
-                                     m1OrientationClient.getTrackingPitchEnabled(),
-                                     m1OrientationClient.getTrackingRollEnabled(),
-                                     std::pair<int, int>(0, 180),
-                                     std::pair<int, int>(0, 180),
-                                     std::pair<int, int>(0, 180)
-            )
-            .withYPR(
-                     m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees().GetYaw(),
-                     m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees().GetPitch(),
-                     m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees().GetRoll()
-            ));
-            orientationControlWindow->draw();
-    }
+    // trigger a server side refresh for listed devices while menu is open
+    m1OrientationClient.command_refresh();
+    //bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
+    orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ 400 , 378, 290, 400}));
+    orientationControlWindow->withDeviceSlots(slots);
+    orientationControlWindow->withOrientationClient(m1OrientationClient);
+    orientationControlWindow->draw();
 }
 
 void MonitorUIBaseComponent::draw()
@@ -302,20 +220,21 @@ void MonitorUIBaseComponent::draw()
             // Settings rendering
             float leftSide_LeftBound_x = 18;
             float rightSide_LeftBound_x = 380;
-            float bottomSettings_topBound_y = 380;
+            float bottomSettings_topBound_y = 382;
             
             setShouldResizeTo(MurkaPoint(504, 467));
             
             /// LEFT SIDE
+
             m.setColor(ENABLED_PARAM);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
-            m.prepare<murka::Label>({leftSide_LeftBound_x, bottomSettings_topBound_y, 150, 20})
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y, 150, 20})
                 .withAlignment(TEXT_LEFT).text("MONITOR MODE")
                 .draw();
             
             m.setColor(BACKGROUND_COMPONENT);
             m.enableFill();
-            m.drawRectangle(20, bottomSettings_topBound_y + 20, 310, 40);
+            m.drawRectangle(20, bottomSettings_topBound_y + 25, 310, 40);
             m.setColor(ENABLED_PARAM);
             
             std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
@@ -324,7 +243,8 @@ void MonitorUIBaseComponent::draw()
             modeDropdown.optionHeight = 40;
             
             if (!showMonitorModeDropdown) {
-                auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 20, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true);
+                auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 25, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).withBackgroundColor(MurkaColor(BACKGROUND_GREY)).withOutlineColor(MurkaColor(ENABLED_PARAM))
+                    .withTriangle(true);
                 dropdownInit.textAlignment = TEXT_LEFT;
                 dropdownInit.heightDivisor = 3;
                 dropdownInit.draw();
@@ -334,7 +254,9 @@ void MonitorUIBaseComponent::draw()
                     modeDropdown.open();
                 }
             } else {
-                modeDropdown.draw();
+                m.addOverlay([&](){
+                    modeDropdown.draw();
+                }, &modeDropdown);
                 if (modeDropdown.changed || !modeDropdown.opened) {
                     monitorState->monitor_mode = modeDropdown.selectedOption;
                     double normalisedValue = processor->parameters.getParameter(processor->paramMonitorMode)->convertTo0to1(monitorState->monitor_mode);
@@ -343,58 +265,57 @@ void MonitorUIBaseComponent::draw()
                     modeDropdown.close();
                 }
             }
-            
-            /// RIGHT SIDE
-            //Broadcast rect
-            m.setColor(DISABLED_PARAM);
+
+            //Timecode offset
+            m.setColor(ENABLED_PARAM);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
-            m.prepare<murka::Label>({rightSide_LeftBound_x + 2, bottomSettings_topBound_y, 150, 20}).withAlignment(TEXT_LEFT).text("BROADCAST MIX").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y + 77, 150, 20})
+                .withAlignment(TEXT_LEFT).text("TIMECODE OFFSET")
+                .draw();
+            
             m.setColor(BACKGROUND_COMPONENT);
             m.enableFill();
-            m.drawRectangle(rightSide_LeftBound_x, bottomSettings_topBound_y + 20, 310, 40);
-            
-            //Timecode rect
-            m.setColor(GRID_LINES_1_RGBA);
-            m.setColor(ENABLED_PARAM);
-            m.prepare<murka::Label>({rightSide_LeftBound_x, bottomSettings_topBound_y + 77, 150, 20}).withAlignment(TEXT_LEFT).text("TIME CODE OFFSET").draw();
-            m.setColor(BACKGROUND_COMPONENT);
-            m.enableFill();
-            m.drawRectangle(rightSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
+            m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
             
             m.setColor(ENABLED_PARAM);
-            auto& hhfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
+            auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
             hhfield.widgetBgColor.a = 0;
             hhfield.drawBounds = false;
             hhfield.draw();
             if (processor->transport->HH < 0) processor->transport->HH = 0;
             if (processor->transport->HH > 100) processor->transport->HH = 99;
             
-            m.prepare<murka::Label>({rightSide_LeftBound_x + 35, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& mmfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
+            auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
             if (processor->transport->MM > 100) processor->transport->MM = 99;
             mmfield.widgetBgColor.a = 0;
             mmfield.drawBounds = false;
             mmfield.draw();
             
-            m.prepare<murka::Label>({rightSide_LeftBound_x + 80, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& ssfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
+            auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
             if (processor->transport->SS > 100) processor->transport->SS = 99;
             ssfield.widgetBgColor.a = 0;
             ssfield.drawBounds = false;
             ssfield.draw();
             
-            m.prepare<murka::Label>({rightSide_LeftBound_x + 125, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& fsfield = m.prepare<murka::TextField>({rightSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
+            auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
             if (processor->transport->FS > 100) processor->transport->FS = 99;
             fsfield.widgetBgColor.a = 0;
             fsfield.drawBounds = false;
             fsfield.draw();
+
+            /// RIGHT SIDE       
+                        
+            // orientation client window
+            draw_orientation_client(m, processor->m1OrientationClient);
             
             /// Bottom bar
 #ifdef CUSTOM_CHANNEL_LAYOUT
@@ -551,8 +472,6 @@ void MonitorUIBaseComponent::draw()
             m.drawPath(triangle);
         }
         
-        // orientation button
-        update_orientation_client_window(m, processor->m1OrientationClient, orientationControlWindow, showOrientationControlMenu, showedOrientationControlBefore);
         
     } else {
         // The monitor has been marked to be disabled
