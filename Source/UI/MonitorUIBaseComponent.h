@@ -92,7 +92,7 @@ private:
     bool showedOrientationControlBefore = false;
     bool showMonitorModeDropdown = false;
     
-    void update_orientation_client_window(murka::Murka &m, M1OrientationClient &m1OrientationClient, M1OrientationClientWindow* orientationControlWindow, bool &showOrientationControlMenu, bool showedOrientationControlBefore);
+    void draw_orientation_client(murka::Murka &m, M1OrientationClient &m1OrientationClient);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MonitorUIBaseComponent)
 };
