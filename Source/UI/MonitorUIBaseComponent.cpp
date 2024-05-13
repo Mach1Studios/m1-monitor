@@ -84,6 +84,7 @@ void MonitorUIBaseComponent::draw_orientation_client(murka::Murka &m, M1Orientat
     m1OrientationClient.command_refresh();
     //bool showOrientationSettingsPanelInsideWindow = (m1OrientationClient.getCurrentDevice().getDeviceType() != M1OrientationManagerDeviceTypeNone);
     orientationControlWindow = &(m.prepare<M1OrientationClientWindow>({ 400 , 378, 290, 400}));
+    orientationControlWindow->withDeviceSlots(slots);
     orientationControlWindow->withOrientationClient(m1OrientationClient);
     orientationControlWindow->draw();
 }
