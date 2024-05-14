@@ -683,20 +683,41 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeAlgoType decode
 //==============================================================================
 void M1MonitorAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-    juce::MemoryOutputStream stream(destData, false);
-    parameters.state.writeToStream(stream);
+    // This method is used to store your parameters in the memory block.
+    
+    // Create an XML doc from the parameters
+    std::unique_ptr<juce::XmlElement> parameters_xml(parameters.state.createXml());
+    
+    // Append the Timecode Offset settings
+    parameters_xml->setAttribute("HH", transport->HH);
+    parameters_xml->setAttribute("MM", transport->MM);
+    parameters_xml->setAttribute("SS", transport->SS);
+    parameters_xml->setAttribute("FS", transport->FS);
+    
+    // Save to output memory
+    copyXmlToBinary(*parameters_xml, destData);
 }
 
 void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
+    // This method is used to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
-    juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
-    if (tree.isValid()) {
-        parameters.state = tree;
+    
+    std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+    if (xml != nullptr) {
+        if (xml->hasTagName(parameters.state.getType())) {
+            
+            juce::ValueTree tree = juce::ValueTree::fromXml(*xml);
+            if (tree.isValid()) {
+                parameters.state = tree;
+            }
+
+            // Set the timecode offset from the saved plugin data
+            transport->HH = xml->getIntAttribute("HH");
+            transport->MM = xml->getIntAttribute("MM");
+            transport->SS = xml->getIntAttribute("SS");
+            transport->FS = xml->getIntAttribute("FS");
+        }
     }
 }
 

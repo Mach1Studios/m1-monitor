@@ -6,7 +6,7 @@
 
 Transport::Transport(M1OrientationClient* orientationClient) : m_orientation_client(orientationClient)
 {
-    startTimer(50);
+    startTimer(10);
 }
 
 double Transport::getTimeInSeconds() const {
@@ -31,9 +31,7 @@ void Transport::sendData() {
     m_transport_offset = HH * 1000 * 60 * 60 + MM * 1000 * 60 + SS * 1000 + FS;
     auto play_head_position = m_correct_time_in_seconds - m_transport_offset / 1000;
     if (play_head_position < 0) play_head_position = 0;
-    if (play_head_position != 0) {
-        m_orientation_client->command_setPlayerPositionInSeconds(play_head_position);
-    }
+    m_orientation_client->command_setPlayerPositionInSeconds(play_head_position);
     m_orientation_client->command_setPlayerIsPlaying(getIsPlaying());
 }
 
