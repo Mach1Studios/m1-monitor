@@ -309,6 +309,9 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
         if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor()) {
             monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
         }
+    } else if (parameterID == paramOutputMode) {
+        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType((int)newValue));
+        m1DecodeChangeInputMode(Mach1DecodeAlgoType((int)newValue));
     }
     
     // update the gui on other plugins for any changes to YPR
