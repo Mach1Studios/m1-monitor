@@ -91,7 +91,9 @@ public:
 
 		if (activated && mouseDownPressed(0) && !isInside) {
 			activated = false;
-			resetKeyboardFocus();
+			if (hasKeyboardFocus()) {
+				resetKeyboardFocus();
+			}
 		}
 
 
