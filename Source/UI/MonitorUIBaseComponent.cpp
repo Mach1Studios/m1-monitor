@@ -279,7 +279,7 @@ void MonitorUIBaseComponent::draw()
             
             m.setColor(ENABLED_PARAM);
             auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
-            hhfield.widgetBgColor.a = 0;
+            hhfield.widgetBgColor.setAlpha(0);
             hhfield.drawBounds = false;
             hhfield.draw();
             if (processor->transport->HH < 0) processor->transport->HH = 0;
@@ -290,7 +290,7 @@ void MonitorUIBaseComponent::draw()
             auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
             if (processor->transport->MM > 100) processor->transport->MM = 99;
-            mmfield.widgetBgColor.a = 0;
+            mmfield.widgetBgColor.setAlpha(0);
             mmfield.drawBounds = false;
             mmfield.draw();
             
@@ -299,7 +299,7 @@ void MonitorUIBaseComponent::draw()
             auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
             if (processor->transport->SS > 100) processor->transport->SS = 99;
-            ssfield.widgetBgColor.a = 0;
+            ssfield.widgetBgColor.setAlpha(0);
             ssfield.drawBounds = false;
             ssfield.draw();
             
@@ -308,7 +308,7 @@ void MonitorUIBaseComponent::draw()
             auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
             if (processor->transport->FS > 100) processor->transport->FS = 99;
-            fsfield.widgetBgColor.a = 0;
+            fsfield.widgetBgColor.setAlpha(0);
             fsfield.drawBounds = false;
             fsfield.draw();
 
