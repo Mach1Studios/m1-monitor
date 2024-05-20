@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MurkaBasicWidgets.h"
-#include "TextField.h"
 #include "../Config.h"
 
 using namespace murka;
@@ -143,47 +142,6 @@ public:
         
         m.setColor(100 + 110 * enabled + A(30 * hoveredLocal), 255);
         auto labelPositionY = shape.size.x * 0.8 + 10;
-        
-        std::function<void()> deleteTheTextField = [&]() {
-            // Temporary solution to delete the TextField:
-            // Searching for an id to delete the text field widget.
-            // To be redone after the UI library refactoring.
-            
-            imIdentifier idToDelete;
-            for (auto childTuple: imChildren) {
-                auto childIdTuple = childTuple.first;
-                if (std::get<1>(childIdTuple) == typeid(TextField).name()) {
-                    idToDelete = childIdTuple;
-                }
-            }
-            imChildren.erase(idToDelete);
-        };
-
-        MurkaShape valueTextShape = { shape.size.x / 2 - valueTextBbox.width / 2 - 5,
-                                     shape.size.x * 0.8 + 10,
-                                     valueTextBbox.width + 10,
-                                     valueTextBbox.height };
-        
-        bool hoveredValueText = false;
-        if (valueTextShape.inside(mousePosition()) && !editingTextNow && enabled) {
-            m.drawRectangle(valueTextShape.x() - 2,
-                             valueTextShape.y(),
-                             2,
-                             2);
-            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
-                             valueTextShape.y(),
-                             2,
-                             2);
-            m.drawRectangle(valueTextShape.x() - 2,
-                             valueTextShape.y() + valueTextShape.height(),
-                             2,
-                             2);
-            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
-                             valueTextShape.y() + valueTextShape.height(),
-                             2,
-                             2);
-            hoveredValueText = true;
-        }
         
         // Action
         
