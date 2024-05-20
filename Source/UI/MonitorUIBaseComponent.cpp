@@ -321,7 +321,6 @@ void MonitorUIBaseComponent::draw()
 #ifdef CUSTOM_CHANNEL_LAYOUT
             // Remove bottom bar for CUSTOM_CHANNEL_LAYOUT macro
 #else
-            
             int dropdownItemHeight = 20;
 
             if (!processor->hostType.isProTools() || // is not PT
