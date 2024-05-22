@@ -26,7 +26,12 @@ public:
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
         auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
-                
+            
+		// Focus 
+		if (activated && !hasKeyboardFocus()) {
+			claimKeyboardFocus();
+		} 
+
         m.pushStyle();
         
         // Increase circle resolution
@@ -75,27 +80,6 @@ public:
         } else {
             m.setColor(DISABLED_PARAM);
         }
-        
-		// Keyboard focus
-		if (enabled) {
-			if(mouseDownPressed(0)) {
-				if (isInside && !activated) {
-					activated = true;
-
-					if (activated) {
-						claimKeyboardFocus();
-					}
-				}
-			}
-		}
-
-		if (activated && mouseDownPressed(0) && !isInside) {
-			activated = false;
-			if (hasKeyboardFocus()) {
-				resetKeyboardFocus();
-			}
-		}
-
 
         float angle = 3.14 * 2 * (inputValueNormalised - 0.25);
         float angleSize = 3.14 * 0.5;
@@ -115,19 +99,6 @@ public:
             //draw arc
             m.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
         }
-        
-
-		// Draw some frame when selected widget
-		if (activated) {
-			m.pushStyle();
-			m.setColor(ENABLED_PARAM);
-			int size = 5;
-			m.drawRectangle(0, 0, size, size);
-			m.drawRectangle(0 + shape.size.x - size, 0, size, size);
-			m.drawRectangle(0, 0 + shape.size.y - size, size, size);
-			m.drawRectangle(0 + shape.size.x - size, 0 + shape.size.y - size, size, size);
-			m.popStyle();
-		}
 
         // TODO: have start point drawn a little further from center to make more room for value label
         juce::Point<float> centralLineStart = center + juce::Point<float>(cos(angle) * 15,
@@ -194,7 +165,7 @@ public:
         }
         
         // hot key resets
-		if (hasKeyboardFocus()) {
+		if (activated) {
 		
 			if (isKeyReleased(murka::MurkaKey::MURKA_KEY_UP)) {
 				*((float*)dataToControl) = 0.0f;

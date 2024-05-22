@@ -145,6 +145,7 @@ void MonitorUIBaseComponent::draw()
             yawRadial.dataToControl = &monitorState->yaw;
             yawRadial.enabled = true;
             yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
+			yawRadial.activated = !isAnyTextfieldActived;
             yawRadial.draw();
             
             if (yawRadial.changed) {
@@ -216,6 +217,8 @@ void MonitorUIBaseComponent::draw()
             m.imChildren.erase(idToDelete);
         };
         
+		isAnyTextfieldActived = false;
+
         if (showSettingsMenu) {
             // Settings rendering
             float leftSide_LeftBound_x = 18;
@@ -311,6 +314,8 @@ void MonitorUIBaseComponent::draw()
             fsfield.widgetBgColor.setAlpha(0);
             fsfield.drawBounds = false;
             fsfield.draw();
+
+			isAnyTextfieldActived = hhfield.activated || mmfield.activated || ssfield.activated || fsfield.activated;
 
             /// RIGHT SIDE       
                         
