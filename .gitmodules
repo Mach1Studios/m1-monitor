@@ -1,10 +1,9 @@
-[submodule "Modules/juce_murka"]
-	path = Modules/juce_murka
-	url = git@github.com:Kiberchaika/juce_murka.git
-	branch = 1_0
 [submodule "Modules/m1_orientation_client"]
 	path = Modules/m1_orientation_client
 	url = git@github.com:Mach1Studios/m1_orientation_client.git
 [submodule "JUCE"]
 	path = JUCE
 	url = git@github.com:juce-framework/JUCE.git
+[submodule "Modules/Murka"]
+	path = Modules/Murka
+	url = https://github.com/Kiberchaika/Murka
