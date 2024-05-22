@@ -91,6 +91,7 @@ private:
     bool showOrientationControlMenu = false;
     bool showedOrientationControlBefore = false;
     bool showMonitorModeDropdown = false;
+	bool isAnyTextfieldActived = false;
     
     void draw_orientation_client(murka::Murka &m, M1OrientationClient &m1OrientationClient);
 
