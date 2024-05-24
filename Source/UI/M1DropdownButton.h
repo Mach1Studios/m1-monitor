@@ -32,7 +32,7 @@ public:
             m.drawPath(triangle);
         }
         
-        m.setColor(LABEL_TEXT_COLOR);
+        m.setColor(labelColor);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, (int)fontSize);
         // interior text
         m.prepare<murka::Label>({0, shape.size.y/heightDivisor, shape.size.x, shape.size.y}).withAlignment(textAlignment).text(label).draw();
@@ -46,6 +46,7 @@ public:
     }
     
     std::string label = "";
+    MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
     bool pressed = false;
     float fontSize = 10;
     bool outlineEnabled = false;
@@ -60,6 +61,11 @@ public:
     
     M1DropdownButton & withLabel(std::string label_) {
         label = label_;
+        return *this;
+    }
+    
+    M1DropdownButton & withLabelColor(MurkaColor lblc) {
+        labelColor = lblc;
         return *this;
     }
     
