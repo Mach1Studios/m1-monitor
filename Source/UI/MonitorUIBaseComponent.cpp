@@ -284,7 +284,8 @@ void MonitorUIBaseComponent::draw()
             auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
             hhfield.widgetBgColor.setAlpha(0);
             hhfield.drawBounds = false;
-            hhfield.draw();
+			hhfield.shouldSelectAllWhenClicked = true;
+			hhfield.draw();
             if (processor->transport->HH < 0) processor->transport->HH = 0;
             if (processor->transport->HH > 100) processor->transport->HH = 99;
             
@@ -295,6 +296,7 @@ void MonitorUIBaseComponent::draw()
             if (processor->transport->MM > 100) processor->transport->MM = 99;
             mmfield.widgetBgColor.setAlpha(0);
             mmfield.drawBounds = false;
+			mmfield.shouldSelectAllWhenClicked = true;
             mmfield.draw();
             
             m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
@@ -304,7 +306,8 @@ void MonitorUIBaseComponent::draw()
             if (processor->transport->SS > 100) processor->transport->SS = 99;
             ssfield.widgetBgColor.setAlpha(0);
             ssfield.drawBounds = false;
-            ssfield.draw();
+			ssfield.shouldSelectAllWhenClicked = true;
+			ssfield.draw();
             
             m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
@@ -313,7 +316,8 @@ void MonitorUIBaseComponent::draw()
             if (processor->transport->FS > 100) processor->transport->FS = 99;
             fsfield.widgetBgColor.setAlpha(0);
             fsfield.drawBounds = false;
-            fsfield.draw();
+			fsfield.shouldSelectAllWhenClicked = true;
+			fsfield.draw();
 
 			isAnyTextfieldActived = hhfield.activated || mmfield.activated || ssfield.activated || fsfield.activated;
 
