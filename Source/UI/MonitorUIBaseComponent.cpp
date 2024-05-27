@@ -282,14 +282,14 @@ void MonitorUIBaseComponent::draw()
             
             m.setColor(ENABLED_PARAM);
             auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
-            hhfield.widgetBgColor.setAlpha(0);
+			if (processor->transport->HH < 0) processor->transport->HH = 0;
+			if (processor->transport->HH > 100) processor->transport->HH = 99;
+			hhfield.widgetBgColor.setAlpha(0);
             hhfield.drawBounds = false;
 			hhfield.shouldSelectAllWhenClicked = true;
 			hhfield.draw();
-            if (processor->transport->HH < 0) processor->transport->HH = 0;
-            if (processor->transport->HH > 100) processor->transport->HH = 99;
-            
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+
+			m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
             auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
@@ -318,6 +318,54 @@ void MonitorUIBaseComponent::draw()
             fsfield.drawBounds = false;
 			fsfield.shouldSelectAllWhenClicked = true;
 			fsfield.draw();
+
+			if (hhfield.boundReached) {
+				if (hhfield.cursorPosition >= 2) {
+					hhfield.cursorPosition = 0;
+					hhfield.deactivate();
+					mmfield.activate();
+					mmfield.shouldForceEditorToSelectAll = true;
+				}
+			};
+
+			if (mmfield.boundReached) {
+				if (mmfield.cursorPosition == 0) {
+					mmfield.cursorPosition = 0;
+					mmfield.deactivate();
+					hhfield.activate();
+					hhfield.shouldForceEditorToSelectAll = true;
+				}
+				if (mmfield.cursorPosition == 2) {
+					mmfield.cursorPosition = 0;
+					mmfield.deactivate();
+					ssfield.activate();
+					ssfield.shouldForceEditorToSelectAll = true;
+				}
+			};
+
+			if (ssfield.boundReached) {
+				if (ssfield.cursorPosition == 0) {
+					ssfield.cursorPosition = 0;
+					ssfield.deactivate();
+					mmfield.activate();
+					mmfield.shouldForceEditorToSelectAll = true;
+				}
+				if (ssfield.cursorPosition >= 2) {
+					ssfield.cursorPosition = 0;
+					ssfield.deactivate();
+					fsfield.activate();
+					fsfield.shouldForceEditorToSelectAll = true;
+				}
+			};
+
+			if (fsfield.boundReached) {
+				if (fsfield.cursorPosition == 0) {
+					fsfield.cursorPosition = 0;
+					fsfield.deactivate();
+					ssfield.activate();
+					ssfield.shouldForceEditorToSelectAll = true;
+				}
+			};
 
 			isAnyTextfieldActived = hhfield.activated || mmfield.activated || ssfield.activated || fsfield.activated;
 
