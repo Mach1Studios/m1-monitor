@@ -93,7 +93,7 @@ public:
                     }
                 } else {
                     m.setColor(labelColor); // default color
-                    if (i = selectedOption) {
+                    if (i == selectedOption) {
                         m.setColor(selectedLabelColor);
                     }
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
