@@ -27,9 +27,9 @@ public:
         
         if (opened) {
             // outline border
-            m.setColor(ENABLED_PARAM);
+            m.setColor(outlineColor);
             m.drawRectangle(0, 0, shape.size.x, shape.size.y);
-            m.setColor(BACKGROUND_GREY);
+            m.setColor(backgroundColor);
             m.drawRectangle(1, 1, shape.size.x - 2, shape.size.y - 2);
             
             bool hoveredAnything = false;
@@ -65,7 +65,7 @@ public:
                 hoveredAnything += hoveredAnOption; // Setting to true if any of those are true
                 
                 if (hoveredAnOption) {
-                    m.setColor(ENABLED_PARAM);
+                    m.setColor(outlineColor);
                     m.drawRectangle(1, i * optionHeight - scrollbarOffsetInPixels, shape.size.x - 2, optionHeight);
                     m.setColor(highlightLabelColor);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
@@ -113,7 +113,7 @@ public:
             }
             
             if (drawScrollbar) {
-                if (preciseHoveredScrollbar) m.setColor(180, 180, 180);
+                if (preciseHoveredScrollbar) m.setColor(ENABLED_PARAM);
                 else m.setColor(120, 120, 120);
                 m.drawRectangle(scrollbarShape);
             }
@@ -160,6 +160,7 @@ public:
     
     bool changed = false;
     bool opened = false;
+    int selectedOption = 0;
     std::vector<std::string> options;
     Mach1DecodeAlgoType* dataToControl = nullptr;
     
@@ -170,6 +171,8 @@ public:
     MurkaColor highlightLabelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaColor selectedLabelColor = MurkaColor(LABEL_TEXT_COLOR);
+    MurkaColor backgroundColor = MurkaColor(BACKGROUND_GREY);
+    MurkaColor outlineColor = MurkaColor(ENABLED_PARAM);
     MurkaShape triggerButtonShape;
     TextAlignment textAlignment = TEXT_CENTER;
 
@@ -195,6 +198,16 @@ public:
     
     M1DropdownMenu & withHighlightLabelColor(MurkaColor hlblc) {
         highlightLabelColor = hlblc;
+        return *this;
+    }
+    
+    M1DropdownMenu & withBackgroundColor(MurkaColor bgc) {
+        backgroundColor = bgc;
+        return *this;
+    }
+    
+    M1DropdownMenu & withOutlineColor(MurkaColor olc) {
+        outlineColor = olc;
         return *this;
     }
     
