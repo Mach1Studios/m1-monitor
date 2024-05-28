@@ -42,7 +42,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                             [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                     std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
                     // Note: Change init output to max bus size when new formats are introduced
-                    std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, Mach1DecodeAlgoSpatial_14, Mach1DecodeAlgoSpatial_8),
+                    std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeAlgoSpatial_14, (int)Mach1DecodeAlgoSpatial_8),
                })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -53,13 +53,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
 
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
-	monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoSpatial_8);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
-    
-    smoothedChannelCoeffs.resize(monitorSettings.m1Decode.getFormatChannelCount());
-    for (int input_channel = 0; input_channel < monitorSettings.m1Decode.getFormatChannelCount(); input_channel++) {
-        smoothedChannelCoeffs[input_channel].resize(2);
-    }
+    m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_8); // sets type and resizes temp buffers
 
     transport = new Transport(&m1OrientationClient);
     
@@ -310,7 +305,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
             monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
         }
     } else if (parameterID == paramOutputMode) {
-        monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType((int)newValue));
+        // `monitorSettings` are changed via the `m1DecodeChangeInputMode()` call
         m1DecodeChangeInputMode(Mach1DecodeAlgoType((int)newValue));
     }
     
@@ -713,6 +708,9 @@ void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInB
             juce::ValueTree tree = juce::ValueTree::fromXml(*xml);
             if (tree.isValid()) {
                 parameters.state = tree;
+
+                // Force update the input/output temp buffers
+                m1DecodeChangeInputMode(Mach1DecodeAlgoType( (int)parameters.getParameter(paramOutputMode)->convertFrom0to1(parameters.getParameter(paramOutputMode)->getValue())));
             }
 
             // Set the timecode offset from the saved plugin data
