@@ -66,6 +66,7 @@ public:
 private:
     bool showSettingsMenu = false;
     bool recenterButtonActive = false;
+    bool isInitialValueApplied = false;
     
 	MurImage m1logo;
 
