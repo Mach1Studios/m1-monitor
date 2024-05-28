@@ -242,6 +242,7 @@ void MonitorUIBaseComponent::draw()
             
             std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
             auto& modeDropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 310, 120}).withOptions(monitorModes);
+            modeDropdown.withHighlightLabelColor(MurkaColor(BACKGROUND_GREY));
             modeDropdown.textAlignment = TEXT_LEFT;
             modeDropdown.optionHeight = 40;
             
