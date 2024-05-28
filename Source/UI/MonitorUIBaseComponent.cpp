@@ -224,7 +224,7 @@ void MonitorUIBaseComponent::draw()
             float leftSide_LeftBound_x = 18;
             float rightSide_LeftBound_x = 380;
             float bottomSettings_topBound_y = 382;
-            
+
             setShouldResizeTo(MurkaPoint(504, 467));
             
             /// LEFT SIDE
@@ -443,6 +443,14 @@ void MonitorUIBaseComponent::draw()
                     m.getSize().height() - 28 - output_options.size() * dropdownItemHeight,
                     120, output_options.size() * dropdownItemHeight })
                 .withOptions(output_options);
+                
+                // Use this to change the initial value on the first loop if we need something other than the 0th index
+                if (!isInitialValueApplied) {
+                    // set 1 as default for Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8
+                    outputDropdownMenu.selectedOption = processor->parameters.getParameter(processor->paramOutputMode)->convertFrom0to1(processor->parameters.getParameter(processor->paramOutputMode)->getValue());
+                    isInitialValueApplied = true;
+                }
+                
                 if (outputDropdownButton.pressed) {
                     outputDropdownMenu.open();
                 }

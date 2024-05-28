@@ -160,7 +160,6 @@ public:
     
     bool changed = false;
     bool opened = false;
-    int selectedOption = 1; // set 1 as default for Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8
     std::vector<std::string> options;
     Mach1DecodeAlgoType* dataToControl = nullptr;
     
