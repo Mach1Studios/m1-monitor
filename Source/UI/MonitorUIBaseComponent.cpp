@@ -396,7 +396,7 @@ void MonitorUIBaseComponent::draw()
                 
                 // OUTPUT DROPDOWN & LABELS
                 /// --> label
-                m.setColor(200, 255);
+                m.setColor(ENABLED_PARAM);
                 m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
                 auto& arrowLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 20, m.getSize().height() - 26, 40, 20));
                 arrowLabel.label = "-->";
@@ -406,7 +406,7 @@ void MonitorUIBaseComponent::draw()
                 arrowLabel.draw();
                 
                 // OUTPUT DROPDOWN or LABEL
-                m.setColor(200, 255);
+                m.setColor(ENABLED_PARAM);
                 m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
                 auto& outputLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 + 110, m.getSize().height() - 26, 60, 20));
                 outputLabel.label = "OUTPUT";
@@ -532,7 +532,7 @@ void MonitorUIBaseComponent::draw()
         // The monitor has been marked to be disabled
         
         /// DISABLED label
-        m.setColor(200, 255);
+        m.setColor(ENABLED_PARAM);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
 
         auto& disabledLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 100, m.getSize().height()/2, 200, 20));
@@ -555,7 +555,7 @@ void MonitorUIBaseComponent::draw()
     }
 
     /// Monitor label
-    m.setColor(200, 255);
+    m.setColor(ENABLED_PARAM);
     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
 #ifdef CUSTOM_CHANNEL_LAYOUT
     auto& monitorLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
@@ -576,7 +576,7 @@ void MonitorUIBaseComponent::draw()
     monitorLabel.highlighted = false;
     monitorLabel.draw();
     
-    m.setColor(200, 255);
+    m.setColor(ENABLED_PARAM);
 #ifdef CUSTOM_CHANNEL_LAYOUT
     m.drawImage(m1logo, 25, m.getSize().height() - 30, 161 / 3, 39 / 3);
 #else

@@ -53,7 +53,6 @@ public:
                 scrollbarOffsetInPixels = 0;
             }
             
-            
             bool coarseHoveredScrollbar = (drawScrollbar ? mousePosition().x > shape.size.x - scrollbarWidth : false);
             
             // Drawing the options
@@ -68,7 +67,7 @@ public:
                 if (hoveredAnOption) {
                     m.setColor(ENABLED_PARAM);
                     m.drawRectangle(1, i * optionHeight - scrollbarOffsetInPixels, shape.size.x - 2, optionHeight);
-                    m.setColor(BACKGROUND_GREY);
+                    m.setColor(highlightLabelColor);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
                     m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels,
                         shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
@@ -169,6 +168,7 @@ public:
     int fontSize = 10;
     bool enabled = true;
     std::string label;
+    MurkaColor highlightLabelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaColor selectedLabelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaShape triggerButtonShape;
@@ -178,7 +178,7 @@ public:
         dataToControl = dataPointer;
         return *this;
     }
-    
+
     M1DropdownMenu & withLabel(std::string label_) {
         label = label_;
         return *this;
@@ -191,6 +191,11 @@ public:
     
     M1DropdownMenu & withSelectedLabelColor(MurkaColor slblc) {
         selectedLabelColor = slblc;
+        return *this;
+    }
+    
+    M1DropdownMenu & withHighlightLabelColor(MurkaColor hlblc) {
+        highlightLabelColor = hlblc;
         return *this;
     }
     
