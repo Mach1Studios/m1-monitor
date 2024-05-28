@@ -63,9 +63,7 @@ public:
                 bool hoveredAnOption = (mousePosition().y > i * optionHeight - scrollbarOffsetInPixels) && (mousePosition().y < (i + 1) * optionHeight - scrollbarOffsetInPixels) && inside();
                 
                 hoveredAnOption *= !coarseHoveredScrollbar; // If we hovered scrollbar section, we're not going to press any element
-                
                 hoveredAnything += hoveredAnOption; // Setting to true if any of those are true
-                
                 
                 if (hoveredAnOption) {
                     m.setColor(ENABLED_PARAM);
@@ -94,7 +92,10 @@ public:
                         }
                     }
                 } else {
-                    m.setColor(LABEL_TEXT_COLOR);
+                    m.setColor(labelColor); // default color
+                    if (i = selectedOption) {
+                        m.setColor(selectedLabelColor);
+                    }
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
                     m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels, shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                 }
@@ -115,7 +116,6 @@ public:
             if (drawScrollbar) {
                 if (preciseHoveredScrollbar) m.setColor(180, 180, 180);
                 else m.setColor(120, 120, 120);
-                
                 m.drawRectangle(scrollbarShape);
             }
             
@@ -169,6 +169,8 @@ public:
     int fontSize = 10;
     bool enabled = true;
     std::string label;
+    MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
+    MurkaColor selectedLabelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaShape triggerButtonShape;
     TextAlignment textAlignment = TEXT_CENTER;
 
@@ -179,6 +181,16 @@ public:
     
     M1DropdownMenu & withLabel(std::string label_) {
         label = label_;
+        return *this;
+    }
+    
+    M1DropdownMenu & withLabelColor(MurkaColor lblc) {
+        labelColor = lblc;
+        return *this;
+    }
+    
+    M1DropdownMenu & withSelectedLabelColor(MurkaColor slblc) {
+        selectedLabelColor = slblc;
         return *this;
     }
     
