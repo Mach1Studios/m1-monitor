@@ -35,7 +35,7 @@ public:
         m.setColor(labelColor);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, (int)fontSize);
         // interior text
-        m.prepare<murka::Label>({0, shape.size.y/heightDivisor, shape.size.x, shape.size.y}).withAlignment(textAlignment).text(label).draw();
+        m.prepare<murka::Label>({labelPaddingLeft, shape.size.y/heightDivisor, shape.size.x - labelPaddingLeft, shape.size.y}).withAlignment(textAlignment).text(label).draw();
         
         pressed = false;
         if ((isHovered()) && (mouseDownPressed(0))) {
@@ -46,6 +46,7 @@ public:
     }
     
     std::string label = "";
+    float labelPaddingLeft = 5;
     MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
     bool pressed = false;
     float fontSize = 10;

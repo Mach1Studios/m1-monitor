@@ -241,7 +241,7 @@ void MonitorUIBaseComponent::draw()
             m.setColor(ENABLED_PARAM);
             
             std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
-            auto& modeDropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 20, 310, 120}).withOptions(monitorModes);
+            auto& modeDropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 25, 310, 120}).withOptions(monitorModes);
             modeDropdown.withHighlightLabelColor(MurkaColor(BACKGROUND_GREY));
             modeDropdown.textAlignment = TEXT_LEFT;
             modeDropdown.optionHeight = 40;
@@ -489,6 +489,7 @@ void MonitorUIBaseComponent::draw()
             .withOutline(false);
             showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
             showSettingsWhileOpenedButton.heightDivisor = 3;
+            showSettingsWhileOpenedButton.labelPaddingLeft = 0;
             showSettingsWhileOpenedButton.draw();
             
             if (showSettingsWhileOpenedButton.pressed) {
@@ -503,6 +504,7 @@ void MonitorUIBaseComponent::draw()
             .withOutline(false);
             showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
             showSettingsWhileClosedButton.heightDivisor = 3;
+            showSettingsWhileClosedButton.labelPaddingLeft = 0;
             showSettingsWhileClosedButton.draw();
             
             if (showSettingsWhileClosedButton.pressed) {
