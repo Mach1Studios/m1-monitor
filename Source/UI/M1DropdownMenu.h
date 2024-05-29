@@ -118,24 +118,20 @@ public:
                 m.drawRectangle(scrollbarShape);
             }
             
-            if (preciseHoveredScrollbar && (mouseDownPressed(0) || std::abs(swipeDelta().y) > 0)) {
+            if (preciseHoveredScrollbar && mouseDownPressed(0)) {
                 holdingScrollbar = true;
             }
             
             // TODO: Add mouse scrolling to control the scroll bar too
             if (holdingScrollbar) {
-                if (mouseDownPressed(0)) {
-                    scrollbarOffsetInPixels -= mouseDelta().y * m.getScreenScale();
-                } else {
-                    scrollbarOffsetInPixels -= swipeDelta().y * m.getScreenScale();
-                }
+                scrollbarOffsetInPixels -= mouseDelta().y * m.getScreenScale();
                 
                 if (scrollbarOffsetInPixels > maxScrollbarOffset) scrollbarOffsetInPixels = maxScrollbarOffset;
                 if (scrollbarOffsetInPixels < 0) scrollbarOffsetInPixels = 0;
 
             }
             
-            if (holdingScrollbar && (!mouseDown(0) && std::abs(swipeDelta().y) == 0)) {
+            if (holdingScrollbar && !mouseDown(0)) {
                 holdingScrollbar = false;
             }
             
