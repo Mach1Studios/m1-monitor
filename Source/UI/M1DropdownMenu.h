@@ -69,8 +69,8 @@ public:
                     m.drawRectangle(1, i * optionHeight - scrollbarOffsetInPixels, shape.size.x - 2, optionHeight);
                     m.setColor(highlightLabelColor);
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels,
-                        shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
+                    m.prepare<murka::Label>({labelPaddingLeft, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels,
+                        shape.size.x - labelPaddingLeft, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                     
                     if (closingMode == modeMouseDown) {
                         if (mouseDownPressed(0)) {
@@ -96,7 +96,7 @@ public:
                         m.setColor(selectedLabelColor);
                     }
                     m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-                    m.prepare<murka::Label>({0, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels, shape.size.x, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
+                    m.prepare<murka::Label>({labelPaddingLeft, optionHeight * i + ((optionHeight/3 < fontSize) ? (optionHeight/3)/2 : optionHeight/3) - scrollbarOffsetInPixels, shape.size.x - labelPaddingLeft, optionHeight}).text(options[i]).withAlignment(textAlignment).draw();
                 }
                 
                 // Closing if pressed/released outside of the menu
@@ -168,6 +168,7 @@ public:
     int fontSize = 10;
     bool enabled = true;
     std::string label;
+    float labelPaddingLeft = 5; 
     MurkaColor highlightLabelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
     MurkaColor selectedLabelColor = MurkaColor(LABEL_TEXT_COLOR);
