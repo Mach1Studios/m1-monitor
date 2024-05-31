@@ -9,11 +9,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-/*
- Architecture:
-
- */
-
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
 juce::String M1MonitorAudioProcessor::paramRoll("roll");
@@ -93,13 +88,13 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                     if (yaw < 0.0f) yaw += 1.0f;
                     if (yaw > 1.0f) yaw -= 1.0f;
                     // apply if yaw is active
-                    // we negate the right-handed yaw from `currentOrientation` before comparing to the left-handed yaw value
                     if (monitorSettings.yawActive) {
-                        currentOrientation.ApplyRotationDegrees({ 0, -((yaw * 360.0f) + monitorSettings.yaw), 0 });
+                        // we negate the right-handed yaw from `currentOrientation` before comparing to the left-handed yaw value
+                        //currentOrientation.ApplyRotationDegrees({ -((yaw * 360.0f) + monitorSettings.yaw), 0, 0 });
                     } else {
-                        currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
+                        //currentOrientation.SetRotation({ 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
                     }
-                    parameters.getParameter(paramYaw)->setValueNotifyingHost(currentOrientation.GetGlobalRotationAsEulerDegrees().Normalized().GetYaw());
+                    //parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(currentOrientation.GetGlobalRotationAsEulerDegrees().Modulus(0.0f, 360.0f).GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
                 }
                 DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", Y: "+std::to_string(msg[0].getFloat32()));
             }
@@ -108,13 +103,13 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                 if (msg[1].isFloat32()){
                     float pitch = msg[1].getFloat32();
                     // apply if pitch is active
-                    // we negate the right-handed pitch from `currentOrientation` before comparing to the left-handed pitch value
                     if (monitorSettings.pitchActive) {
-                        currentOrientation.ApplyRotationDegrees({ -((pitch * 180.0f) - 90.0f + monitorSettings.pitch), 0, 0 });
+                        // we negate the right-handed pitch from `currentOrientation` before comparing to the left-handed pitch value
+                        //currentOrientation.ApplyRotationDegrees({ 0, -((pitch * 180.0f) - 90.0f + monitorSettings.pitch), 0 });
                     } else {
-                        currentOrientation.SetRotation({ 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
+                        //currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
                     }
-                    parameters.getParameter(paramPitch)->setValueNotifyingHost(currentOrientation.GetGlobalRotationAsEulerDegrees().Normalized().GetPitch());
+                    //parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(currentOrientation.GetGlobalRotationAsEulerDegrees().Modulus(-90.0f, 90.0f).GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
                 }
                 DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", P: "+std::to_string(msg[1].getFloat32()));
             }
@@ -428,73 +423,45 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // m1_orientation_client update
     if (m1OrientationClient.isConnectedToServer()) {
 
+        Mach1::Float3 mon_ori_deg = {
+            monitorSettings.yawActive ? parameters.getParameter(paramYaw)->convertFrom0to1(parameters.getParameter(paramYaw)->getValue()) : 0.0f,
+            monitorSettings.pitchActive ? parameters.getParameter(paramPitch)->convertFrom0to1(parameters.getParameter(paramPitch)->getValue()) : 0.0f,
+            monitorSettings.rollActive ? parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue()): 0.0f
+        };
+
+        // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
+        auto external_orientation = m1OrientationClient.getOrientation();
+        Mach1::Float3 ex_ori_deg = external_orientation.GetGlobalRotationAsEulerDegrees();
+        Mach1::Float3 ex_ori_delta_deg = previous_external_orientation.GetGlobalRotationAsEulerDegrees() - ex_ori_deg;
+        Mach1::Float3 new_ori = {
+            monitorSettings.yawActive ? ex_ori_delta_deg.GetYaw() : 0.0f,
+            monitorSettings.pitchActive ? ex_ori_delta_deg.GetPitch() : 0.0f,
+            monitorSettings.rollActive ? ex_ori_delta_deg.GetRoll() : 0.0f
+        };
+        previous_external_orientation = external_orientation;
+
+        // we reset the angle to safely apply the last known values on each loop
+        currentOrientation.Reset();
+        currentOrientation.ApplyRotationDegrees(mon_ori_deg);
+        currentOrientation.ApplyRotationDegrees(new_ori);
+
+        auto new_params = currentOrientation.GetGlobalRotationAsEulerDegrees();
+        // the jmap normalizes the values for JUCE parameters and we apply the external_orientation to the parameters
+        parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(new_params.Modulus(0, 360.0f).GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
+        parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
+        parameters.getParameter(paramRoll)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetRoll(), -90.0f, 90.0f, 0.0f, 1.0f));
+        
+        // send the monitor's master YPR
         monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
         monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
 
-        // update the external orientation normalised
-        external_orientation = m1OrientationClient.getOrientation();
-        
-        // retrieve normalized values and add the current external device orientation
-        if (previous_external_orientation.GetGlobalRotationAsEulerDegrees().GetYaw() != external_orientation.GetGlobalRotationAsEulerDegrees().GetYaw()) {
-            
-            if (monitorSettings.yawActive) {
-                currentOrientation.ApplyRotationDegrees({ 0, external_orientation.GetGlobalRotationAsEulerDegrees().GetYaw() - previous_external_orientation.GetGlobalRotationAsEulerDegrees().GetYaw() + -monitorSettings.yaw, 0 });
-            } else {
-                currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
-            }
-            parameters.getParameter(paramYaw)->setValueNotifyingHost(currentOrientation.GetGlobalRotationAsEulerDegrees().Normalized().GetYaw());
-        } else {
-            // since there is no change from external sources we will just update the orientation via monitorSettings
-            currentOrientation.ApplyRotationDegrees({ 0, -monitorSettings.yaw, 0 });
-        }
-        
-        if (previous_external_orientation.GetGlobalRotationAsEulerDegrees().GetPitch() != external_orientation.GetGlobalRotationAsEulerDegrees().GetPitch()) {
-            
-            if (monitorSettings.pitchActive) {
-                currentOrientation.ApplyRotationDegrees({ external_orientation.GetGlobalRotationAsEulerDegrees().GetPitch() - previous_external_orientation.GetGlobalRotationAsEulerDegrees().GetPitch() + -monitorSettings.pitch, 0, 0 });
-            } else {
-                currentOrientation.SetRotation({ 0.5, currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
-            }
-            parameters.getParameter(paramPitch)->setValueNotifyingHost(currentOrientation.GetGlobalRotationAsEulerDegrees().Normalized().GetPitch());
-        } else {
-            // since there is no change from external sources we will just update the orientation via monitorSettings
-            currentOrientation.ApplyRotationDegrees({ -monitorSettings.pitch, 0, 0 });
-        }
-        
-        if (previous_external_orientation.GetGlobalRotationAsEulerDegrees().GetRoll() != external_orientation.GetGlobalRotationAsEulerDegrees().GetRoll()) {
-            if (monitorSettings.rollActive) {
-                currentOrientation.ApplyRotationDegrees({ 0, 0, external_orientation.GetGlobalRotationAsEulerDegrees().GetRoll() - previous_external_orientation.GetGlobalRotationAsEulerDegrees().GetRoll() + monitorSettings.roll });
-            } else {
-                currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), 0.5 });
-            }
-            parameters.getParameter(paramPitch)->setValueNotifyingHost(currentOrientation.GetGlobalRotationAsEulerDegrees().Normalized().GetPitch());
-        } else {
-            // since there is no change from external sources we will just update the orientation via monitorSettings
-            currentOrientation.ApplyRotationDegrees({ 0, 0, monitorSettings.roll });
-        }
-                
-        // store orientation for next loop's delta check
-        previous_external_orientation = external_orientation;
-        
     } else {
-        // update orientation without external orientation
-        if (monitorSettings.yawActive) {
-            currentOrientation.ApplyRotationDegrees({ 0, parameters.getParameter(paramYaw)->getValue() * 360.0f, 0 });
-        } else {
-            currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
-        }
+        float current_yaw = monitorSettings.yawActive ? parameters.getParameter(paramYaw)->convertFrom0to1(parameters.getParameter(paramYaw)->getValue()) : 0.0f;
+        float current_pitch = monitorSettings.pitchActive ? parameters.getParameter(paramPitch)->convertFrom0to1(parameters.getParameter(paramPitch)->getValue()) : 0.0f;
+        float current_roll = monitorSettings.rollActive ? parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue()) : 0.0f;
 
-        if (monitorSettings.pitchActive) {
-            currentOrientation.ApplyRotationDegrees({ (parameters.getParameter(paramPitch)->getValue() * 180.0f) - 90.0f, 0, 0 });
-        } else {
-            currentOrientation.SetRotation({ 0.5, currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
-        }
-        
-        if (monitorSettings.rollActive) {
-            currentOrientation.ApplyRotationDegrees({ 0, 0, (parameters.getParameter(paramRoll)->getValue() * 180.0f) - 90.0f });
-        } else {
-            currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), 0.5 });
-        }
+        Mach1::Float3 current_orientation_deg = {current_yaw, current_pitch, current_roll};
+        currentOrientation.SetRotation(current_orientation_deg.EulerRadians());
     }
 
     // Mach1Decode processing loop
