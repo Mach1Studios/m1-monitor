@@ -423,33 +423,29 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // m1_orientation_client update
     if (m1OrientationClient.isConnectedToServer()) {
 
-        Mach1::Float3 mon_ori_deg = {
-            monitorSettings.yawActive ? parameters.getParameter(paramYaw)->convertFrom0to1(parameters.getParameter(paramYaw)->getValue()) : 0.0f,
-            monitorSettings.pitchActive ? parameters.getParameter(paramPitch)->convertFrom0to1(parameters.getParameter(paramPitch)->getValue()) : 0.0f,
-            monitorSettings.rollActive ? parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue()): 0.0f
-        };
-
         // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
         auto external_orientation = m1OrientationClient.getOrientation();
         Mach1::Float3 ex_ori_deg = external_orientation.GetGlobalRotationAsEulerDegrees();
         Mach1::Float3 ex_ori_delta_deg = previous_external_orientation.GetGlobalRotationAsEulerDegrees() - ex_ori_deg;
-        Mach1::Float3 new_ori = {
-            monitorSettings.yawActive ? ex_ori_delta_deg.GetYaw() : 0.0f,
-            monitorSettings.pitchActive ? ex_ori_delta_deg.GetPitch() : 0.0f,
-            monitorSettings.rollActive ? ex_ori_delta_deg.GetRoll() : 0.0f
-        };
-        previous_external_orientation = external_orientation;
+        
+        // if there is a detected new delta value
+        if (ex_ori_delta_deg.operator!=({0, 0, 0})) {
+            Mach1::Float3 new_ori = {
+                monitorSettings.yawActive ? ex_ori_delta_deg.GetYaw() : 0.0f,
+                monitorSettings.pitchActive ? ex_ori_delta_deg.GetPitch() : 0.0f,
+                monitorSettings.rollActive ? ex_ori_delta_deg.GetRoll() : 0.0f
+            };
+            previous_external_orientation = external_orientation;
 
-        // we reset the angle to safely apply the last known values on each loop
-        currentOrientation.Reset();
-        currentOrientation.ApplyRotationDegrees(mon_ori_deg);
-        currentOrientation.ApplyRotationDegrees(new_ori);
+            // we reset the angle to safely apply the last known values on each loop
+            currentOrientation.ApplyRotationDegrees(new_ori);
 
-        auto new_params = currentOrientation.GetGlobalRotationAsEulerDegrees();
-        // the jmap normalizes the values for JUCE parameters and we apply the external_orientation to the parameters
-        parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(new_params.Modulus(0, 360.0f).GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
-        parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
-        parameters.getParameter(paramRoll)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetRoll(), -90.0f, 90.0f, 0.0f, 1.0f));
+            auto new_params = currentOrientation.GetGlobalRotationAsEulerDegrees();
+            // the jmap normalizes the values for JUCE parameters and we apply the external_orientation to the parameters
+            parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(new_params.Modulus(0, 360.0f).GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
+            parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
+            parameters.getParameter(paramRoll)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetRoll(), -90.0f, 90.0f, 0.0f, 1.0f));
+        }
         
         // send the monitor's master YPR
         monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
