@@ -89,12 +89,10 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                     if (yaw > 1.0f) yaw -= 1.0f;
                     // apply if yaw is active
                     if (monitorSettings.yawActive) {
-                        // we negate the right-handed yaw from `currentOrientation` before comparing to the left-handed yaw value
-                        //currentOrientation.ApplyRotationDegrees({ -((yaw * 360.0f) + monitorSettings.yaw), 0, 0 });
+                        parameters.getParameter(paramYaw)->setValueNotifyingHost(yaw);
                     } else {
-                        //currentOrientation.SetRotation({ 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetPitch(), currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
+                        parameters.getParameter(paramYaw)->setValueNotifyingHost(0.0f);
                     }
-                    //parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(currentOrientation.GetGlobalRotationAsEulerDegrees().Modulus(0.0f, 360.0f).GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
                 }
                 DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", Y: "+std::to_string(msg[0].getFloat32()));
             }
@@ -102,14 +100,17 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                 // Capturing Player's Pitch mouse offset
                 if (msg[1].isFloat32()){
                     float pitch = msg[1].getFloat32();
+                    // add the offset to the current orientation
+                    pitch += parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch);
+                    // manual version of clamp for the pitch slider
+                    if (pitch < 0.0f) pitch = 0.0f;
+                    if (pitch > 1.0f) pitch = 1.0f;
                     // apply if pitch is active
                     if (monitorSettings.pitchActive) {
-                        // we negate the right-handed pitch from `currentOrientation` before comparing to the left-handed pitch value
-                        //currentOrientation.ApplyRotationDegrees({ 0, -((pitch * 180.0f) - 90.0f + monitorSettings.pitch), 0 });
+                        parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
                     } else {
-                        //currentOrientation.SetRotation({ currentOrientation.GetGlobalRotationAsEulerRadians().GetYaw(), 0, currentOrientation.GetGlobalRotationAsEulerRadians().GetRoll()});
+                        parameters.getParameter(paramPitch)->setValueNotifyingHost(0.0f);
                     }
-                    //parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(currentOrientation.GetGlobalRotationAsEulerDegrees().Modulus(-90.0f, 90.0f).GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
                 }
                 DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", P: "+std::to_string(msg[1].getFloat32()));
             }
@@ -270,10 +271,6 @@ void M1MonitorAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     
     // Checks if output bus is non DISCRETE layout and fixes host specific channel ordering issues
     fillChannelOrderArray(monitorSettings.m1Decode.getFormatChannelCount());
-    
-    // setup initial values for currentOrientation
-    Mach1::Float3 new_rot = { monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll }; // in degrees
-    currentOrientation.SetRotation(new_rot.EulerRadians());
 }
 
 void M1MonitorAudioProcessor::releaseResources()
@@ -314,7 +311,6 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String &parameterID, 
     }
 
     // TODO: add UI for syncing panners to current monitor outputMode and add that outputMode int to this function
-
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -435,33 +431,25 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
                 monitorSettings.pitchActive ? ex_ori_delta_deg.GetPitch() : 0.0f,
                 monitorSettings.rollActive ? ex_ori_delta_deg.GetRoll() : 0.0f
             };
-            previous_external_orientation = external_orientation;
-
-            // we reset the angle to safely apply the last known values on each loop
-            currentOrientation.ApplyRotationDegrees(new_ori);
-
-            auto new_params = currentOrientation.GetGlobalRotationAsEulerDegrees();
+            
             // the jmap normalizes the values for JUCE parameters and we apply the external_orientation to the parameters
-            parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(new_params.Modulus(0, 360.0f).GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
-            parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
-            parameters.getParameter(paramRoll)->setValueNotifyingHost(juce::jmap(new_params.Modulus(-180.0f, 180.0f).Clamped(-90.0f, 90.0f).GetRoll(), -90.0f, 90.0f, 0.0f, 1.0f));
+            ex_ori_delta_deg.Clamped({-180.0f, -90.f, -90.0f}, {180.0f, 90.0f, 90.0f});
+            
+            // TODO: figure out why ext orientation is needed as negative
+            parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(monitorSettings.yaw + -ex_ori_delta_deg.GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
+            parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(monitorSettings.pitch + -ex_ori_delta_deg.GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
+            parameters.getParameter(paramRoll)->setValueNotifyingHost(juce::jmap(monitorSettings.roll + -ex_ori_delta_deg.GetRoll(), -90.0f, 90.0f, 0.0f, 1.0f));
         }
         
         // send the monitor's master YPR
         monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
         monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
-
-    } else {
-        float current_yaw = monitorSettings.yawActive ? parameters.getParameter(paramYaw)->convertFrom0to1(parameters.getParameter(paramYaw)->getValue()) : 0.0f;
-        float current_pitch = monitorSettings.pitchActive ? parameters.getParameter(paramPitch)->convertFrom0to1(parameters.getParameter(paramPitch)->getValue()) : 0.0f;
-        float current_roll = monitorSettings.rollActive ? parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue()) : 0.0f;
-
-        Mach1::Float3 current_orientation_deg = {current_yaw, current_pitch, current_roll};
-        currentOrientation.SetRotation(current_orientation_deg.EulerRadians());
+        
+        previous_external_orientation = external_orientation;
     }
 
     // Mach1Decode processing loop
-    monitorSettings.m1Decode.setRotationDegrees({ -currentOrientation.GetGlobalRotationAsEulerDegrees().GetYaw(), -currentOrientation.GetGlobalRotationAsEulerDegrees().GetPitch(), currentOrientation.GetGlobalRotationAsEulerDegrees().GetRoll() });
+    monitorSettings.m1Decode.setRotationDegrees({ monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll });
     monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
     monitorSettings.m1Decode.endBuffer();
@@ -515,9 +503,6 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 //        for (int channel = getTotalNumInputChannels(); channel <= getTotalNumOutputChannels(); ++channel)
 //            buffer.clear(channel, 0, buffer.getNumSamples());
     }
-    
-    // update orientation for calculating offsets
-    previousOrientation = currentOrientation;
     
     // clear remaining input channels
     for (auto channel = 2; channel < getTotalNumInputChannels(); ++channel)
