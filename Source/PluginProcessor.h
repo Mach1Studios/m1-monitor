@@ -117,8 +117,6 @@ public:
     // Orientation Manager/Client
     void setStatus(bool success, std::string message);
     M1OrientationClient m1OrientationClient;
-    Mach1::Orientation currentOrientation;
-    Mach1::Orientation previousOrientation;
     Mach1::Orientation previous_external_orientation;
 
     // Communication to Player and the rest of the M1SpatialSystem

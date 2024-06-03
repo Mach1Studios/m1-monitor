@@ -1,7 +1,7 @@
 #ifndef TYPESFORDATAEXCHANGE_H
 #define TYPESFORDATAEXCHANGE_H
 
-#include "Mach1Decode.h"
+#include <Mach1Decode.h> 
 
 struct MixerSettings {
     /// This object contains:
