@@ -260,14 +260,14 @@ void MonitorUIBaseComponent::draw()
             } else {
                 m.addOverlay([&](){
                     modeDropdown.draw();
+                    if (modeDropdown.changed || !modeDropdown.opened) {
+                        monitorState->monitor_mode = modeDropdown.selectedOption;
+                        double normalisedValue = processor->parameters.getParameter(processor->paramMonitorMode)->convertTo0to1(monitorState->monitor_mode);
+                        processor->parameters.getParameter(processor->paramMonitorMode)->setValueNotifyingHost(normalisedValue);
+                        showMonitorModeDropdown = false;
+                        modeDropdown.close();
+                    }
                 }, &modeDropdown);
-                if (modeDropdown.changed || !modeDropdown.opened) {
-                    monitorState->monitor_mode = modeDropdown.selectedOption;
-                    double normalisedValue = processor->parameters.getParameter(processor->paramMonitorMode)->convertTo0to1(monitorState->monitor_mode);
-                    processor->parameters.getParameter(processor->paramMonitorMode)->setValueNotifyingHost(normalisedValue);
-                    showMonitorModeDropdown = false;
-                    modeDropdown.close();
-                }
             }
 
             //Timecode offset
