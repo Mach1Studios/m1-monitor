@@ -74,10 +74,10 @@ public:
                     
                     if (closingMode == modeMouseDown) {
                         if (mouseDownPressed(0)) {
-                            opened = false; // Closing the menu
                             if (selectedOption != i) {
                                 changed = true;
-                            }
+                                close(true);
+                            } else close(false);
                             selectedOption = i;
                         }
                     }
@@ -100,14 +100,12 @@ public:
                 }
                 
                 // Closing if pressed/released outside of the menu
-                if (!inside() && !hoveredAnything && !holdingScrollbar) {
+                if (!inside() && !hoveredAnything && !holdingScrollbar && opened) {
                     if ((closingMode == modeMouseDown) && (mouseDownPressed(0))) {
-                        opened = false;
-                        changed = false;
+                        close(false);
                     }
                     if ((closingMode == modeMouseUp) && (mouseReleased(0))) {
-                        opened = false;
-                        changed = false;
+                        close(false);
                     }
                 }
             }
@@ -142,11 +140,11 @@ public:
     
     bool holdingScrollbar = false;
     
-    void close() {
+    void close(bool hasChanged = false) {
         opened = false;
         mouseKeptDownFrames = 0;
         closingMode = closingModeTypes::modeUnknown;
-        changed = false;
+        changed = hasChanged;
     }
     
     void open() {
