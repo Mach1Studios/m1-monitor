@@ -418,34 +418,7 @@ void M1MonitorAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 
     // m1_orientation_client update
     if (m1OrientationClient.isConnectedToServer()) {
-
-        // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
-        auto external_orientation = m1OrientationClient.getOrientation();
-        Mach1::Float3 ex_ori_deg = external_orientation.GetGlobalRotationAsEulerDegrees();
-        Mach1::Float3 ex_ori_delta_deg = previous_external_orientation.GetGlobalRotationAsEulerDegrees() - ex_ori_deg;
-        
-        // if there is a detected new delta value
-        if (ex_ori_delta_deg.operator!=({0, 0, 0})) {
-            Mach1::Float3 new_ori = {
-                monitorSettings.yawActive ? ex_ori_delta_deg.GetYaw() : 0.0f,
-                monitorSettings.pitchActive ? ex_ori_delta_deg.GetPitch() : 0.0f,
-                monitorSettings.rollActive ? ex_ori_delta_deg.GetRoll() : 0.0f
-            };
-            
-            // the jmap normalizes the values for JUCE parameters and we apply the external_orientation to the parameters
-            ex_ori_delta_deg.Clamped({-180.0f, -90.f, -90.0f}, {180.0f, 90.0f, 90.0f});
-            
-            // TODO: figure out why ext orientation is needed as negative
-            parameters.getParameter(paramYaw)->setValueNotifyingHost(juce::jmap(monitorSettings.yaw + -ex_ori_delta_deg.GetYaw(), 0.0f, 360.0f, 0.0f, 1.0f));
-            parameters.getParameter(paramPitch)->setValueNotifyingHost(juce::jmap(monitorSettings.pitch + -ex_ori_delta_deg.GetPitch(), -90.0f, 90.0f, 0.0f, 1.0f));
-            parameters.getParameter(paramRoll)->setValueNotifyingHost(juce::jmap(monitorSettings.roll + -ex_ori_delta_deg.GetRoll(), -90.0f, 90.0f, 0.0f, 1.0f));
-        }
-        
-        // send the monitor's master YPR
-        monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
-        monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
-        
-        previous_external_orientation = external_orientation;
+        syncParametersWithExternalOrientation();
     }
 
     // Mach1Decode processing loop
@@ -671,10 +644,9 @@ void M1MonitorAudioProcessor::setStateInformation (const void* data, int sizeInB
 }
 
 void M1MonitorAudioProcessor::updateTransportWithPlayhead() {
-    AudioPlayHead* ph = getPlayHead();
+    AudioPlayHead *ph = getPlayHead();
 
-    if (ph == nullptr)
-    {
+    if (ph == nullptr) {
         return;
     }
 
@@ -690,6 +662,53 @@ void M1MonitorAudioProcessor::updateTransportWithPlayhead() {
 
     transport->setIsPlaying(play_head_position->getIsPlaying());
 }
+
+void M1MonitorAudioProcessor::syncParametersWithExternalOrientation() {
+    monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
+    monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+
+    // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
+    auto ex_ori_vec = m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
+    auto ex_ori_delta_vec = ex_ori_vec - m_last_external_ori_degrees;
+    m_last_external_ori_degrees = ex_ori_vec;
+
+    // Zero out changes in locked axes.
+    auto axis_locks_vec = Mach1::Float3 {
+            monitorSettings.pitchActive ? 1.0f : 0.0f,
+            monitorSettings.yawActive ? 1.0f : 0.0f,
+            monitorSettings.rollActive ? 1.0f : 0.0f
+    };
+    ex_ori_delta_vec *= axis_locks_vec;
+
+    if (ex_ori_delta_vec.IsApproximatelyEqual({0.0f})) return; // nothing happened
+
+    // Convert the vector of change in degrees into a vector of change in VST parameter values.
+    // That way, we don't need to fiddle around with differing 3D vector component convention or the fact that
+    // each component has a different range [(0->360; -90->90), but they are provided by the client as (-180 to 180)].
+    // Keep in mind that change in pitch and roll are halved, as their range is half as small.
+    ex_ori_delta_vec = ex_ori_delta_vec.Map(0, 360, 0, 1);
+
+    // Get the current state of the orientation, as normalized values. Zero out locked axes.
+    auto yaw = parameters.getParameter(paramYaw)->getValue() * axis_locks_vec.GetYaw();
+    auto pitch = parameters.getParameter(paramPitch)->getValue() * axis_locks_vec.GetPitch();
+    auto roll = parameters.getParameter(paramRoll)->getValue() * axis_locks_vec.GetRoll();
+
+    // Manually apply the change in parameters, modulating when size is > 1. Compensate for pitch and roll.
+    yaw = std::fmodf(yaw + ex_ori_delta_vec.GetYaw(), 1.0f);
+    pitch = std::fmodf(pitch + ex_ori_delta_vec.GetPitch() * 2.0f, 1.0f);
+    roll = std::fmodf(roll + ex_ori_delta_vec.GetRoll() * 2.0f, 1.0f);
+
+    // Modulate when size is < 0.
+    if (yaw < 0) yaw += std::ceil(-yaw);
+    if (pitch < 0) pitch += std::ceil(-pitch);
+    if (roll < 0) roll += std::ceil(-roll);
+
+    // Notify the parameters of their new state.
+    parameters.getParameter(paramYaw)->setValueNotifyingHost(yaw);
+    parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
+    parameters.getParameter(paramRoll)->setValueNotifyingHost(roll);
+}
+
 
 //==============================================================================
 // This creates new instances of the plugin..

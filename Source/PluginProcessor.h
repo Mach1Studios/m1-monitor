@@ -117,7 +117,7 @@ public:
     // Orientation Manager/Client
     void setStatus(bool success, std::string message);
     M1OrientationClient m1OrientationClient;
-    Mach1::Orientation previous_external_orientation;
+    Mach1::Float3 m_last_external_ori_degrees;
 
     // Communication to Player and the rest of the M1SpatialSystem
     void timerCallback() override;
@@ -132,6 +132,7 @@ public:
 
 private:
     void updateTransportWithPlayhead();
+    void syncParametersWithExternalOrientation();
     void createLayout();
 
     std::vector<std::vector<float>> audioDataIn;
