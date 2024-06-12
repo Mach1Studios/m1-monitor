@@ -214,6 +214,9 @@ public:
     float rangeFrom = 0;
     float rangeTo = 1;
     int floatingPointPrecision = 1;
+    
+    bool orientationClientConnected = false;
+    float orientationClientValue = 0;
 
     std::function<void()> cursorHide, cursorShow;
     

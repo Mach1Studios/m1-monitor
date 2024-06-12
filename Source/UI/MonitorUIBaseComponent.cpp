@@ -133,6 +133,7 @@ void MonitorUIBaseComponent::draw()
             // External Mixer not detected!
             
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+            Float3 current_ext_orientation = processor->m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
             
             /// YPR SLIDERS
             auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
@@ -146,6 +147,8 @@ void MonitorUIBaseComponent::draw()
             yawRadial.enabled = true;
             yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
 			yawRadial.activated = !isAnyTextfieldActived;
+            yawRadial.orientationClientConnected = processor->m1OrientationClient.isConnectedToDevice();
+            yawRadial.orientationClientValue = current_ext_orientation.GetYaw();
             yawRadial.draw();
             
             if (yawRadial.changed) {
@@ -164,6 +167,8 @@ void MonitorUIBaseComponent::draw()
             pitchSlider.defaultValue = 0.0;
             pitchSlider.postfix = "º";
             pitchSlider.dataToControl = &monitorState->pitch;
+            pitchSlider.orientationClientConnected = processor->m1OrientationClient.isConnectedToDevice();
+            pitchSlider.orientationClientValue = current_ext_orientation.GetPitch();
             if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
                 // Disabling pitch slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
                 pitchSlider.enabled = false;
@@ -188,6 +193,8 @@ void MonitorUIBaseComponent::draw()
             rollSlider.defaultValue = 0.0;
             rollSlider.postfix = "º";
             rollSlider.dataToControl = &monitorState->roll;
+            rollSlider.orientationClientConnected = processor->m1OrientationClient.isConnectedToDevice();
+            rollSlider.orientationClientValue = current_ext_orientation.GetRoll();
             if (monitorState->monitor_mode == 2 || monitorState->m1Decode.getFormatChannelCount() <= 4) {
                 // Disabling roll slider because we are either a non-spatial review mode or using 4 channel Mach1 Horizon format which only supports yaw rotation playback
                 rollSlider.enabled = false;

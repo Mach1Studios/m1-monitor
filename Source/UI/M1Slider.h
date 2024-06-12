@@ -46,6 +46,7 @@ public:
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
         
+        // Parameter reticle position
         int ellipseSize = 5;
         float reticlePositionNorm;
         if (isHorizontal) {
@@ -61,7 +62,20 @@ public:
         if (reticlePosition.inside(mousePosition())) {
             reticleHover = true;
         }
-                
+
+        // Orientation Client reticle position
+        int indicatorSize = 10;
+        float oc_reticlePositionNorm;
+        if (isHorizontal) {
+            oc_reticlePositionNorm = (orientationClientValue - rangeFrom) / (rangeTo - rangeFrom);
+        } else {
+            oc_reticlePositionNorm = (orientationClientValue - rangeTo) / (rangeFrom - rangeTo);
+        }
+        MurkaShape oc_reticlePosition = { getSize().x / 2 - 6,
+                                      (shape.size.y) * reticlePositionNorm - 6,
+                                      12,
+                                      12 };
+
         m.pushStyle();
         m.enableFill();
                 
@@ -87,13 +101,22 @@ public:
                                         labelWidth, 30}).withAlignment(TEXT_CENTER).text(valueText).draw();
             }
             
+            // Draw OC reticle line
+            if (orientationClientConnected) {
+                m.setColor(ORIENTATION_ACTIVE_COLOR);
+                m.drawLine(shape.size.x * oc_reticlePositionNorm,
+                           shape.size.y/2 - indicatorSize,
+                           shape.size.x * oc_reticlePositionNorm,
+                           shape.size.y/2 + indicatorSize);
+            }
+            
             // Draw reticle circle
             if (enabled) {
                 m.setColor(M1_ACTION_YELLOW);
             } else {
                 m.setColor(DISABLED_PARAM);
             }
-            m.drawCircle(reticlePositionNorm * (shape.size.x - 2 * ellipseSize) + ellipseSize, shape.size.y/2 , ellipseSize);
+            m.drawCircle(reticlePositionNorm * (shape.size.x - 2 * ellipseSize) + ellipseSize, shape.size.y/2, ellipseSize);
             
         } else { // draw verically
             m.setColor(133 + 20 * A(reticleHover));
@@ -101,7 +124,6 @@ public:
 
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
             m.setColor(REF_LABEL_TEXT_COLOR);
-            
             
             float labelWidth = 40;
             float labelHeight = 30;
@@ -118,6 +140,15 @@ public:
                 m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 9,
                                         labelWidth, labelHeight })
                     .withAlignment(TEXT_CENTER).text(valueText).draw();
+            }
+            
+            // Draw OC reticle line
+            if (orientationClientConnected) {
+                m.setColor(ORIENTATION_ACTIVE_COLOR);
+                m.drawLine(shape.size.x/2 - indicatorSize,
+                           shape.size.y * oc_reticlePositionNorm,
+                           shape.size.x/2 + indicatorSize,
+                           shape.size.y * oc_reticlePositionNorm);
             }
             
             // Draw reticle circle
@@ -212,6 +243,10 @@ public:
     std::string label = "";
     double fontSize = 10;
     int floatingPointPrecision = 1;
+    
+    bool orientationClientConnected = false;
+    float orientationClientValue = 0;
+
 
     std::function<void()> cursorHide, cursorShow;
     
