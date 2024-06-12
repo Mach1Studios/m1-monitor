@@ -74,6 +74,18 @@ public:
             m.drawLine(start.x, start.y, end.x, end.y);
         }
         
+        // Draw OC line
+        if (orientationClientConnected) {
+            m.setColor(ORIENTATION_ACTIVE_COLOR);
+            float oc_valueNorm = ((orientationClientValue - rangeFrom) / (rangeTo - rangeFrom));
+            float oc_angle = 3.14 * 2 * (oc_valueNorm - 0.25);
+            juce::Point<float> centralLineStart = center + juce::Point<float>(cos(oc_angle) * 75,
+                                                                  sin(oc_angle) * 75) ;
+            juce::Point<float> centralLineEnd = center + juce::Point<float>(cos(oc_angle) * (shape.size.x / 2 - 7), sin(oc_angle) * (shape.size.x / 2 - 7));
+            // draw main line
+            m.drawLine(centralLineStart.x, centralLineStart.y, centralLineEnd.x, centralLineEnd.y);
+        }
+        
         // The main line
         if (enabled) {
             m.setColor(M1_ACTION_YELLOW);
