@@ -40,9 +40,7 @@ public:
         pressed = false;
         if ((isHovered()) && (mouseDownPressed(0))) {
             pressed = true; // Only sets to true the frame the "pressed" happened
-        }
-        
-        //        m.popStyle(); // TODO: THIS THING MAKES EVERYTHING HANG, issue with Murka - have to show assert!
+        }        
     }
     
     std::string label = "";
