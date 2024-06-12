@@ -133,7 +133,7 @@ void MonitorUIBaseComponent::draw()
             // External Mixer not detected!
             
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
-            Float3 current_ext_orientation = processor->m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
+            Mach1::Float3 current_ext_orientation = processor->m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
             
             /// YPR SLIDERS
             auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
