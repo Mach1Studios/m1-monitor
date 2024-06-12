@@ -53,7 +53,7 @@ public:
         juce::Point<float> center = juce::Point<float>(shape.size.x / 2, shape.size.y / 2);
 
         for (int i = 0; i < 8 * 4; i++) {
-            float angle = ((3.14 * 2.) / (8. * 4)) * i;
+            float angle = (juce::MathConstants<float>::twoPi / (8.0f * 4)) * i;
             float startL = shape.size.x / 2 - 12;
             float endL = shape.size.x / 2 - 5;
             juce::Point<float> start = center +
@@ -64,7 +64,7 @@ public:
         }
 
         for (int i = 0; i < 8; i++) {
-            float angle = ((3.14 * 2.) / 8.) * i;
+            float angle = (juce::MathConstants<float>::twoPi / 8.0f) * i;
             float startL = shape.size.x / 2 - 24;
             float endL = shape.size.x / 2 - 5;
             juce::Point<float> start = center +
@@ -78,7 +78,7 @@ public:
         if (orientationClientConnected) {
             m.setColor(ORIENTATION_ACTIVE_COLOR);
             float oc_valueNorm = ((orientationClientValue - rangeFrom) / (rangeTo - rangeFrom));
-            float oc_angle = 3.14 * 2 * (oc_valueNorm - 0.25);
+            float oc_angle = juce::MathConstants<float>::twoPi * (oc_valueNorm - 0.25f);
             juce::Point<float> centralLineStart = center + juce::Point<float>(cos(oc_angle) * 75,
                                                                   sin(oc_angle) * 75) ;
             juce::Point<float> centralLineEnd = center + juce::Point<float>(cos(oc_angle) * (shape.size.x / 2 - 7), sin(oc_angle) * (shape.size.x / 2 - 7));
@@ -93,21 +93,21 @@ public:
             m.setColor(DISABLED_PARAM);
         }
 
-        float angle = 3.14 * 2 * (inputValueNormalised - 0.25);
-        float angleSize = 3.14 * 0.5;
+        float angle = juce::MathConstants<float>::twoPi * (inputValueNormalised - 0.25f);
+        float angleSize = juce::MathConstants<float>::halfPi;
         
         int numsteps = 60;
         for (int i = 0; i < numsteps; i++) {
             float phase0 = (float)i / (float)numsteps;
             float phase1 = ((float)i + 1) / (float)numsteps;
             
-            float angle0 = phase0 * angleSize + angle - angleSize * 0.5;
-            float angle1 = phase1 * angleSize + angle - angleSize * 0.5;
+            float angle0 = phase0 * angleSize + angle - angleSize * 0.5f;
+            float angle1 = phase1 * angleSize + angle - angleSize * 0.5f;
 
             juce::Point<float> lineStart = center +
-                                    juce::Point<float>(cos(angle0 - 0.01) * (shape.size.x / 2 - 1), sin(angle0 - 0.01) * (shape.size.y / 2 - 1));
+                                    juce::Point<float>(cos(angle0 - 0.01f) * (shape.size.x / 2 - 1), sin(angle0 - 0.01f) * (shape.size.y / 2 - 1));
             juce::Point<float> lineEnd = center +
-                                    juce::Point<float>(cos(angle1 + 0.01) * (shape.size.x / 2 - 1), sin(angle1 + 0.01) * (shape.size.y / 2 - 1));
+                                    juce::Point<float>(cos(angle1 + 0.01f) * (shape.size.x / 2 - 1), sin(angle1 + 0.01f) * (shape.size.y / 2 - 1));
             //draw arc
             m.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
         }
