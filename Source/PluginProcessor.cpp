@@ -78,42 +78,29 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     // setup the listener
     monitorOSC.AddListener([&](juce::OSCMessage msg) {
         if (msg.getAddressPattern() == "/YPR-Offset") {
-            if (msg.size() >= 1) {
-                // Capturing Player's Yaw mouse offset
-                if (msg[0].isFloat32()){
-                    float yaw = msg[0].getFloat32();
-                    // add the offset to the current orientation
-                    yaw += parameters.getParameter(paramYaw)->convertTo0to1(monitorSettings.yaw);
-                    // manual version of modulo for the endless yaw radial
-                    if (yaw < 0.0f) yaw += 1.0f;
-                    if (yaw > 1.0f) yaw -= 1.0f;
-                    // apply if yaw is active
-                    if (monitorSettings.yawActive) {
-                        parameters.getParameter(paramYaw)->setValueNotifyingHost(yaw);
-                    } else {
-                        parameters.getParameter(paramYaw)->setValueNotifyingHost(0.0f);
-                    }
-                }
-                DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", Y: "+std::to_string(msg[0].getFloat32()));
-            }
-            if (msg.size() >= 2) {
-                // Capturing Player's Pitch mouse offset
-                if (msg[1].isFloat32()){
-                    float pitch = msg[1].getFloat32();
-                    // add the offset to the current orientation
-                    pitch += parameters.getParameter(paramPitch)->convertTo0to1(monitorSettings.pitch);
-                    // manual version of clamp for the pitch slider
-                    if (pitch < 0.0f) pitch = 0.0f;
-                    if (pitch > 1.0f) pitch = 1.0f;
-                    // apply if pitch is active
-                    if (monitorSettings.pitchActive) {
-                        parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
-                    } else {
-                        parameters.getParameter(paramPitch)->setValueNotifyingHost(0.0f);
-                    }
-                }
-                DBG("[OSC] Recieved msg | " + msg.getAddressPattern().toString() + ", P: "+std::to_string(msg[1].getFloat32()));
-            }
+            float yaw = 0.0f;
+            float pitch = 0.0f;
+            //float roll = 0.0f;
+
+            if (monitorSettings.yawActive && msg.size() >= 1) yaw = msg[0].getFloat32();
+            if (monitorSettings.pitchActive && msg.size() >= 2) pitch = msg[1].getFloat32();
+            //if (monitorSettings.rollActive && msg.size() >= 3) roll = msg[2].getFloat32();
+
+            yaw = jmap(yaw + 180.0f, -180.0f, 180.0f, 0.0f, 1.0f);
+            pitch = jmap(pitch, -90.0f, 90.0f, 0.0f, 1.0f);
+            //roll = jmap(roll, -90.0f, 90.0f, 0.0f, 1.0f);
+
+            yaw = std::fmodf(yaw, 1.0f);
+            pitch = std::fmodf(pitch, 1.0f);
+            //roll = std::fmodf(roll, 1.0f);
+
+            if (yaw < 0) yaw += std::ceil(-yaw);
+            if (pitch < 0) pitch += std::ceil(-pitch);
+            //if (roll < 0) roll += std::ceil(-roll);
+
+            parameters.getParameter(paramYaw)->setValueNotifyingHost(yaw);
+            parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
+            //parameters.getParameter(paramRoll)->setValueNotifyingHost(roll);
         } else {
             // display a captured unexpected osc message
             if (msg.size() > 0) {
@@ -673,8 +660,8 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation() {
 
     // Zero out changes in locked axes.
     auto axis_locks_vec = Mach1::Float3 {
-            monitorSettings.pitchActive ? 1.0f : 0.0f,
             monitorSettings.yawActive ? 1.0f : 0.0f,
+            monitorSettings.pitchActive ? 1.0f : 0.0f,
             monitorSettings.rollActive ? 1.0f : 0.0f
     };
     ex_ori_delta_vec *= axis_locks_vec;
@@ -685,7 +672,7 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation() {
     // That way, we don't need to fiddle around with differing 3D vector component convention or the fact that
     // each component has a different range [(0->360; -90->90), but they are provided by the client as (-180 to 180)].
     // Keep in mind that change in pitch and roll are halved, as their range is half as small.
-    ex_ori_delta_vec = ex_ori_delta_vec.Map(0, 360, 0, 1);
+    ex_ori_delta_vec = ex_ori_delta_vec.Map(360, 0, 0, 1);
 
     // Get the current state of the orientation, as normalized values. Zero out locked axes.
     auto yaw = parameters.getParameter(paramYaw)->getValue() * axis_locks_vec.GetYaw();
