@@ -672,7 +672,7 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation() {
     // That way, we don't need to fiddle around with differing 3D vector component convention or the fact that
     // each component has a different range [(0->360; -90->90), but they are provided by the client as (-180 to 180)].
     // Keep in mind that change in pitch and roll are halved, as their range is half as small.
-    ex_ori_delta_vec = ex_ori_delta_vec.Map(360, 0, 0, 1);
+    ex_ori_delta_vec = ex_ori_delta_vec.Map(0, 360, 0, 1);
 
     // Get the current state of the orientation, as normalized values. Zero out locked axes.
     auto yaw = parameters.getParameter(paramYaw)->getValue() * axis_locks_vec.GetYaw();
@@ -694,7 +694,6 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation() {
     parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
     parameters.getParameter(paramRoll)->setValueNotifyingHost(roll);
 }
-
 
 //==============================================================================
 // This creates new instances of the plugin..
