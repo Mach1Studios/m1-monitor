@@ -32,14 +32,13 @@ add_subdirectory(JUCE)
 add_subdirectory(Modules)
 
 if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/JUCE_deps)
-    set(AAX_PATH "JUCE_deps/AAX_SDK_2p3p2")
     set(VST2_PATH "JUCE_deps/VST_SDK_vst2/VST2_SDK")
     message(STATUS "JUCE Dependencies Found: ${PROJECT_SOURCE_DIR}/JUCE_deps")
 else()
     message(STATUS "Warning: Did not find additional JUCE deps submodule. Please add the appropriate SDKs manually.")
 endif()
 
-option(BUILD_VST3 "Compile VST3 plugin type" OFF)
+option(BUILD_VST3 "Compile VST3 plugin type" ON)
 option(BUILD_VST "Compile VST2 plugin type" OFF)
 option(BUILD_AAX "Compile AAX plugin type" OFF)
 option(BUILD_AU "Compile AU plugin type" OFF)
@@ -57,10 +56,9 @@ set(CUSTOM_BUNDLE_ID "com.mach1.spatial.monitor")
 set(CUSTOM_PLUGIN_CODE "M1MT")
 
 # check which formats we want to build
-# Valid formats: AAX VST VST3 AU // Not yet supported: Unity AUv3 Standalone CLAP
-# Will only allow either AAX or other plugin formats, not both
-if(BUILD_AAX AND AAX_PATH)
+if(BUILD_AAX)
     list(APPEND FORMATS "AAX")
+    set(AAX_PATH "JUCE/modules/juce_audio_plugin_client/AAX/SDK")
     juce_set_aax_sdk_path(${AAX_PATH})
     message(STATUS "AAX SDK path set as: ${AAX_PATH}")
 endif()
