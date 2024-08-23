@@ -69,10 +69,10 @@ void MonitorUIBaseComponent::draw_orientation_client(murka::Murka &m, M1Orientat
         }
         
         std::string name = devices[i].getDeviceName();
-        slots.push_back({ icon, 
+        slots.push_back({ icon,
             name,
             name == m1OrientationClient.getCurrentDevice().getDeviceName(),
-            i, 
+            i,
             [&](int idx)
             {
                 m1OrientationClient.command_startTrackingUsingDevice(devices[idx]);
@@ -145,7 +145,7 @@ void MonitorUIBaseComponent::draw()
             yawRadial.postfix = "º";
             yawRadial.dataToControl = &monitorState->yaw;
             yawRadial.enabled = true;
-            yawRadial.withFontSize(DEFAULT_FONT_SIZE-2);
+            yawRadial.withFontSize(DEFAULT_FONT_SIZE-3);
 			yawRadial.activated = !isAnyTextfieldActived;
             yawRadial.orientationClientConnected = processor->m1OrientationClient.isConnectedToDevice();
             yawRadial.orientationClientValue = current_ext_orientation.GetYaw();
@@ -158,7 +158,7 @@ void MonitorUIBaseComponent::draw()
             
             auto& pitchSlider = m.prepare<M1Slider>({ 465, 45, 160, 140 }).withLabel("PITCH")
                 .hasMovingLabel(true)
-                .withFontSize(DEFAULT_FONT_SIZE-2)
+                .withFontSize(DEFAULT_FONT_SIZE-3)
                 .drawHorizontal(false);
             pitchSlider.cursorHide = cursorHide;
             pitchSlider.cursorShow = cursorShow;
@@ -184,7 +184,7 @@ void MonitorUIBaseComponent::draw()
             
             auto& rollSlider = m.prepare<M1Slider>({ 465, 180, 160, 160 }).withLabel("ROLL")
                 .hasMovingLabel(true)
-                .withFontSize(DEFAULT_FONT_SIZE-2)
+                .withFontSize(DEFAULT_FONT_SIZE-3)
                 .drawHorizontal(true);
             rollSlider.cursorHide = cursorHide;
             rollSlider.cursorShow = cursorShow;
@@ -237,7 +237,7 @@ void MonitorUIBaseComponent::draw()
             /// LEFT SIDE
 
             m.setColor(ENABLED_PARAM);
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
             m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y, 150, 20})
                 .withAlignment(TEXT_LEFT).text("MONITOR MODE")
                 .draw();
@@ -249,6 +249,7 @@ void MonitorUIBaseComponent::draw()
             
             std::vector<std::string> monitorModes = {"MACH1 SPATIAL (DEFAULT)", "STEREO SAFE", "FRONT/BACK FOLDDOWN"};
             auto& modeDropdown = m.prepare<M1DropdownMenu>({20, bottomSettings_topBound_y + 25, 310, 120}).withOptions(monitorModes);
+            modeDropdown.fontSize = DEFAULT_FONT_SIZE-3;
             modeDropdown.withHighlightLabelColor(MurkaColor(BACKGROUND_GREY));
             modeDropdown.textAlignment = TEXT_LEFT;
             modeDropdown.optionHeight = 40;
@@ -257,6 +258,7 @@ void MonitorUIBaseComponent::draw()
                 auto& dropdownInit = m.prepare<M1DropdownButton>({20, bottomSettings_topBound_y + 25, 310, 40}).withLabel(monitorModes[monitorState->monitor_mode]).withOutline(true).withBackgroundColor(MurkaColor(BACKGROUND_GREY)).withOutlineColor(MurkaColor(ENABLED_PARAM))
                     .withTriangle(true);
                 dropdownInit.textAlignment = TEXT_LEFT;
+                dropdownInit.fontSize = DEFAULT_FONT_SIZE-3;
                 dropdownInit.heightDivisor = 3;
                 dropdownInit.draw();
                 
@@ -279,7 +281,7 @@ void MonitorUIBaseComponent::draw()
 
             //Timecode offset
             m.setColor(ENABLED_PARAM);
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-1);
+            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
             m.prepare<murka::Label>({leftSide_LeftBound_x + 10, bottomSettings_topBound_y + 77, 150, 20})
                 .withAlignment(TEXT_LEFT).text("TIMECODE OFFSET")
                 .draw();
@@ -377,7 +379,7 @@ void MonitorUIBaseComponent::draw()
 
 			isAnyTextfieldActived = hhfield.activated || mmfield.activated || ssfield.activated || fsfield.activated;
 
-            /// RIGHT SIDE       
+            /// RIGHT SIDE
                         
             // orientation client window
             draw_orientation_client(m, processor->m1OrientationClient);
@@ -400,12 +402,12 @@ void MonitorUIBaseComponent::draw()
                 m.drawRectangle(0, m.getSize().height(), m.getSize().width(), 35); // bottom bar
                 
                 m.setColor(APP_LABEL_TEXT_COLOR);
-                m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+                m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-3);
                 
                 // OUTPUT DROPDOWN & LABELS
                 /// --> label
                 m.setColor(ENABLED_PARAM);
-                m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+                m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-3);
                 auto& arrowLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 - 20, m.getSize().height() - 26, 40, 20));
                 arrowLabel.label = "-->";
                 arrowLabel.alignment = TEXT_CENTER;
@@ -415,9 +417,9 @@ void MonitorUIBaseComponent::draw()
                 
                 // OUTPUT DROPDOWN or LABEL
                 m.setColor(ENABLED_PARAM);
-                m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+                m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-3);
                 auto& outputLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 + 110, m.getSize().height() - 26, 60, 20));
-                outputLabel.label = "OUTPUT";
+                outputLabel.label = "DECODE";
                 outputLabel.alignment = TEXT_CENTER;
                 outputLabel.enabled = false;
                 outputLabel.highlighted = false;
@@ -426,6 +428,7 @@ void MonitorUIBaseComponent::draw()
                 auto& outputDropdownButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 + 20, m.getSize().height() - 28, 80, 20 })
                     .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount()))
                     .withOutline(true);
+                outputDropdownButton.fontSize = DEFAULT_FONT_SIZE-5;
                 outputDropdownButton.heightDivisor = 8;
                 outputDropdownButton.draw();
                 std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
@@ -462,7 +465,7 @@ void MonitorUIBaseComponent::draw()
                 }
                 
                 outputDropdownMenu.optionHeight = dropdownItemHeight;
-                outputDropdownMenu.fontSize = 9;
+                outputDropdownMenu.fontSize = DEFAULT_FONT_SIZE-5;
                 outputDropdownMenu.draw();
                 
                 if (outputDropdownMenu.changed) {
@@ -573,7 +576,7 @@ void MonitorUIBaseComponent::draw()
 
     /// Monitor label
     m.setColor(ENABLED_PARAM);
-    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
+    m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-2);
 #ifdef CUSTOM_CHANNEL_LAYOUT
     auto& monitorLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() - 100, m.getSize().height() - 30, 80, 20));
 #else
