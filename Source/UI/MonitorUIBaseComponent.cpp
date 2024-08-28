@@ -467,7 +467,7 @@ void MonitorUIBaseComponent::draw()
                 
                 outputDropdownMenu.optionHeight = dropdownItemHeight;
                 outputDropdownMenu.fontSize = DEFAULT_FONT_SIZE-5;
-                outputDropdownMenu.labelPadding_x = 5;
+                outputDropdownMenu.labelPadding_x = 15;
                 outputDropdownMenu.draw();
                 
                 if (outputDropdownMenu.changed) {
