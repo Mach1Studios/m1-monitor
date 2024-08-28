@@ -114,15 +114,15 @@ public:
             m.drawLine(lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
         }
 
-        juce::Point<float> centralLineStart = center + juce::Point<float>(cos(angle) * 25,
-                                                              sin(angle) * 25) ;
+        juce::Point<float> centralLineStart = center + juce::Point<float>(cos(angle) * 25, sin(angle) * 25) ;
         juce::Point<float> centralLineEnd = center + juce::Point<float>(cos(angle) * (shape.size.x / 2 - 7), sin(angle) * (shape.size.x / 2 - 7));
         // draw main line
         m.drawLine(centralLineStart.x, centralLineStart.y, centralLineEnd.x, centralLineEnd.y);
         
         // value label
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-        m.prepare<murka::Label>({(shape.size.x/2 - 20), shape.size.y/2 - fontSize/2 - 2, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).draw();
+        juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(valueText, 0, 0); // used to find size of text
+        m.prepare<murka::Label>({shape.size.x/2 - label_box.width/2, shape.size.y/2 - label_box.height/2, 40, 40}).withAlignment(TEXT_CENTER).text(valueText).draw();
         
         m.popStyle();
         
