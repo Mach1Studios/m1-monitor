@@ -35,7 +35,8 @@ public:
         m.setColor(labelColor);
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, (int)fontSize);
         // interior text
-        m.prepare<murka::Label>({labelPaddingLeft, shape.size.y/heightDivisor, shape.size.x - labelPaddingLeft, shape.size.y}).withAlignment(textAlignment).text(label).draw();
+        juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(label, 0, 0); // used to find size of text
+        m.prepare<murka::Label>({labelPadding_x, labelPadding_y + shape.size.y/2 - label_box.height/2, shape.size.x - labelPadding_x, shape.size.y}).withAlignment(textAlignment).text(label).draw();
         
         pressed = false;
         if ((isHovered()) && (mouseDownPressed(0))) {
@@ -44,13 +45,13 @@ public:
     }
     
     std::string label = "";
-    float labelPaddingLeft = 5;
+    float labelPadding_x = 0;
     MurkaColor labelColor = MurkaColor(LABEL_TEXT_COLOR);
     bool pressed = false;
     float fontSize = 10;
     bool outlineEnabled = false;
     TextAlignment textAlignment = TEXT_CENTER;
-    int heightDivisor = 3;
+    int labelPadding_y = 0;
     MurkaColor bgColor, outlineColor;
     bool drawTriangle = false;
     

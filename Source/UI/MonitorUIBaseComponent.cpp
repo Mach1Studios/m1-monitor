@@ -252,6 +252,7 @@ void MonitorUIBaseComponent::draw()
             modeDropdown.fontSize = DEFAULT_FONT_SIZE-3;
             modeDropdown.withHighlightLabelColor(MurkaColor(BACKGROUND_GREY));
             modeDropdown.textAlignment = TEXT_LEFT;
+            modeDropdown.labelPadding_x = 5;
             modeDropdown.optionHeight = 40;
             
             if (!showMonitorModeDropdown) {
@@ -259,7 +260,7 @@ void MonitorUIBaseComponent::draw()
                     .withTriangle(true);
                 dropdownInit.textAlignment = TEXT_LEFT;
                 dropdownInit.fontSize = DEFAULT_FONT_SIZE-3;
-                dropdownInit.heightDivisor = 3;
+                dropdownInit.labelPadding_x = 5;
                 dropdownInit.draw();
                 
                 if (dropdownInit.pressed) {
@@ -291,7 +292,7 @@ void MonitorUIBaseComponent::draw()
             m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
             
             m.setColor(ENABLED_PARAM);
-            auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
+            auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 6, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
 			if (processor->transport->HH < 0) processor->transport->HH = 0;
 			if (processor->transport->HH > 100) processor->transport->HH = 99;
 			hhfield.widgetBgColor.setAlpha(0);
@@ -299,9 +300,9 @@ void MonitorUIBaseComponent::draw()
 			hhfield.shouldSelectAllWhenClicked = true;
 			hhfield.draw();
 
-			m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+			m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 111, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
+            auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
             if (processor->transport->MM > 100) processor->transport->MM = 99;
             mmfield.widgetBgColor.setAlpha(0);
@@ -309,9 +310,9 @@ void MonitorUIBaseComponent::draw()
 			mmfield.shouldSelectAllWhenClicked = true;
             mmfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 111, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
+            auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
             if (processor->transport->SS > 100) processor->transport->SS = 99;
             ssfield.widgetBgColor.setAlpha(0);
@@ -319,9 +320,9 @@ void MonitorUIBaseComponent::draw()
 			ssfield.shouldSelectAllWhenClicked = true;
 			ssfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 111, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
+            auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
             if (processor->transport->FS > 100) processor->transport->FS = 99;
             fsfield.widgetBgColor.setAlpha(0);
@@ -429,7 +430,7 @@ void MonitorUIBaseComponent::draw()
                     .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount()))
                     .withOutline(true);
                 outputDropdownButton.fontSize = DEFAULT_FONT_SIZE-5;
-                outputDropdownButton.heightDivisor = 8;
+                outputDropdownButton.labelPadding_x = 15;
                 outputDropdownButton.draw();
                 std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
                 if (processor->hostType.isProTools()) {
@@ -466,6 +467,7 @@ void MonitorUIBaseComponent::draw()
                 
                 outputDropdownMenu.optionHeight = dropdownItemHeight;
                 outputDropdownMenu.fontSize = DEFAULT_FONT_SIZE-5;
+                outputDropdownMenu.labelPadding_x = 5;
                 outputDropdownMenu.draw();
                 
                 if (outputDropdownMenu.changed) {
@@ -492,14 +494,12 @@ void MonitorUIBaseComponent::draw()
         m.setColor(ENABLED_PARAM);
         float settings_button_height = 370;
         if (showSettingsMenu) {
-            auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
+            auto& showSettingsWhileOpenedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 25,
                 120, 30 })
             .withLabel("SETTINGS")
             .withFontSize(DEFAULT_FONT_SIZE)
             .withOutline(false);
             showSettingsWhileOpenedButton.textAlignment = TEXT_LEFT;
-            showSettingsWhileOpenedButton.heightDivisor = 3;
-            showSettingsWhileOpenedButton.labelPaddingLeft = 0;
             showSettingsWhileOpenedButton.draw();
             
             if (showSettingsWhileOpenedButton.pressed) {
@@ -507,14 +507,12 @@ void MonitorUIBaseComponent::draw()
                 deleteTheSettingsButton();
             }
         } else {
-            auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 30,
+            auto& showSettingsWhileClosedButton = m.prepare<M1DropdownButton>({ m.getSize().width()/2 - 30, settings_button_height - 25,
                 120, 30 })
             .withLabel("SETTINGS")
             .withFontSize(DEFAULT_FONT_SIZE)
             .withOutline(false);
             showSettingsWhileClosedButton.textAlignment = TEXT_LEFT;
-            showSettingsWhileClosedButton.heightDivisor = 3;
-            showSettingsWhileClosedButton.labelPaddingLeft = 0;
             showSettingsWhileClosedButton.draw();
             
             if (showSettingsWhileClosedButton.pressed) {
@@ -528,7 +526,7 @@ void MonitorUIBaseComponent::draw()
             // draw settings arrow indicator pointing up
             m.enableFill();
             m.setColor(LABEL_TEXT_COLOR);
-            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8};
+            MurkaPoint triangleCenter = {m.getSize().width()/2 + 60, settings_button_height - 7};
             std::vector<MurkaPoint3D> triangle;
             triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0});
             triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0}); // top middle
@@ -539,7 +537,7 @@ void MonitorUIBaseComponent::draw()
             // draw settings arrow indicator pointing down
             m.enableFill();
             m.setColor(LABEL_TEXT_COLOR);
-            MurkaPoint triangleCenter = {m.getSize().width()/2 + 65, settings_button_height - 8 - 5};
+            MurkaPoint triangleCenter = {m.getSize().width()/2 + 60, settings_button_height - 7 - 5};
             std::vector<MurkaPoint3D> triangle;
             triangle.push_back({triangleCenter.x + 5, triangleCenter.y, 0});
             triangle.push_back({triangleCenter.x - 5, triangleCenter.y, 0}); // bottom middle
