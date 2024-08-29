@@ -92,8 +92,8 @@ public:
                 float posX = reticlePositionNorm * (shape.size.x - 2 * ellipseSize) + ellipseSize - labelWidth / 2;
                 posX = (std::max)(0.0f, (std::min)(shape.size.x - labelWidth, posX));
 
-                m.prepare<murka::Label>({ posX, shape.size.y/2 - 35, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
-                m.prepare<murka::Label>({ posX + 2, shape.size.y/2 + 22, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
+                m.prepare<murka::Label>({ posX + 3, shape.size.y/2 - 35, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ posX + 4, shape.size.y/2 + 22, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
             } else {
                 m.prepare<murka::Label>({ shape.size.x / 2 - labelWidth /2, shape.size.y - labelHeight,
                                         labelWidth, 30}).withAlignment(TEXT_CENTER).text(label).draw();
