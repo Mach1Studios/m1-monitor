@@ -292,7 +292,7 @@ void MonitorUIBaseComponent::draw()
             m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
             
             m.setColor(ENABLED_PARAM);
-            auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 6, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
+            auto& hhfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
 			if (processor->transport->HH < 0) processor->transport->HH = 0;
 			if (processor->transport->HH > 100) processor->transport->HH = 99;
 			hhfield.widgetBgColor.setAlpha(0);
@@ -300,9 +300,9 @@ void MonitorUIBaseComponent::draw()
 			hhfield.shouldSelectAllWhenClicked = true;
 			hhfield.draw();
 
-			m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 111, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+			m.prepare<murka::Label>({leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
+            auto& mmfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
             if (processor->transport->MM < 0) processor->transport->MM = 0;
             if (processor->transport->MM > 100) processor->transport->MM = 99;
             mmfield.widgetBgColor.setAlpha(0);
@@ -310,9 +310,9 @@ void MonitorUIBaseComponent::draw()
 			mmfield.shouldSelectAllWhenClicked = true;
             mmfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 111, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
+            auto& ssfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
             if (processor->transport->SS < 0) processor->transport->SS = 0;
             if (processor->transport->SS > 100) processor->transport->SS = 99;
             ssfield.widgetBgColor.setAlpha(0);
@@ -320,9 +320,9 @@ void MonitorUIBaseComponent::draw()
 			ssfield.shouldSelectAllWhenClicked = true;
 			ssfield.draw();
             
-            m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 111, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
+            m.prepare<murka::Label>({leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 113, 30, 30}).withAlignment(TEXT_LEFT).text(":").draw();
             
-            auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 107, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
+            auto& fsfield = m.prepare<murka::TextField>({leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30}).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
             if (processor->transport->FS < 0) processor->transport->FS = 0;
             if (processor->transport->FS > 100) processor->transport->FS = 99;
             fsfield.widgetBgColor.setAlpha(0);
@@ -419,7 +419,7 @@ void MonitorUIBaseComponent::draw()
                 // OUTPUT DROPDOWN or LABEL
                 m.setColor(ENABLED_PARAM);
                 m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE-3);
-                auto& outputLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 + 110, m.getSize().height() - 26, 60, 20));
+                auto& outputLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width()/2 + 105, m.getSize().height() - 26, 60, 20));
                 outputLabel.label = "DECODE";
                 outputLabel.alignment = TEXT_CENTER;
                 outputLabel.enabled = false;
@@ -430,7 +430,6 @@ void MonitorUIBaseComponent::draw()
                     .withLabel(std::to_string(monitorState->m1Decode.getFormatChannelCount()))
                     .withOutline(true);
                 outputDropdownButton.fontSize = DEFAULT_FONT_SIZE-5;
-                outputDropdownButton.labelPadding_x = 15;
                 outputDropdownButton.draw();
                 std::vector<std::string> output_options = {"M1Horizon-4", "M1Spatial-8"};
                 if (processor->hostType.isProTools()) {
@@ -467,7 +466,6 @@ void MonitorUIBaseComponent::draw()
                 
                 outputDropdownMenu.optionHeight = dropdownItemHeight;
                 outputDropdownMenu.fontSize = DEFAULT_FONT_SIZE-5;
-                outputDropdownMenu.labelPadding_x = 15;
                 outputDropdownMenu.draw();
                 
                 if (outputDropdownMenu.changed) {
