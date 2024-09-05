@@ -3,7 +3,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
 	cmake_policy(SET CMP0135 NEW)
 endif()
 
-if(EXTERNAL_M1SDK_PATH) 
+if(EXTERNAL_M1SDK_PATH)
     message(STATUS "Using an external M1SDK Path: ${EXTERNAL_M1SDK_PATH}")
     set(MACH1SPATIAL_LIBS_PATH ${EXTERNAL_M1SDK_PATH}/mach1spatial-libs)
 else()
@@ -52,7 +52,7 @@ if(WIN32 OR MSVC OR MINGW)
         optimized ${MACH1DECODE_LIBRARY_RELEASE}
     )
 else()
-    find_library(MACH1DECODE_LIBRARY 
+    find_library(MACH1DECODE_LIBRARY
         NAMES Mach1DecodeCAPI
         PATHS ${MACH1SPATIAL_LIBS_UNIX_PATH}/lib
     )

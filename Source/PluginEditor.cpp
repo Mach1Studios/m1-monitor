@@ -6,18 +6,18 @@
   ==============================================================================
 */
 
-#include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "PluginProcessor.h"
 
 //==============================================================================
-M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor (M1MonitorAudioProcessor& p)
-    : AudioProcessorEditor (&p)
+M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor(M1MonitorAudioProcessor& p)
+    : AudioProcessorEditor(&p)
 {
     setSize(504, 267);
     // size when advanced settings open = 504, 469
-    
+
     processor = &p;
-    
+
     monitorUIBaseComponent = new MonitorUIBaseComponent(processor);
     monitorUIBaseComponent->setSize(getWidth(), getHeight());
 
@@ -34,10 +34,10 @@ M1MonitorAudioProcessorEditor::~M1MonitorAudioProcessorEditor()
 
 //==============================================================================
 
-void M1MonitorAudioProcessorEditor::paint (juce::Graphics& g)
+void M1MonitorAudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (40, 40, 40));
-    g.setColour (juce::Colour (40, 40, 40));
+    g.fillAll(juce::Colour(40, 40, 40));
+    g.setColour(juce::Colour(40, 40, 40));
 }
 
 void M1MonitorAudioProcessorEditor::resized()

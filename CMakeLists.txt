@@ -109,7 +109,7 @@ juce_add_plugin(${PLUGIN_NAME}
                 IS_SYNTH FALSE)
 
 target_compile_definitions(${PLUGIN_NAME}
-    PUBLIC 
+    PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
@@ -144,7 +144,7 @@ foreach(target ${FORMATS} "All")
     if(TARGET ${PLUGIN_NAME}_${target})
         if(${target} STREQUAL "VST" OR ${target} STREQUAL "VST3")
                 set_target_properties(${PLUGIN_NAME}_${target} PROPERTIES
-                FOLDER "Targets"                
+                FOLDER "Targets"
                 XCODE_SCHEME_EXECUTABLE /Applications/REAPER.app
                 XCODE_GENERATE_SCHEME ON)
         elseif(${target} STREQUAL "AAX")
@@ -156,7 +156,7 @@ foreach(target ${FORMATS} "All")
             set_target_properties(${PLUGIN_NAME}_${target} PROPERTIES
                 # Tuck the actual plugin targets into a folder where they won't bother us
                 FOLDER "Targets"
-                
+
                 # MacOS only: Sets the default executable that Xcode will open on build
                 # For this exact path to to work, manually build the AudioPluginHost.xcodeproj in the JUCE subdir
                 #XCODE_SCHEME_EXECUTABLE ${PROJECT_SOURCE_DIR}/JUCE/extras/AudioPluginHost/Builds/MacOSX/build/Debug/AudioPluginHost.app
@@ -171,23 +171,23 @@ set_target_properties(Resources PROPERTIES FOLDER "Targets")
 # add required flags
 juce_generate_juce_header(${PLUGIN_NAME})
 
-target_link_libraries(${PLUGIN_NAME} PRIVATE 
-    juce::juce_audio_basics 
-    juce::juce_audio_devices 
-    juce::juce_audio_formats 
-    juce::juce_audio_plugin_client 
-    juce::juce_audio_processors 
-    juce::juce_audio_utils 
-    juce::juce_core 
-    juce::juce_data_structures 
-    juce::juce_dsp 
-    juce::juce_events 
-    juce::juce_graphics 
-    juce::juce_gui_basics 
-    juce::juce_gui_extra 
-    juce::juce_opengl 
-    juce::juce_osc 
-    juce_murka 
+target_link_libraries(${PLUGIN_NAME} PRIVATE
+    juce::juce_audio_basics
+    juce::juce_audio_devices
+    juce::juce_audio_formats
+    juce::juce_audio_plugin_client
+    juce::juce_audio_processors
+    juce::juce_audio_utils
+    juce::juce_core
+    juce::juce_data_structures
+    juce::juce_dsp
+    juce::juce_events
+    juce::juce_graphics
+    juce::juce_gui_basics
+    juce::juce_gui_extra
+    juce::juce_opengl
+    juce::juce_osc
+    juce_murka
     m1_orientation_client
     m1_mathematics
     )
