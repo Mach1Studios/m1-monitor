@@ -44,7 +44,7 @@
         #else
             #error ERROR: Undefined Output Configuration from CMAKE
         #endif
-        
+
         // if AAX or RTAS is setup alongside custom channel single mode than error
         #if (JucePlugin_Build_AAX == 1)
             #error ERROR: Build AAX -> Disable Custom layout chanel
@@ -81,9 +81,9 @@
 #define BACKGROUND_COMPONENT 50, 50, 50
 #define BACKGROUND_GREY 40, 40, 40
 
-#define GRID_LINES_1_RGBA 68, 68, 68, 51//0.2 opacity //small grid lines
+#define GRID_LINES_1_RGBA 68, 68, 68, 51 //0.2 opacity //small grid lines
 #define GRID_LINES_2 68, 68, 68
-#define GRID_LINES_3_RGBA 102, 102, 102, 178//0.7 opacity
+#define GRID_LINES_3_RGBA 102, 102, 102, 178 //0.7 opacity
 #define GRID_LINES_4_RGB 133, 133, 133
 #define OVERLAY_YAW_REF_RGBA 93, 93, 93, 51
 

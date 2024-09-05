@@ -7,7 +7,6 @@
 class Transport : public juce::Timer
 {
 public:
-
     Transport(M1OrientationClient* orientationClient);
 
     /**
@@ -44,9 +43,9 @@ public:
     int FS = 0;
 
 private:
-	M1OrientationClient* m_orientation_client = nullptr;
+    M1OrientationClient* m_orientation_client = nullptr;
 
     double m_transport_offset = 0;
-	double m_correct_time_in_seconds = 0;
+    double m_correct_time_in_seconds = 0;
     bool m_is_playing = true;
 };
