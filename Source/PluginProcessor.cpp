@@ -121,6 +121,11 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
         }
     });
 
+    // print build time for debug
+    juce::String date(__DATE__);
+    juce::String time(__TIME__);
+    DBG("Build date: " + date + " | Build time: " + time);
+
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
 }
@@ -410,7 +415,7 @@ void M1MonitorAudioProcessor::fillChannelOrderArray(int numM1InputChannels)
 
     if (!chanset.isDiscreteLayout())
     { // Check for DAW specific instructions
-        if (hostType.isProTools() && chanset.size() == 8 && chanset.getDescription().contains(juce::String("7.1 Surround")))
+        if (hostType.isProTools() && chanset.size() == 8 && chanset.getDescription().equalsIgnoreCase(juce::String("7.1 Surround")))
         {
             // TODO: Remove this and figure out why we cannot use what is in "else" on PT 7.1
             chan_types[0] = juce::AudioChannelSet::ChannelType::left;
@@ -517,8 +522,8 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
                 // Input channel reordering from fillChannelOrder()
                 int input_channel_reordered = input_channel_indices[input_channel];
 
-                outBufferL[sample] += tempBuffer.getReadPointer(input_channel * 2)[sample] * smoothedChannelCoeffs[input_channel_reordered][0].getNextValue();
-                outBufferR[sample] += tempBuffer.getReadPointer(input_channel * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel_reordered][1].getNextValue();
+                outBufferL[sample] += tempBuffer.getReadPointer(input_channel_reordered * 2)[sample] * smoothedChannelCoeffs[input_channel][0].getNextValue(); // all the even tempBuffer indices are for the left output
+                outBufferR[sample] += tempBuffer.getReadPointer(input_channel_reordered * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel][1].getNextValue(); // all the odd tempBuffer indices are for the right output
             }
         }
     }

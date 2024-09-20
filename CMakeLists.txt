@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.15.0)
 file(STRINGS VERSION CURRENT_VERSION)
 project(M1-Monitor VERSION ${CURRENT_VERSION})
 
-# Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
-if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
-    cmake_policy(SET CMP0135 NEW)
-endif()
-
 ### IDE Generator pre-config ###
 # Xcode: Disable automatic build scheme generation globally.
 #        Instead, we explicitely specify which targets require schemes.
