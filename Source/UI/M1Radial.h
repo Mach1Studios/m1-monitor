@@ -30,12 +30,6 @@ public:
         auto font = m.getCurrentFont();
         auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
 
-        // Focus
-        if (activated && !hasKeyboardFocus())
-        {
-            claimKeyboardFocus();
-        }
-
         m.pushStyle();
 
         // Increase circle resolution
