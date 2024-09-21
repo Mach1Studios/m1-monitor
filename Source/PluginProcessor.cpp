@@ -124,7 +124,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     // print build time for debug
     juce::String date(__DATE__);
     juce::String time(__TIME__);
-    DBG("Build date: " + date + " | Build time: " + time);
+    DBG("[MONITOR] Build date: " + date + " | Build time: " + time);
 
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
