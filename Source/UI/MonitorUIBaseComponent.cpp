@@ -23,19 +23,6 @@ MonitorUIBaseComponent::~MonitorUIBaseComponent()
 void MonitorUIBaseComponent::initialise()
 {
     JuceMurkaBaseComponent::initialise();
-
-    std::string resourcesPath;
-    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0)
-    {
-        resourcesPath = juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory).getChildFile("Application Support/Mach1 Spatial System/resources").getFullPathName().toStdString();
-    }
-    else
-    {
-        resourcesPath = juce::File::getSpecialLocation(juce::File::SpecialLocationType::userApplicationDataDirectory).getChildFile("Mach1 Spatial System/resources").getFullPathName().toStdString();
-    }
-    printf("Resources Loaded From: %s \n", resourcesPath.c_str());
-    m.setResourcesPath(resourcesPath);
-
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
 }
 
@@ -111,7 +98,7 @@ void MonitorUIBaseComponent::draw()
     // This clears the context with our background.
     //juce::OpenGLHelpers::clear(juce::Colour(255.0, 198.0, 30.0));
 
-    float scale = (float)openGLContext.getRenderingScale() * 0.7; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
+    float scale = (float)openGLContext.getRenderingScale() * 0.7f; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
 
     if (scale != m.getScreenScale())
     {
@@ -175,7 +162,7 @@ void MonitorUIBaseComponent::draw()
             if (yawRadial.changed)
             {
                 double normalisedValue = processor->parameters.getParameter(processor->paramYaw)->convertTo0to1(monitorState->yaw);
-                processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost(normalisedValue);
+                processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost((float)normalisedValue);
             }
 
             auto& pitchSlider = m.prepare<M1Slider>({ 465, 45, 160, 140 }).withLabel("PITCH").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
@@ -202,7 +189,7 @@ void MonitorUIBaseComponent::draw()
             if (pitchSlider.changed)
             {
                 double normalisedValue = (processor->parameters.getParameter(processor->paramPitch)->convertTo0to1(monitorState->pitch));
-                processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost(normalisedValue);
+                processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost((float)normalisedValue);
             }
 
             auto& rollSlider = m.prepare<M1Slider>({ 465, 180, 160, 160 }).withLabel("ROLL").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(true);
@@ -229,7 +216,7 @@ void MonitorUIBaseComponent::draw()
             if (rollSlider.changed)
             {
                 double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll));
-                processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost(normalisedValue);
+                processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost((float)normalisedValue);
             }
         }
 
@@ -305,7 +292,7 @@ void MonitorUIBaseComponent::draw()
                     {
                         monitorState->monitor_mode = modeDropdown.selectedOption;
                         double normalisedValue = processor->parameters.getParameter(processor->paramMonitorMode)->convertTo0to1(monitorState->monitor_mode);
-                        processor->parameters.getParameter(processor->paramMonitorMode)->setValueNotifyingHost(normalisedValue);
+                        processor->parameters.getParameter(processor->paramMonitorMode)->setValueNotifyingHost((float)normalisedValue);
                         showMonitorModeDropdown = false;
                         modeDropdown.close();
                     }
@@ -697,13 +684,10 @@ void MonitorUIBaseComponent::draw()
 //==============================================================================
 void MonitorUIBaseComponent::paint(juce::Graphics& g)
 {
-    // You can add your component specific drawing code here!
     // This will draw over the top of the openGL background.
 }
 
 void MonitorUIBaseComponent::resized()
 {
     // This is called when the MonitorUIBaseComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
 }
