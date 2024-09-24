@@ -192,10 +192,9 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE Resources PUBLIC juce::juce_recomme
 set(JucePlugin_Name ${PLUGIN_NAME})
 set(JucePlugin_Desc ${PLUGIN_NAME})
 
-# download and link m1-sdk
-include(cmake/fetchM1SDK.cmake)
-target_link_libraries(${PLUGIN_NAME} PRIVATE ${MACH1DECODE_LIBRARY})
-target_sources(${PLUGIN_NAME} PRIVATE ${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp) # cpp file is the same for all targets, disregard the xcode path
+# link m1-sdk
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE M1Decode)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE Modules/m1-sdk/libmach1spatial/api_common/include Modules/m1-sdk/libmach1spatial/api_decode/include Modules/m1-sdk/libmach1spatial/deps)
 
 if(WIN32 OR MSVC OR MINGW)
     message(STATUS "Adding windows OS flag for httplib")
@@ -215,7 +214,6 @@ get_target_property(juce_library_code "${PLUGIN_NAME}" JUCE_GENERATED_SOURCES_DI
 set(juce_header "${juce_library_code}/JuceHeader.h")
 list(REMOVE_ITEM project_sources "${juce_header}")
 # remove m1-sdk cpp files too
-list(REMOVE_ITEM project_sources "${MACH1SPATIAL_LIBS_PATH}/xcode/include/Mach1Decode.cpp") # cpp file is the same for all targets, disregard the xcode path
 
 #   Place JuceHeader.h and the associated CMake Rule file into a "JUCE Library Code" folder.
 source_group("JUCE Library Code" FILES "${juce_header}")
