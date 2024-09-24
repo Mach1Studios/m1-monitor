@@ -1,4 +1,3 @@
-
 #include "Transport.h"
 
 // TODO: If possible, make public members private, rename them, create get/setters for them, and recalculate
