@@ -13,6 +13,8 @@ private:
     juce::String userAgent;
     juce::URL url;
     juce::String headers;
+    juce::String apiKey = "G-CP8900GQKP";
+    juce::String secret = "xkPfUnMKSVCNxqhnf75uHQ";
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(M1Analytics)
 };
