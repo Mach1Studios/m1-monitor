@@ -8,6 +8,8 @@ target_sources(${PLUGIN_NAME} PRIVATE    Config.h
                                     Transport.cpp
                                     MonitorOSC.h
                                     MonitorOSC.cpp
+                                    M1Analytics.h
+                                    M1Analytics.cpp
                                     UI/M1Checkbox.h
                                     UI/M1DropdownButton.h
                                     UI/M1DropdownMenu.h

@@ -182,6 +182,7 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE
     juce::juce_gui_extra
     juce::juce_opengl
     juce::juce_osc
+    juce::juce_analytics
     juce_murka
     m1_orientation_client
     m1_mathematics
