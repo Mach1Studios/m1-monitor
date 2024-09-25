@@ -7,7 +7,7 @@ struct MixerSettings
 {
     /// This object contains:
     /// - `Mach1DecodeAlgoType`
-    Mach1Decode m1Decode;
+    Mach1Decode<float> m1Decode;
 
     float yaw = 0; // degree range   0->360
     float pitch = 0; // degree range -90->90

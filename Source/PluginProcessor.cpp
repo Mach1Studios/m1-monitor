@@ -16,7 +16,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramRoll, 1), TRANS("Roll"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
                                                                            // Note: Change init output to max bus size when new formats are introduced
-                                                                           std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeAlgoSpatial_14, (int)Mach1DecodeAlgoSpatial_8),
+                                                                           std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeMode::M1DecodeSpatial_14, (int)Mach1DecodeMode::M1DecodeSpatial_8),
                                                                        })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -28,7 +28,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
-    m1DecodeChangeInputMode(Mach1DecodeAlgoSpatial_8); // sets type and resizes temp buffers
+    m1DecodeChangeInputMode(M1DecodeSpatial_8); // sets type and resizes temp buffers
 
     transport = new Transport(&m1OrientationClient);
 
@@ -230,23 +230,23 @@ void M1MonitorAudioProcessor::createLayout()
             {
                 if (getBus(true, 0)->getCurrentLayout().size() == 4)
                 {
-                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoHorizon_4);
-                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoHorizon_4);
+                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_4);
+                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_4);
                 }
                 else if (getBus(true, 0)->getCurrentLayout().size() == 8)
                 {
-                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
-                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
+                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_8);
+                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_8);
                 }
                 else if (getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() == 2)
                 { // if an ambisonic 2nd order
-                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
-                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_8);
+                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_8);
+                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_8);
                 }
                 else if (getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() > 2)
                 { // if an ambisonic bus higher than 2nd order
-                    monitorSettings.m1Decode.setDecodeAlgoType(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
-                    m1DecodeChangeInputMode(Mach1DecodeAlgoType::Mach1DecodeAlgoSpatial_14);
+                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_14);
+                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_14);
                 }
                 else
                 {
@@ -316,7 +316,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
     else if (parameterID == paramOutputMode)
     {
         // `monitorSettings` are changed via the `m1DecodeChangeInputMode()` call
-        m1DecodeChangeInputMode(Mach1DecodeAlgoType((int)newValue));
+        m1DecodeChangeInputMode(Mach1DecodeMode((int)newValue));
     }
 
     // update the gui on other plugins for any changes to YPR
@@ -337,7 +337,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
 bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
     juce::PluginHostType hostType;
-    Mach1Decode configTester;
+    Mach1Decode<float> configTester;
 
     // block plugin if input or output is disabled on construction
     if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::disabled()
@@ -376,9 +376,9 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
     {
         // Test for all available Mach1Encode configs
         // manually maintained for-loop of first enum element to last enum element
-        for (int inputEnum = 0; inputEnum != Mach1DecodeAlgoSpatial_14; inputEnum++)
+        for (int inputEnum = 0; inputEnum != Mach1DecodeMode::M1DecodeSpatial_14; inputEnum++)
         {
-            configTester.setDecodeAlgoType(static_cast<Mach1DecodeAlgoType>(inputEnum));
+            configTester.setDecodeMode(static_cast<Mach1DecodeMode>(inputEnum));
             // test each input, if the input has the number of channels as the input testing layout has move on to output testing
             if (layouts.getMainInputChannelSet().size() >= configTester.getFormatChannelCount())
             {
@@ -463,9 +463,7 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     // Mach1Decode processing loop
     monitorSettings.m1Decode.setRotationDegrees({ monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll });
-    monitorSettings.m1Decode.beginBuffer();
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
-    monitorSettings.m1Decode.endBuffer();
 
     // Update spatial mixer coeffs from Mach1Decode for a smoothed value
     for (int channel = 0; channel < monitorSettings.m1Decode.getFormatChannelCount(); ++channel)
@@ -646,9 +644,9 @@ juce::AudioProcessorEditor* M1MonitorAudioProcessor::createEditor()
 }
 
 //==============================================================================
-void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeAlgoType decodeMode)
+void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode)
 {
-    monitorSettings.m1Decode.setDecodeAlgoType(decodeMode);
+    monitorSettings.m1Decode.setDecodeMode(decodeMode);
     auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
     smoothedChannelCoeffs.resize(inputChannelsCount);
 
@@ -699,7 +697,7 @@ void M1MonitorAudioProcessor::setStateInformation(const void* data, int sizeInBy
                 parameters.state = tree;
 
                 // Force update the input/output temp buffers
-                m1DecodeChangeInputMode(Mach1DecodeAlgoType((int)parameters.getParameter(paramOutputMode)->convertFrom0to1(parameters.getParameter(paramOutputMode)->getValue())));
+                m1DecodeChangeInputMode(Mach1DecodeMode((int)parameters.getParameter(paramOutputMode)->convertFrom0to1(parameters.getParameter(paramOutputMode)->getValue())));
             }
 
             // Set the timecode offset from the saved plugin data

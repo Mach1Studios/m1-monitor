@@ -507,11 +507,11 @@ void MonitorUIBaseComponent::draw()
                 // Mach1Decode API has the first index [0] set to Mach1DecodeAlgoSpatial_8
                 // and [1] as Mach1DecodeAlgoSpatial_8 which is the opposite of how we list them in the UI
                 // this function swaps them
-                if ((int)processor->parameters.getParameter(processor->paramOutputMode)->convertFrom0to1(processor->parameters.getParameter(processor->paramOutputMode)->getValue()) == (int)Mach1DecodeAlgoHorizon_4)
+                if ((int)processor->parameters.getParameter(processor->paramOutputMode)->convertFrom0to1(processor->parameters.getParameter(processor->paramOutputMode)->getValue()) == (int)Mach1DecodeMode::M1DecodeSpatial_4)
                 { /* Swap to Mach1DecodeAlgoSpatial_4 */
                     outputDropdownMenu.selectedOption = 0;
                 }
-                if ((int)processor->parameters.getParameter(processor->paramOutputMode)->convertFrom0to1(processor->parameters.getParameter(processor->paramOutputMode)->getValue()) == (int)Mach1DecodeAlgoSpatial_8)
+                if ((int)processor->parameters.getParameter(processor->paramOutputMode)->convertFrom0to1(processor->parameters.getParameter(processor->paramOutputMode)->getValue()) == (int)Mach1DecodeMode::M1DecodeSpatial_8)
                 { /* Swap to Mach1DecodeAlgoSpatial_8 */
                     outputDropdownMenu.selectedOption = 1;
                 }
@@ -529,19 +529,19 @@ void MonitorUIBaseComponent::draw()
                 {
                     if (outputDropdownMenu.selectedOption == 0)
                     {
-                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeAlgoHorizon_4));
+                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_4));
                     }
                     else if (outputDropdownMenu.selectedOption == 1)
                     {
-                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeAlgoSpatial_8));
+                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_8));
                     }
                     else if (outputDropdownMenu.selectedOption == 2)
                     {
-                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeAlgoSpatial_12));
+                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_12));
                     }
                     else if (outputDropdownMenu.selectedOption == 3)
                     {
-                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeAlgoSpatial_14));
+                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_14));
                     }
                 }
             }

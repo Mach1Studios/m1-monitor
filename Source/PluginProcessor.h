@@ -107,7 +107,7 @@ public:
     static juce::String paramOutputMode;
 
     double processorSampleRate = 44100; // only has to be something for the initilizer to work
-    void m1DecodeChangeInputMode(Mach1DecodeAlgoType inputMode);
+    void m1DecodeChangeInputMode(Mach1DecodeMode inputMode);
     MixerSettings monitorSettings;
     juce::PluginHostType hostType;
     bool layoutCreated = false;
