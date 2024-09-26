@@ -197,7 +197,7 @@ public:
     bool opened = false;
     int selectedOption = 0;
     std::vector<std::string> options;
-    Mach1DecodeAlgoType* dataToControl = nullptr;
+    Mach1DecodeMode* dataToControl = nullptr;
 
     int optionHeight = 30;
     int fontSize = 10;
@@ -212,7 +212,7 @@ public:
     MurkaShape triggerButtonShape;
     TextAlignment textAlignment = TEXT_CENTER;
 
-    M1DropdownMenu& controlling(Mach1DecodeAlgoType* dataPointer)
+    M1DropdownMenu& controlling(Mach1DecodeMode* dataPointer)
     {
         dataToControl = dataPointer;
         return *this;
