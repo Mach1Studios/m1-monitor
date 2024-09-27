@@ -112,6 +112,7 @@ public:
     MixerSettings monitorSettings;
     juce::PluginHostType hostType;
     bool layoutCreated = false;
+    bool pluginInitialized = false;
 
     // Orientation Manager/Client
     void setStatus(bool success, std::string message);

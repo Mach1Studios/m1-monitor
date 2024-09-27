@@ -117,8 +117,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     juce::String date(__DATE__);
     juce::String time(__TIME__);
     DBG("[MONITOR] Build date: " + date + " | Build time: " + time);
-    jobThreads.addJob(new M1Analytics("M1-Monitor_Launched", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
-
+    
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
 }
@@ -264,10 +263,17 @@ void M1MonitorAudioProcessor::createLayout()
 //==============================================================================
 void M1MonitorAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
+    // Set up host bus layout
     if (!layoutCreated)
     {
         createLayout();
+    }
+    
+    // flag for the initial reporting
+    if (!pluginInitialized)
+    {
+        jobThreads.addJob(new M1Analytics("M1-Monitor_Launched", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
+        pluginInitialized = true; // stop this from being called again
     }
 
     // can still be used to calculate coeffs even in STREAMING_PANNER_PLUGIN mode

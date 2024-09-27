@@ -17,9 +17,9 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
 
     juce::String appType, appName, appVersion, appManufacturer;
 #if defined(JucePlugin_Name)
-    appType         = "Plugin";
-    appName         = JucePlugin_Name;
-    appVersion      = JucePlugin_VersionString;
+    appType = "Plugin";
+    appName = JucePlugin_Name;
+    appVersion = JucePlugin_VersionString;
     appManufacturer = JucePlugin_Manufacturer;
 #else
     if (juce::JUCEApplicationBase::isStandaloneApp())
@@ -28,7 +28,7 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
 
         if (auto* app = juce::JUCEApplicationBase::getInstance())
         {
-            appName    = app->getApplicationName();
+            appName = app->getApplicationName();
             appVersion = app->getApplicationVersion();
         }
     }
@@ -43,9 +43,9 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
     baseProps->setProperty("$app_name", appName);
     baseProps->setProperty("$app_version", appVersion);
     baseProps->setProperty("$app_manu", appManufacturer);
-    baseProps->setProperty("m1_mode", m1Mode);
-    baseProps->setProperty("has_helper", hasHelper);
-    baseProps->setProperty("country", juce::SystemStats::getUserRegion());
+    baseProps->setProperty("m1Mode", m1Mode);
+    baseProps->setProperty("hasHelper", hasHelper);
+    baseProps->setProperty("$region", juce::SystemStats::getUserRegion());
     baseProps->setProperty("language", juce::SystemStats::getUserLanguage());
     baseProps->setProperty("cpu", juce::SystemStats::getCpuVendor());
     baseProps->setProperty("cpu-model", juce::SystemStats::getCpuModel());
