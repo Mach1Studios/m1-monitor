@@ -12,35 +12,12 @@ MonitorUIBaseComponent::MonitorUIBaseComponent(M1MonitorAudioProcessor* processo
     processor = processor_;
     monitorState = &processor->monitorSettings;
 
-    jobThreads.addJob(new M1Analytics(), true);
-
     startTimerHz(60); // Starts the timer to call the timerCallback method at 60 Hz.
 }
 
 MonitorUIBaseComponent::~MonitorUIBaseComponent()
 {
-    jobThreads.addJob(new M1Analytics("appFinished"), true);
     juce::Thread::sleep(1000);
-}
-
-void MonitorUIBaseComponent::addJob(std::function<void()> job)
-{
-    jobThreads.addJob(std::move(job));
-}
-
-void MonitorUIBaseComponent::addJob(juce::ThreadPoolJob* job, bool deleteJobWhenFinished)
-{
-    jobThreads.addJob(job, deleteJobWhenFinished);
-}
-
-void MonitorUIBaseComponent::cancelJob(juce::ThreadPoolJob* job)
-{
-    jobThreads.removeJob(job, true, 100);
-}
-
-juce::ThreadPool& MonitorUIBaseComponent::getThreadPool()
-{
-    return jobThreads;
 }
 
 //==============================================================================

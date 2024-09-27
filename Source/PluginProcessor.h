@@ -4,6 +4,7 @@
 #include "MonitorOSC.h"
 #include "Transport.h"
 #include "TypesForDataExchange.h"
+#include "M1Analytics.h"
 #include <JuceHeader.h>
 #include <Mach1Decode.h>
 
@@ -127,6 +128,12 @@ public:
 
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
+    
+    // Analytics for crash reporting
+    void addJob(std::function<void()> job);
+    void addJob(juce::ThreadPoolJob* job, bool deleteJobWhenFinished);
+    void cancelJob(juce::ThreadPoolJob* job);
+    juce::ThreadPool& getThreadPool();
 
 private:
     void updateTransportWithPlayhead();
@@ -136,6 +143,9 @@ private:
     std::vector<std::vector<float>> audioDataIn;
     std::vector<float> spatialMixerCoeffs;
     std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
+    
+    juce::ThreadPool jobThreads{ std::max(4, juce::SystemStats::getNumCpus()) };
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(M1MonitorAudioProcessor)
 };

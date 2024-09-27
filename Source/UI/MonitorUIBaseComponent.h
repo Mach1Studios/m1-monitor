@@ -65,12 +65,6 @@ public:
     // Timer callback for resizing
     void timerCallback() override;
 
-    // Analytics for crash reporting
-    void addJob(std::function<void()> job);
-    void addJob(juce::ThreadPoolJob* job, bool deleteJobWhenFinished);
-    void cancelJob(juce::ThreadPoolJob* job);
-    juce::ThreadPool& getThreadPool();
-
 private:
     bool showSettingsMenu = false;
     bool recenterButtonActive = false;
@@ -103,8 +97,6 @@ private:
     bool isAnyTextfieldActived = false;
 
     void draw_orientation_client(murka::Murka& m, M1OrientationClient& m1OrientationClient);
-
-    juce::ThreadPool jobThreads{ std::max(4, juce::SystemStats::getNumCpus()) };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MonitorUIBaseComponent)
 };
