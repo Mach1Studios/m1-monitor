@@ -1,92 +1,86 @@
 #include "M1Analytics.h"
 
-juce::StringPairArray M1Analytics::createUsageData(const juce::String& event)
+void M1Analytics::createUsageData(const juce::String& eventName, const juce::var& properties)
 {
+    // Mixpanel endpoint
+    juce::URL mixpanelURL("https://api.mixpanel.com/track/");
+
     const auto anon_id = juce::String(juce::SystemStats::getDeviceIdentifiers().joinIntoString(":").hashCode64());
 
-    juce::StringPairArray data;
-    data.set("event_name", "MonitorLaunch");
-    data.set("client_id", anon_id);
-    data.set("type", "event");
-    data.set("ea", event);
+    // Base properties required by Mixpanel
+    juce::DynamicObject::Ptr baseProps = new juce::DynamicObject();
+    baseProps->setProperty("token", secret); // Replace with your token
+    baseProps->setProperty("time", juce::Time::getCurrentTime().toMilliseconds() / 1000);
+    baseProps->setProperty("user_id", anon_id);
+    baseProps->setProperty("$os", juce::SystemStats::getOperatingSystemName());
+    baseProps->setProperty("$app_name", JucePlugin_Name);
+    baseProps->setProperty("$app_version", JucePlugin_VersionString);
+    baseProps->setProperty("region", juce::SystemStats::getUserRegion());
+    baseProps->setProperty("cpu", juce::SystemStats::getCpuVendor());
 
-    data.set("user_id", anon_id);
-    data.set("cd1", juce::SystemStats::getUserRegion());
-    data.set("cd2", juce::SystemStats::getOperatingSystemName());
-    data.set("cd3", juce::SystemStats::getDeviceDescription());
-
-    juce::String appType, appName, appVersion, appManufacturer;
-
-#if defined(JucePlugin_Name)
-    appType = "Plugin";
-    appName = JucePlugin_Name;
-    appVersion = JucePlugin_VersionString;
-    appManufacturer = JucePlugin_Manufacturer;
-#else
-    if (juce::JUCEApplicationBase::isStandaloneApp())
+    // Merge user-defined properties
+    if (properties.isObject())
     {
-        appType = "Application";
-
-        if (auto* app = juce::JUCEApplicationBase::getInstance())
+        NamedValueSet& propSet = properties.getDynamicObject()->getProperties();
+        for (int i = 0; i < propSet.size(); ++i)
         {
-            appName = app->getApplicationName();
-            appVersion = app->getApplicationVersion();
+            baseProps->setProperty(propSet.getName(i), propSet.getValueAt(i));
         }
     }
-    else
-    {
-        appType = "Library";
-    }
-#endif
 
-    data.set("cd5", appType);
-    data.set("cd6", appName);
-    data.set("cd7", appVersion);
-    data.set("cd8", appManufacturer);
+    // Create the event JSON
+    juce::DynamicObject::Ptr eventObj = new juce::DynamicObject();
+    eventObj->setProperty("event", eventName);
+    eventObj->setProperty("properties", juce::var(baseProps));
 
-    data.set("an", appName);
-    data.set("av", appVersion);
+    juce::var eventVar(eventObj);
+    juce::String eventJson = juce::JSON::toString(eventVar);
 
-    return data;
+    // Base64 encode the JSON string
+    juce::MemoryOutputStream mo;
+    juce::Base64::convertToBase64(mo, eventJson.toRawUTF8(), eventJson.getNumBytesAsUTF8());
+    juce::String base64Data = mo.toString();
+
+    // Prepare POST parameters
+    juce::URL::OpenStreamProgressCallback* progressCallback = nullptr;
+    void* progressCallbackContext = nullptr;
+
+    // Create URL with parameters
+    url = mixpanelURL.withPOSTData("data=" + base64Data + "&verbose=1");
 }
 
-M1Analytics::M1Analytics(const juce::String& event) : juce::ThreadPoolJob("M1-Monitor Analytics")
+M1Analytics::M1Analytics(const juce::String& eventName) : juce::ThreadPoolJob("M1-Monitor Analytics")
 {
-    auto agentCPUVendor = juce::SystemStats::getCpuVendor();
-
-    if (agentCPUVendor.isEmpty())
-        agentCPUVendor = "CPU";
-
-    auto agentOSName = juce::SystemStats::getOperatingSystemName().replaceCharacter('.', '_').replace("iOS", "iPhone OS");
-#if JUCE_IOS
-    agentOSName << " like Mac OS X";
-#endif
-
-    userAgent << "Mozilla/5.0 ("
-              << juce::SystemStats::getDeviceDescription() << ";"
-              << agentCPUVendor << " " << agentOSName << ";"
-              << juce::SystemStats::getDisplayLanguage() << ")";
-
-    juce::StringArray postData;
-
-    auto parameters = createUsageData(event);
-    for (auto& key : parameters.getAllKeys())
-        if (parameters[key].isNotEmpty())
-            postData.add(key + "=" + juce::URL::addEscapeChars(parameters[key], true));
-
-    const auto address = "https://www.google-analytics.com/mp/collect?";
-    url = juce::URL(address)
-              .withParameter("measurement_id", apiKey)
-              .withParameter("api_secret", secret)
-              .withPOSTData(postData.joinIntoString("\r\n"));
 }
 
 juce::ThreadPoolJob::JobStatus M1Analytics::runJob()
 {
-    juce::WebInputStream(url, true)
-        .withExtraHeaders(headers)
-        .withConnectionTimeout(2000)
-        .connect(nullptr);
+    // Define custom properties
+    juce::DynamicObject::Ptr props = new juce::DynamicObject();
+    props->setProperty("sample_rate", "48000");
+    props->setProperty("buffer_size", "512");
+
+    var properties(props);
+
+    // Track the event
+    createUsageData("Monitor-Initialized", properties);
+
+    // Send the request asynchronously
+    juce::WebInputStream stream(url, true);
+    stream.withConnectionTimeout(2000);
+    stream.connect(nullptr);
+
+    if (stream.isError())
+    {
+        // Handle error
+        DBG("Mixpanel tracking failed.");
+    }
+    else
+    {
+        // Optionally read the response
+        juce::String response = stream.readEntireStreamAsString();
+        DBG("Mixpanel response: " + response);
+    }
 
     return juce::ThreadPoolJob::jobHasFinished;
 }
