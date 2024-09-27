@@ -117,6 +117,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     juce::String date(__DATE__);
     juce::String time(__TIME__);
     DBG("[MONITOR] Build date: " + date + " | Build time: " + time);
+    jobThreads.addJob(new M1Analytics("M1-Monitor_Launched", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
 
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
@@ -127,6 +128,7 @@ M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
     transport = nullptr;
     m1OrientationClient.command_disconnect();
     m1OrientationClient.close();
+    jobThreads.addJob(new M1Analytics("M1-Monitor_Exited", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
 }
 
 //==============================================================================
@@ -317,6 +319,8 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
     {
         // `monitorSettings` are changed via the `m1DecodeChangeInputMode()` call
         m1DecodeChangeInputMode(Mach1DecodeMode((int)newValue));
+        jobThreads.addJob(new M1Analytics("M1-Monitor_ModeChanged", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
+
     }
 
     // update the gui on other plugins for any changes to YPR
@@ -783,6 +787,28 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
     parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
     parameters.getParameter(paramRoll)->setValueNotifyingHost(roll);
 }
+
+//==============================================================================
+void M1MonitorAudioProcessor::addJob(std::function<void()> job)
+{
+    jobThreads.addJob(std::move(job));
+}
+
+void M1MonitorAudioProcessor::addJob(juce::ThreadPoolJob* job, bool deleteJobWhenFinished)
+{
+    jobThreads.addJob(job, deleteJobWhenFinished);
+}
+
+void M1MonitorAudioProcessor::cancelJob(juce::ThreadPoolJob* job)
+{
+    jobThreads.removeJob(job, true, 100);
+}
+
+juce::ThreadPool& M1MonitorAudioProcessor::getThreadPool()
+{
+    return jobThreads;
+}
+
 
 //==============================================================================
 // This creates new instances of the plugin..

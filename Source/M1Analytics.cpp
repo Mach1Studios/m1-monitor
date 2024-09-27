@@ -2,21 +2,64 @@
 
 void M1Analytics::createUsageData(const juce::String& eventName, const juce::var& properties)
 {
-    // Mixpanel endpoint
-    juce::URL mixpanelURL("https://api.mixpanel.com/track/");
+    // HTTP POST endpoint
+    juce::URL endpointURL;
+    if (isUsingProxy) {
+        // Proxy server endpoint
+        juce::URL proxy_ep("http://your-ec2-ip-address:3000/track");
+        endpointURL = proxy_ep;
+    } else {
+        juce::URL mp_ep("https://api.mixpanel.com/track/");
+        endpointURL = mp_ep;
+    }
 
     const auto anon_id = juce::String(juce::SystemStats::getDeviceIdentifiers().joinIntoString(":").hashCode64());
 
+    juce::String appType, appName, appVersion, appManufacturer;
+#if defined(JucePlugin_Name)
+    appType         = "Plugin";
+    appName         = JucePlugin_Name;
+    appVersion      = JucePlugin_VersionString;
+    appManufacturer = JucePlugin_Manufacturer;
+#else
+    if (juce::JUCEApplicationBase::isStandaloneApp())
+    {
+        appType = "Application";
+
+        if (auto* app = juce::JUCEApplicationBase::getInstance())
+        {
+            appName    = app->getApplicationName();
+            appVersion = app->getApplicationVersion();
+        }
+    }
+#endif
     // Base properties required by Mixpanel
     juce::DynamicObject::Ptr baseProps = new juce::DynamicObject();
-    baseProps->setProperty("token", secret); // Replace with your token
+    baseProps->setProperty("token", api_key);
     baseProps->setProperty("time", juce::Time::getCurrentTime().toMilliseconds() / 1000);
-    baseProps->setProperty("user_id", anon_id);
+    baseProps->setProperty("distinct_id", anon_id);
     baseProps->setProperty("$os", juce::SystemStats::getOperatingSystemName());
-    baseProps->setProperty("$app_name", JucePlugin_Name);
-    baseProps->setProperty("$app_version", JucePlugin_VersionString);
-    baseProps->setProperty("region", juce::SystemStats::getUserRegion());
+    baseProps->setProperty("$app_type", appType);
+    baseProps->setProperty("$app_name", appName);
+    baseProps->setProperty("$app_version", appVersion);
+    baseProps->setProperty("$app_manu", appManufacturer);
+    baseProps->setProperty("m1_mode", m1Mode);
+    baseProps->setProperty("has_helper", hasHelper);
+    baseProps->setProperty("country", juce::SystemStats::getUserRegion());
+    baseProps->setProperty("language", juce::SystemStats::getUserLanguage());
     baseProps->setProperty("cpu", juce::SystemStats::getCpuVendor());
+    baseProps->setProperty("cpu-model", juce::SystemStats::getCpuModel());
+  
+    // TODO: implement this safely (this is not in a mesage thread and therefore not thread safe)
+    /*
+    juce::String res = "Unknown";
+    if (const juce::Displays::Display* d = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+    {
+        juce::Rectangle<int> r = d->totalArea;
+        res = juce::String(r.getWidth()) + "x" + juce::String(r.getHeight());
+    }
+    baseProps->setProperty("display", res);
+     */
 
     // Merge user-defined properties
     if (properties.isObject())
@@ -46,27 +89,103 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
     void* progressCallbackContext = nullptr;
 
     // Create URL with parameters
-    url = mixpanelURL.withPOSTData("data=" + base64Data + "&verbose=1");
+    url = endpointURL.withPOSTData("data=" + base64Data + "&verbose=1");
 }
 
-M1Analytics::M1Analytics(const juce::String& eventName) : juce::ThreadPoolJob("M1-Monitor Analytics")
+juce::String M1Analytics::getMixpanelToken()
 {
+    // Try to read from an environment variable
+    const char* envVar = std::getenv("MIXPANEL_PROJECT_TOKEN");
+    if (envVar != nullptr)
+        return juce::String(envVar);
+
+    // Alternatively, read from a config file
+    // Using common support files installation location
+    juce::File configFile;
+    juce::File m1SupportDirectory = juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory);
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+        // test for any mac OS
+        configFile = m1SupportDirectory.getChildFile("Application Support").getChildFile("Mach1");
+    } else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0) {
+        // test for any windows OS
+        configFile = m1SupportDirectory.getChildFile("Mach1");
+    } else {
+        configFile = m1SupportDirectory.getChildFile("Mach1");
+    }
+    configFile = configFile.getChildFile("settings.json");
+    DBG("Opening settings file: " + configFile.getFullPathName().quoted());
+    
+    if (configFile.existsAsFile()) {
+        juce::String jsonString = configFile.loadFileAsString();
+        juce::var jsonData = juce::JSON::parse(jsonString);
+
+        if (jsonData.isVoid())
+        {
+            DBG("Failed to parse settings.json");
+            // Token not found
+            return juce::String();
+        }
+    
+        if (jsonData.isObject())
+        {
+            juce::var apiKeyVar = jsonData.getProperty("mp_api_key", var());
+
+            if (apiKeyVar.isString())
+            {
+                return apiKeyVar.toString();
+            }
+            else
+            {
+                DBG("mp_api_key is missing or not a string.");
+            }
+        }
+        else
+        {
+            DBG("JSON data is not an object.");
+        }
+    }
+
+    // Token not found
+    return juce::String();
+}
+
+M1Analytics::M1Analytics(const juce::String& _eventName, int _sampleRate, int _m1Mode, bool _hasHelper) : juce::ThreadPoolJob("M1Analytics")
+{
+    eventName = _eventName;
+    sampleRate = _sampleRate;
+    m1Mode = _m1Mode;
+    hasHelper = _hasHelper;
 }
 
 juce::ThreadPoolJob::JobStatus M1Analytics::runJob()
 {
+    if (!isAnalyticsEnabled)
+        return juce::ThreadPoolJob::jobHasFinished;
+
+    // grab the hardcoded api_key first, otherwise look for an installed key
+    if (api_key.isEmpty()) {
+        juce::String projectToken = getMixpanelToken();
+        if (projectToken.isEmpty())
+        {
+            DBG("Mixpanel project token not found.");
+            return juce::ThreadPoolJob::jobHasFinished;
+        }
+    }
+
     // Define custom properties
     juce::DynamicObject::Ptr props = new juce::DynamicObject();
-    props->setProperty("sample_rate", "48000");
-    props->setProperty("buffer_size", "512");
+    props->setProperty("sample_rate", sampleRate);
 
-    var properties(props);
+    juce::var properties(props);
 
     // Track the event
-    createUsageData("Monitor-Initialized", properties);
+    createUsageData(eventName, properties);
 
     // Send the request asynchronously
     juce::WebInputStream stream(url, true);
+    if (isUsingProxy) {
+        stream.withExtraHeaders("Content-Type: application/json"); // needed for proxy usage
+    }
     stream.withConnectionTimeout(2000);
     stream.connect(nullptr);
 
