@@ -2,6 +2,14 @@
 
 void M1Analytics::createUsageData(const juce::String& eventName, const juce::var& properties)
 {
+    // get host information
+    juce::PluginHostType daw;
+    juce::String daw_version;
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+        const auto daw_path = juce::File::getSpecialLocation(juce::File::hostApplicationPath).getParentDirectory().getParentDirectory().getParentDirectory();
+        daw_version = daw_path.getVersion();
+    }
+    
     // HTTP POST endpoint
     juce::URL endpointURL;
     if (isUsingProxy) {
@@ -45,6 +53,10 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
     baseProps->setProperty("$app_manu", appManufacturer);
     baseProps->setProperty("m1Mode", m1Mode);
     baseProps->setProperty("hasHelper", hasHelper);
+    baseProps->setProperty("daw", daw.getHostDescription());
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0) {
+        baseProps->setProperty("daw_version", daw_version);
+    }
     baseProps->setProperty("$region", juce::SystemStats::getUserRegion());
     baseProps->setProperty("language", juce::SystemStats::getUserLanguage());
     baseProps->setProperty("cpu", juce::SystemStats::getCpuVendor());

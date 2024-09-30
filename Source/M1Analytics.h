@@ -16,7 +16,7 @@ private:
     bool isAnalyticsEnabled = true;
     bool isUsingProxy = false;
     juce::URL url;
-    juce::String api_key = "05b79d8d7aeeb24730569c23383e26a5";
+    juce::String api_key = "05b79d8d7aeeb24730569c23383e26a5"; // public collection ID for Mach1
     juce::String productName;
     juce::String eventName;
     int sampleRate = 0;
