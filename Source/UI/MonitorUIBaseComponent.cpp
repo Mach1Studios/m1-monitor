@@ -96,20 +96,16 @@ void MonitorUIBaseComponent::draw_orientation_client(murka::Murka& m, M1Orientat
 
 void MonitorUIBaseComponent::draw()
 {
-    // This clears the context with our background.
-    //juce::OpenGLHelpers::clear(juce::Colour(255.0, 198.0, 30.0));
-
-    float scale = (float)openGLContext.getRenderingScale() * 0.7f; // (Desktop::getInstance().getMainMouseSource().getScreenPosition().x / 300.0); //  0.7;
-
+    m.setColor(BACKGROUND_GREY);
+    m.clear();
+    
+    // TODO: Remove this and rescale all sizing and positions
+    float scale = (float)openGLContext.getRenderingScale() * 0.7f;
     if (scale != m.getScreenScale())
     {
         m.setScreenScale(scale);
-        m.updateFontsTextures(&m);
-        m.clearFontsTextures();
+        m.reloadFonts(&m);
     }
-
-    m.setColor(BACKGROUND_GREY);
-    m.clear();
 
     if (processor->monitorOSC.IsActiveMonitor())
     {
