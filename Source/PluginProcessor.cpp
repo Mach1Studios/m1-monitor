@@ -11,7 +11,7 @@ juce::String M1MonitorAudioProcessor::paramOutputMode("outputMode");
 M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     : AudioProcessor(getHostSpecificLayout()),
       parameters(*this, &mUndoManager, juce::Identifier("M1-Monitor"), {
-                                                                           std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramYaw, 1), TRANS("Yaw"), juce::NormalisableRange<float>(0.0f, 360.0f, 0.01f), monitorSettings.yaw, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                                                                           std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramYaw, 1), TRANS("Yaw"), juce::NormalisableRange<float>(-180.0f, 180.0f, 0.01f), monitorSettings.yaw, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramPitch, 1), TRANS("Pitch"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.pitch, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramRoll, 1), TRANS("Roll"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
@@ -73,7 +73,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                 pitch = msg[1].getFloat32();
             //if (monitorSettings.rollActive && msg.size() >= 3) roll = msg[2].getFloat32();
 
-            yaw = jmap(yaw + 180.0f, -180.0f, 180.0f, 0.0f, 1.0f);
+            yaw = jmap(yaw, -180.0f, 180.0f, 0.0f, 1.0f);
             pitch = jmap(pitch, -90.0f, 90.0f, 0.0f, 1.0f);
             //roll = jmap(roll, -90.0f, 90.0f, 0.0f, 1.0f);
 
@@ -117,7 +117,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     juce::String date(__DATE__);
     juce::String time(__TIME__);
     DBG("[MONITOR] Build date: " + date + " | Build time: " + time);
-    
+
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
 }
@@ -268,7 +268,7 @@ void M1MonitorAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
     {
         createLayout();
     }
-    
+
     // flag for the initial reporting
     if (!pluginInitialized)
     {
@@ -326,7 +326,6 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
         // `monitorSettings` are changed via the `m1DecodeChangeInputMode()` call
         m1DecodeChangeInputMode(Mach1DecodeMode((int)newValue));
         jobThreads.addJob(new M1Analytics("M1-Monitor_ModeChanged", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
-
     }
 
     // update the gui on other plugins for any changes to YPR
@@ -750,7 +749,7 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
 
     // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
     auto ex_ori_vec = m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
-    auto ex_ori_delta_vec = ex_ori_vec - m_last_external_ori_degrees;
+    auto ext_ori_delta_vec = ex_ori_vec - m_last_external_ori_degrees;
     m_last_external_ori_degrees = ex_ori_vec;
 
     // Zero out changes in locked axes.
@@ -759,16 +758,16 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
         monitorSettings.pitchActive ? 1.0f : 0.0f,
         monitorSettings.rollActive ? 1.0f : 0.0f
     };
-    ex_ori_delta_vec *= axis_locks_vec;
+    ext_ori_delta_vec *= axis_locks_vec;
 
-    if (ex_ori_delta_vec.IsApproximatelyEqual({ 0.0f }))
+    if (ext_ori_delta_vec.IsApproximatelyEqual({ 0.0f }))
         return; // nothing happened
 
     // Convert the vector of change in degrees into a vector of change in VST parameter values.
     // That way, we don't need to fiddle around with differing 3D vector component convention or the fact that
-    // each component has a different range [(0->360; -90->90), but they are provided by the client as (-180 to 180)].
+    // each component could have a different range [(0->360; -90->90), but they are provided by the client as (-180 to 180)].
     // Keep in mind that change in pitch and roll are halved, as their range is half as small.
-    ex_ori_delta_vec = ex_ori_delta_vec.Map(0, 360, 0, 1);
+    ext_ori_delta_vec = ext_ori_delta_vec.Map(0, 360, 0, 1);
 
     // Get the current state of the orientation, as normalized values. Zero out locked axes.
     auto yaw = parameters.getParameter(paramYaw)->getValue() * axis_locks_vec.GetYaw();
@@ -776,9 +775,9 @@ void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
     auto roll = parameters.getParameter(paramRoll)->getValue() * axis_locks_vec.GetRoll();
 
     // Manually apply the change in parameters, modulating when size is > 1. Compensate for pitch and roll.
-    yaw = std::fmodf(yaw + ex_ori_delta_vec.GetYaw(), 1.0f);
-    pitch = std::fmodf(pitch + ex_ori_delta_vec.GetPitch() * 2.0f, 1.0f);
-    roll = std::fmodf(roll + ex_ori_delta_vec.GetRoll() * 2.0f, 1.0f);
+    yaw = std::fmodf(yaw + ext_ori_delta_vec.GetYaw(), 1.0f);
+    pitch = std::fmodf(pitch + ext_ori_delta_vec.GetPitch() * 2.0f, 1.0f);
+    roll = std::fmodf(roll + ext_ori_delta_vec.GetRoll() * 2.0f, 1.0f);
 
     // Modulate when size is < 0.
     if (yaw < 0)
@@ -814,7 +813,6 @@ juce::ThreadPool& M1MonitorAudioProcessor::getThreadPool()
 {
     return jobThreads;
 }
-
 
 //==============================================================================
 // This creates new instances of the plugin..
