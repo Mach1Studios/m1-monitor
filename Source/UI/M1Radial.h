@@ -12,6 +12,7 @@ public:
     {
         float* data = dataToControl;
         float inputValueNormalised = ((*data - rangeFrom) / (rangeTo - rangeFrom));
+        inputValueNormalised -= 0.5f; // rescale so that the median value is upward
 
         bool isInside = inside()
                         * (!editingTextNow);
@@ -28,7 +29,6 @@ public:
         std::string displayString = float_to_string(*data, floatingPointPrecision);
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
-        auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
 
         m.pushStyle();
 
@@ -76,6 +76,7 @@ public:
             m.setLineWidth(6);
             m.setColor(ORIENTATION_ACTIVE_COLOR);
             float oc_valueNorm = ((orientationClientValue - rangeFrom) / (rangeTo - rangeFrom));
+            oc_valueNorm -= 0.5f; // rescale so that the median value is upward
             float oc_angle = juce::MathConstants<float>::twoPi * (oc_valueNorm - 0.25f);
             juce::Point<float> centralLineStart = center + juce::Point<float>(cos(oc_angle) * 75, sin(oc_angle) * 75);
             juce::Point<float> centralLineEnd = center + juce::Point<float>(cos(oc_angle) * (shape.size.x / 2 - 7), sin(oc_angle) * (shape.size.x / 2 - 7));
@@ -120,7 +121,7 @@ public:
         // value label
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(valueText, 0, 0); // used to find size of text
-        m.prepare<murka::Label>({ shape.size.x / 2 - label_box.width / 2, shape.size.y / 2 - label_box.height / 2, 40, 40 }).withAlignment(TEXT_CENTER).text(valueText).draw();
+        m.prepare<murka::Label>({ shape.size.x / 2 - label_box.width / 2, shape.size.y / 2 - label_box.height / 2, 42, 40 }).withAlignment(TEXT_CENTER).text(valueText).draw();
 
         m.popStyle();
 
