@@ -98,7 +98,7 @@ void MonitorUIBaseComponent::draw()
 {
     m.setColor(BACKGROUND_GREY);
     m.clear();
-    
+
     // TODO: Remove this and rescale all sizing and positions
     float scale = (float)openGLContext.getRenderingScale() * 0.7f;
     if (scale != m.getScreenScale())
@@ -467,30 +467,25 @@ void MonitorUIBaseComponent::draw()
                                                  .withOutline(true);
                 outputDropdownButton.fontSize = DEFAULT_FONT_SIZE - 5;
                 outputDropdownButton.draw();
-                std::vector<std::string> output_options = { "M1Horizon-4", "M1Spatial-8" };
+                std::vector<std::string> output_options = { "M1Spatial-4", "M1Spatial-8" };
                 if (processor->hostType.isProTools())
                 {
                     // more selective assignment in PT only
                     if (processor->getMainBusNumInputChannels() == 16)
                     {
-                        output_options.push_back("M1Spatial-12");
                         output_options.push_back("M1Spatial-14");
                     }
                     else if (processor->getMainBusNumInputChannels() == 36)
                     {
-                        output_options.push_back("M1Spatial-12");
                         output_options.push_back("M1Spatial-14");
                     }
                     else if (processor->getMainBusNumInputChannels() == 64)
                     {
-                        output_options.push_back("M1Spatial-12");
                         output_options.push_back("M1Spatial-14");
                     }
                 }
                 else
                 {
-                    if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 12)
-                        output_options.push_back("M1Spatial-12");
                     if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 14)
                         output_options.push_back("M1Spatial-14");
                 }
@@ -533,10 +528,6 @@ void MonitorUIBaseComponent::draw()
                         processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_8));
                     }
                     else if (outputDropdownMenu.selectedOption == 2)
-                    {
-                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_12));
-                    }
-                    else if (outputDropdownMenu.selectedOption == 3)
                     {
                         processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_14));
                     }
