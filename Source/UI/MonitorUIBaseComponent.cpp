@@ -144,8 +144,8 @@ void MonitorUIBaseComponent::draw()
             auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
             yawRadial.cursorHide = cursorHide;
             yawRadial.cursorShow = cursorShow;
-            yawRadial.rangeFrom = 0.;
-            yawRadial.rangeTo = 360.;
+            yawRadial.rangeFrom = -180.;
+            yawRadial.rangeTo = 180.;
             yawRadial.defaultValue = 0.;
             yawRadial.postfix = "º";
             yawRadial.dataToControl = &monitorState->yaw;

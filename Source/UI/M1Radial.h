@@ -12,6 +12,7 @@ public:
     {
         float* data = dataToControl;
         float inputValueNormalised = ((*data - rangeFrom) / (rangeTo - rangeFrom));
+        inputValueNormalised -= 0.5f; // rescale so that the median value is upward
 
         bool isInside = inside()
                         * (!editingTextNow);
@@ -76,6 +77,7 @@ public:
             m.setLineWidth(6);
             m.setColor(ORIENTATION_ACTIVE_COLOR);
             float oc_valueNorm = ((orientationClientValue - rangeFrom) / (rangeTo - rangeFrom));
+            oc_valueNorm -= 0.5f; // rescale so that the median value is upward
             float oc_angle = juce::MathConstants<float>::twoPi * (oc_valueNorm - 0.25f);
             juce::Point<float> centralLineStart = center + juce::Point<float>(cos(oc_angle) * 75, sin(oc_angle) * 75);
             juce::Point<float> centralLineEnd = center + juce::Point<float>(cos(oc_angle) * (shape.size.x / 2 - 7), sin(oc_angle) * (shape.size.x / 2 - 7));
