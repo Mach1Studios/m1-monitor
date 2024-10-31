@@ -29,7 +29,6 @@ public:
         std::string displayString = float_to_string(*data, floatingPointPrecision);
         std::string valueText = prefix + displayString + postfix;
         auto font = m.getCurrentFont();
-        auto valueTextBbox = font->getStringBoundingBox(valueText, 0, 0);
 
         m.pushStyle();
 
@@ -122,7 +121,7 @@ public:
         // value label
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
         juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(valueText, 0, 0); // used to find size of text
-        m.prepare<murka::Label>({ shape.size.x / 2 - label_box.width / 2, shape.size.y / 2 - label_box.height / 2, 40, 40 }).withAlignment(TEXT_CENTER).text(valueText).draw();
+        m.prepare<murka::Label>({ shape.size.x / 2 - label_box.width / 2, shape.size.y / 2 - label_box.height / 2, 42, 40 }).withAlignment(TEXT_CENTER).text(valueText).draw();
 
         m.popStyle();
 

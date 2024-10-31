@@ -73,7 +73,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                 pitch = msg[1].getFloat32();
             //if (monitorSettings.rollActive && msg.size() >= 3) roll = msg[2].getFloat32();
 
-            yaw = jmap(yaw + 180.0f, -180.0f, 180.0f, 0.0f, 1.0f);
+            yaw = jmap(yaw, -180.0f, 180.0f, 0.0f, 1.0f);
             pitch = jmap(pitch, -90.0f, 90.0f, 0.0f, 1.0f);
             //roll = jmap(roll, -90.0f, 90.0f, 0.0f, 1.0f);
 
