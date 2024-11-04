@@ -30,7 +30,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     monitorSettings.m1Decode.setFilterSpeed(0.99);
     m1DecodeChangeInputMode(M1DecodeSpatial_8); // sets type and resizes temp buffers
 
-    transport = new Transport(&m1OrientationClient);
+    transport = new Transport(&m1OrientationClient, &monitorOSC);
 
     // We will assume the folders are properly created during the installation step
     juce::File settingsFile;
@@ -316,7 +316,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
         monitorSettings.monitor_mode = (int)parameters.getParameter(paramMonitorMode)->convertFrom0to1(parameters.getParameter(paramMonitorMode)->getValue());
 
         // update gui on other plugins
-        if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor())
+        if (monitorOSC.isConnected() && monitorOSC.isActiveMonitor())
         {
             monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
         }
@@ -331,7 +331,7 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
     // update the gui on other plugins for any changes to YPR
     if (parameterID == paramYaw || parameterID == paramPitch || parameterID == paramRoll)
     {
-        if (monitorOSC.IsConnected() && monitorOSC.IsActiveMonitor())
+        if (monitorOSC.isConnected() && monitorOSC.isActiveMonitor())
         {
             // update the server and panners of final calculated orientation
             // sending un-normalized full range values in degrees
@@ -460,9 +460,6 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     // if you've got more output channels than input clears extra outputs
     for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
         buffer.clear(channel, 0, buffer.getNumSamples());
-
-    // transport
-    updateTransportWithPlayhead();
 
     // m1_orientation_client update
     if (m1OrientationClient.isConnectedToServer())
@@ -633,6 +630,9 @@ void M1MonitorAudioProcessor::timerCallback()
 {
     // Added if we need to move the OSC stuff from the processorblock
     monitorOSC.update(); // test for connection
+
+    // transport
+    updateTransportWithPlayhead(); // Updates here for hosts that freeze processBlock()
 }
 
 //==============================================================================
@@ -739,7 +739,7 @@ void M1MonitorAudioProcessor::updateTransportWithPlayhead()
         transport->setTimeInSeconds(*play_head_position->getTimeInSeconds());
     }
 
-    transport->setIsPlaying(play_head_position->getIsPlaying());
+    transport->setIsPlaying(ph->getPosition()->getIsPlaying());
 }
 
 void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()

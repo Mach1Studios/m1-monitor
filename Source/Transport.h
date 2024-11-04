@@ -2,12 +2,13 @@
 
 #include <JuceHeader.h>
 
+#include "MonitorOSC.h"
 #include "m1_orientation_client/M1OrientationClient.h"
 
 class Transport : public juce::Timer
 {
 public:
-    Transport(M1OrientationClient* orientationClient);
+    Transport(M1OrientationClient* orientationClient, MonitorOSC* monitorOSC);
 
     /**
      * @brief Get the current time in the transport in seconds
@@ -44,8 +45,9 @@ public:
 
 private:
     M1OrientationClient* m_orientation_client = nullptr;
+    MonitorOSC* m_monitor_osc = nullptr;
 
     double m_transport_offset = 0;
     double m_correct_time_in_seconds = 0;
-    bool m_is_playing = true;
+    bool m_is_playing = false;
 };

@@ -3,7 +3,7 @@
 // TODO: If possible, make public members private, rename them, create get/setters for them, and recalculate
 //  m_transport_offset in said setters. This would cut down on amount of operations performed per 50 ms.
 
-Transport::Transport(M1OrientationClient* orientationClient) : m_orientation_client(orientationClient)
+Transport::Transport(M1OrientationClient* orientationClient, MonitorOSC* monitorOSC) : m_orientation_client(orientationClient), m_monitor_osc(monitorOSC)
 {
     startTimer(10);
 }
@@ -43,5 +43,9 @@ void Transport::sendData()
 
 void Transport::timerCallback()
 {
-    sendData();
+    // only send the data if this is the active monitor instance to reduce conflict
+    if (m_orientation_client->isConnectedToServer() && m_monitor_osc->isActiveMonitor())
+    {
+        sendData();
+    }
 }

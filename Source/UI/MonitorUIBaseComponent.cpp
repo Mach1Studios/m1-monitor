@@ -107,7 +107,7 @@ void MonitorUIBaseComponent::draw()
         m.reloadFonts(&m);
     }
 
-    if (processor->monitorOSC.IsActiveMonitor())
+    if (processor->monitorOSC.isActiveMonitor())
     {
         // Monitor plugin is marked as active, this is used to disable monitor plugin instances when more than 1 is discovered via the OSC messaging
 

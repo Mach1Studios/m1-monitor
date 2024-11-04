@@ -97,7 +97,7 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
     {
         if (msg.getAddressPattern() == "/connectedToServer")
         {
-            isConnected = true;
+            is_connected = true;
         }
         else if (msg.getAddressPattern() == "/m1-activate-client")
         {
@@ -116,7 +116,7 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
         else if (msg.getAddressPattern() == "/m1-reconnect-req")
         {
             disconnectToHelper();
-            isConnected = false;
+            is_connected = false;
         }
         else
         {
@@ -128,12 +128,12 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
 
 void MonitorOSC::update()
 {
-    if (!isConnected && helperPort > 0)
+    if (!is_connected && helperPort > 0)
     {
         connectToHelper();
     }
 
-    if (isConnected)
+    if (is_connected)
     {
         // updates pingtime on helper tool
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/m1-status"));
@@ -148,7 +148,7 @@ void MonitorOSC::update()
             {
                 disconnectToHelper();
             }
-            isConnected = false;
+            is_connected = false;
         }
     }
 }
@@ -160,7 +160,7 @@ void MonitorOSC::AddListener(std::function<void(juce::OSCMessage msg)> messageRe
 
 MonitorOSC::~MonitorOSC()
 {
-    if (isConnected && helperPort > 0)
+    if (is_connected && helperPort > 0)
     {
         disconnectToHelper();
     }
@@ -173,27 +173,27 @@ MonitorOSC::~MonitorOSC()
 
 bool MonitorOSC::Send(const juce::OSCMessage& msg)
 {
-    return (isConnected && juce::OSCSender::send(msg));
+    return (is_connected && juce::OSCSender::send(msg));
 }
 
-bool MonitorOSC::IsConnected()
+bool MonitorOSC::isConnected()
 {
-    return isConnected;
+    return is_connected;
 }
 
-bool MonitorOSC::IsActiveMonitor()
+bool MonitorOSC::isActiveMonitor()
 {
-    return isActiveMonitor;
+    return is_active_monitor;
 }
 
 void MonitorOSC::setActiveState(bool is_active)
 {
-    isActiveMonitor = is_active;
+    is_active_monitor = is_active;
 }
 
 bool MonitorOSC::sendRequestToBecomeActive()
 {
-    if (isConnected && port > 0)
+    if (is_connected && port > 0)
     {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitorActiveReq"));
         m.addInt32(port); // int of current monitor port to use for identification
@@ -204,7 +204,7 @@ bool MonitorOSC::sendRequestToBecomeActive()
 
 bool MonitorOSC::sendMonitoringMode(int mode)
 {
-    if (isConnected && port > 0)
+    if (is_connected && port > 0)
     {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitoringMode"));
         m.addInt32(mode); // int of monitor mode
@@ -215,7 +215,7 @@ bool MonitorOSC::sendMonitoringMode(int mode)
 
 bool MonitorOSC::sendMasterYPR(float yaw, float pitch, float roll)
 {
-    if (isConnected && port > 0)
+    if (is_connected && port > 0)
     {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMasterYPR"));
         m.addFloat32(yaw); // expected degrees -180->180
