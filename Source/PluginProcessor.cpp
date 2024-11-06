@@ -686,6 +686,9 @@ void M1MonitorAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
     parameters_xml->setAttribute("SS", transport->SS);
     parameters_xml->setAttribute("FS", transport->FS);
 
+    // Append extra plugin settings
+    parameters_xml->setAttribute("isActive", monitorOSC.isActiveMonitor());
+
     // Save to output memory
     copyXmlToBinary(*parameters_xml, destData);
 }
@@ -714,6 +717,9 @@ void M1MonitorAudioProcessor::setStateInformation(const void* data, int sizeInBy
             transport->MM = xml->getIntAttribute("MM");
             transport->SS = xml->getIntAttribute("SS");
             transport->FS = xml->getIntAttribute("FS");
+
+            // Append extra plugin settings
+            monitorOSC.setActiveState(xml->getIntAttribute("isActive"));
         }
     }
 }
