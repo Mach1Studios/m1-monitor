@@ -1,5 +1,46 @@
 #include "MonitorOSC.h"
 
+MonitorOSC::MonitorOSC()
+{
+    // We will assume the folders are properly created during the installation step
+    juce::File settingsFile;
+    // Using common support files installation location
+    juce::File m1SupportDirectory = juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory);
+
+    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0)
+    {
+        // test for any mac OS
+        settingsFile = m1SupportDirectory.getChildFile("Application Support").getChildFile("Mach1");
+    }
+    else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0)
+    {
+        // test for any windows OS
+        settingsFile = m1SupportDirectory.getChildFile("Mach1");
+    }
+    else
+    {
+        settingsFile = m1SupportDirectory.getChildFile("Mach1");
+    }
+    settingsFile = settingsFile.getChildFile("settings.json");
+    DBG("Opening settings file: " + settingsFile.getFullPathName().quoted());
+
+    initFromSettings(settingsFile.getFullPathName().toStdString());
+    juce::OSCReceiver::addListener(this);
+}
+
+MonitorOSC::~MonitorOSC()
+{
+    if (is_connected && helperPort > 0)
+    {
+        disconnectToHelper();
+    }
+    juce::OSCSender::disconnect();
+    juce::OSCReceiver::disconnect();
+
+    // reset the port
+    port = 0;
+}
+
 bool MonitorOSC::init(int helperPort)
 {
     // check port
@@ -61,34 +102,6 @@ bool MonitorOSC::initFromSettings(std::string jsonSettingsFilePath)
         }
     }
     return true;
-}
-
-MonitorOSC::MonitorOSC()
-{
-    // We will assume the folders are properly created during the installation step
-    juce::File settingsFile;
-    // Using common support files installation location
-    juce::File m1SupportDirectory = juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory);
-
-    if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::MacOSX) != 0)
-    {
-        // test for any mac OS
-        settingsFile = m1SupportDirectory.getChildFile("Application Support").getChildFile("Mach1");
-    }
-    else if ((juce::SystemStats::getOperatingSystemType() & juce::SystemStats::Windows) != 0)
-    {
-        // test for any windows OS
-        settingsFile = m1SupportDirectory.getChildFile("Mach1");
-    }
-    else
-    {
-        settingsFile = m1SupportDirectory.getChildFile("Mach1");
-    }
-    settingsFile = settingsFile.getChildFile("settings.json");
-    DBG("Opening settings file: " + settingsFile.getFullPathName().quoted());
-
-    initFromSettings(settingsFile.getFullPathName().toStdString());
-    juce::OSCReceiver::addListener(this);
 }
 
 void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
@@ -158,19 +171,6 @@ void MonitorOSC::AddListener(std::function<void(juce::OSCMessage msg)> messageRe
     this->messageReceived = messageReceived;
 }
 
-MonitorOSC::~MonitorOSC()
-{
-    if (is_connected && helperPort > 0)
-    {
-        disconnectToHelper();
-    }
-    juce::OSCSender::disconnect();
-    juce::OSCReceiver::disconnect();
-
-    // reset the port
-    port = 0;
-}
-
 bool MonitorOSC::Send(const juce::OSCMessage& msg)
 {
     return (is_connected && juce::OSCSender::send(msg));
@@ -197,6 +197,17 @@ bool MonitorOSC::sendRequestToBecomeActive()
     {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitorActiveReq"));
         m.addInt32(port); // int of current monitor port to use for identification
+        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+    }
+    return false;
+}
+
+bool MonitorOSC::sendRequestToChangeChannelConfig(int channel_count_for_config)
+{
+    if (is_connected && port > 0)
+    {
+        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setChannelConfigReq"));
+        m.addInt32(channel_count_for_config); // int of new layout
         return juce::OSCSender::send(m); // check to update isConnected for error catching;
     }
     return false;

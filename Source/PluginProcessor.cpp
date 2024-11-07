@@ -91,6 +91,31 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
             parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
             //parameters.getParameter(paramRoll)->setValueNotifyingHost(roll);
         }
+        else if (msg.getAddressPattern() == "/m1-channel-config")
+        {
+            DBG("[OSC] Recieved msg | Channel Config: " + std::to_string(msg[0].getInt32()));
+            // Capturing monitor active state
+            int channel_count = msg[0].getInt32();
+            if (channel_count != monitorSettings.m1Decode.getFormatChannelCount()) // got a request for a different config
+            {
+                if (channel_count == 4)
+                {
+                    parameters.getParameter(paramOutputMode)->setValueNotifyingHost(parameters.getParameter(paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_4));
+                }
+                else if (channel_count == 8)
+                {
+                    parameters.getParameter(paramOutputMode)->setValueNotifyingHost(parameters.getParameter(paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_8));
+                }
+                else if (channel_count == 14)
+                {
+                    parameters.getParameter(paramOutputMode)->setValueNotifyingHost(parameters.getParameter(paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_14));
+                }
+                else
+                {
+                    DBG("[OSC] Error with received channel config!");
+                }
+            }
+        }
         else
         {
             // display a captured unexpected osc message
@@ -655,7 +680,14 @@ juce::AudioProcessorEditor* M1MonitorAudioProcessor::createEditor()
 //==============================================================================
 void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode)
 {
-    monitorSettings.m1Decode.setDecodeMode(decodeMode);
+    if (monitorSettings.m1Decode.getDecodeMode() != decodeMode)
+    {
+        DBG("Current config: " + std::to_string(monitorSettings.m1Decode.getDecodeMode()) + " and new config: " + std::to_string(decodeMode));
+        monitorSettings.m1Decode.setDecodeMode(decodeMode);
+        // Report change to m1-system-helper for other clients and plugins
+        monitorOSC.sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
+    }
+
     auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
     smoothedChannelCoeffs.resize(inputChannelsCount);
 
