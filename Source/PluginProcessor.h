@@ -120,7 +120,7 @@ public:
 
     // Communication to Player and the rest of the M1SpatialSystem
     void timerCallback() override;
-    MonitorOSC monitorOSC;
+    std::unique_ptr<MonitorOSC> monitorOSC;
 
     // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer
