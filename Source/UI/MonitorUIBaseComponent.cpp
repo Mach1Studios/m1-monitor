@@ -310,11 +310,11 @@ void MonitorUIBaseComponent::draw()
             m.drawRectangle(leftSide_LeftBound_x, bottomSettings_topBound_y + 100, 310, 40);
 
             m.setColor(ENABLED_PARAM);
-            auto& hhfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->HH);
-            if (processor->transport->HH < 0)
-                processor->transport->HH = 0;
-            if (processor->transport->HH > 100)
-                processor->transport->HH = 99;
+            auto& hhfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 5, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->monitorOSC.HH);
+            if (processor->monitorOSC.HH < 0)
+                processor->monitorOSC.HH = 0;
+            if (processor->monitorOSC.HH > 100)
+                processor->monitorOSC.HH = 99;
             hhfield.widgetBgColor.setAlpha(0);
             hhfield.drawBounds = false;
             hhfield.shouldSelectAllWhenClicked = true;
@@ -322,11 +322,11 @@ void MonitorUIBaseComponent::draw()
 
             m.prepare<murka::Label>({ leftSide_LeftBound_x + 38, bottomSettings_topBound_y + 113, 30, 30 }).withAlignment(TEXT_LEFT).text(":").draw();
 
-            auto& mmfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->MM);
-            if (processor->transport->MM < 0)
-                processor->transport->MM = 0;
-            if (processor->transport->MM > 100)
-                processor->transport->MM = 99;
+            auto& mmfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 50, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->monitorOSC.MM);
+            if (processor->monitorOSC.MM < 0)
+                processor->monitorOSC.MM = 0;
+            if (processor->monitorOSC.MM > 100)
+                processor->monitorOSC.MM = 99;
             mmfield.widgetBgColor.setAlpha(0);
             mmfield.drawBounds = false;
             mmfield.shouldSelectAllWhenClicked = true;
@@ -334,11 +334,11 @@ void MonitorUIBaseComponent::draw()
 
             m.prepare<murka::Label>({ leftSide_LeftBound_x + 83, bottomSettings_topBound_y + 113, 30, 30 }).withAlignment(TEXT_LEFT).text(":").draw();
 
-            auto& ssfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->SS);
-            if (processor->transport->SS < 0)
-                processor->transport->SS = 0;
-            if (processor->transport->SS > 100)
-                processor->transport->SS = 99;
+            auto& ssfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 95, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->monitorOSC.SS);
+            if (processor->monitorOSC.SS < 0)
+                processor->monitorOSC.SS = 0;
+            if (processor->monitorOSC.SS > 100)
+                processor->monitorOSC.SS = 99;
             ssfield.widgetBgColor.setAlpha(0);
             ssfield.drawBounds = false;
             ssfield.shouldSelectAllWhenClicked = true;
@@ -346,11 +346,11 @@ void MonitorUIBaseComponent::draw()
 
             m.prepare<murka::Label>({ leftSide_LeftBound_x + 128, bottomSettings_topBound_y + 113, 30, 30 }).withAlignment(TEXT_LEFT).text(":").draw();
 
-            auto& fsfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->transport->FS);
-            if (processor->transport->FS < 0)
-                processor->transport->FS = 0;
-            if (processor->transport->FS > 100)
-                processor->transport->FS = 99;
+            auto& fsfield = m.prepare<murka::TextField>({ leftSide_LeftBound_x + 140, bottomSettings_topBound_y + 105, 30, 30 }).onlyAllowNumbers(true).fillWidthWithZeroes(2).controlling(&processor->monitorOSC.FS);
+            if (processor->monitorOSC.FS < 0)
+                processor->monitorOSC.FS = 0;
+            if (processor->monitorOSC.FS > 100)
+                processor->monitorOSC.FS = 99;
             fsfield.widgetBgColor.setAlpha(0);
             fsfield.drawBounds = false;
             fsfield.shouldSelectAllWhenClicked = true;

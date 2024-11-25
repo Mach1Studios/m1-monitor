@@ -26,6 +26,8 @@ MonitorOSC::MonitorOSC()
 
     initFromSettings(settingsFile.getFullPathName().toStdString());
     juce::OSCReceiver::addListener(this);
+
+    startTimer(10); // 10ms timer for playhead position updates
 }
 
 MonitorOSC::~MonitorOSC()
@@ -282,5 +284,84 @@ bool MonitorOSC::disconnectToHelper()
     else
     {
         return false;
+    }
+}
+
+double MonitorOSC::getTimeInSeconds() const
+{
+    return m_correct_time_in_seconds;
+}
+
+void MonitorOSC::setTimeInSeconds(double time_in_seconds)
+{
+    m_correct_time_in_seconds = time_in_seconds;
+}
+
+bool MonitorOSC::getIsPlaying() const
+{
+    return m_is_playing;
+}
+
+void MonitorOSC::setIsPlaying(bool is_playing)
+{
+    m_is_playing = is_playing;
+}
+
+void MonitorOSC::command_setPlayerFrameRate(float playerFrameRate)
+{
+    if (is_connected && port > 0)
+    {
+        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerFrameRate"));
+        m.addFloat32(playerFrameRate); // float of framerate from DAW side
+        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+    }
+    return false;
+}
+
+void MonitorOSC::command_setPlayerPositionInSeconds(float playerPlayheadPositionInSeconds)
+{
+    if (is_connected && port > 0)
+    {
+        lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerPosition"));
+        m.addInt32(lastUpdateToPlayer);
+        m.addFloat32(playerPlayheadPositionInSeconds); // float of current time in seconds
+        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+    }
+    return false;
+}
+
+void MonitorOSC::command_setPlayerIsPlaying(bool playerIsPlaying)
+{
+    if (is_connected && port > 0)
+    {
+        lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerIsPlaying"));
+        m.addInt32(lastUpdateToPlayer);
+        m.addInt32(playerIsPlaying); // int of current playstate
+        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+    }
+    return false;
+}
+
+void MonitorOSC::sendData()
+{
+    if (!isConnected() || !isActiveMonitor())
+        return;
+
+    m_transport_offset = HH * 1000 * 60 * 60 + MM * 1000 * 60 + SS * 1000 + FS;
+    auto play_head_position = m_correct_time_in_seconds - m_transport_offset / 1000;
+    if (play_head_position < 0)
+        play_head_position = 0;
+    command_setPlayerPositionInSeconds(play_head_position);
+    command_setPlayerIsPlaying(getIsPlaying());
+}
+
+void MonitorOSC::timerCallback()
+{
+    // only send the data if this is the active monitor instance to reduce conflict
+    if (isConnected() && isActiveMonitor())
+    {
+        sendData();
     }
 }
