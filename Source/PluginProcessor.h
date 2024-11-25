@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Config.h"
-#include "MonitorOSC.h"
-#include "Transport.h"
-#include "TypesForDataExchange.h"
 #include "M1Analytics.h"
+#include "MonitorOSC.h"
+#include "TypesForDataExchange.h"
 #include <JuceHeader.h>
 #include <Mach1Decode.h>
 
@@ -122,14 +121,13 @@ public:
     // Communication to Player and the rest of the M1SpatialSystem
     void timerCallback() override;
     MonitorOSC monitorOSC;
-    ScopedPointer<Transport> transport; // TODO: use std::unique_ptr
 
     // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer
 
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
-    
+
     // Analytics for crash reporting
     void addJob(std::function<void()> job);
     void addJob(juce::ThreadPoolJob* job, bool deleteJobWhenFinished);
@@ -144,7 +142,7 @@ private:
     std::vector<std::vector<float>> audioDataIn;
     std::vector<float> spatialMixerCoeffs;
     std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
-    
+
     juce::ThreadPool jobThreads{ std::max(4, juce::SystemStats::getNumCpus()) };
 
     //==============================================================================

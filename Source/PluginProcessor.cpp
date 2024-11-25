@@ -30,8 +30,6 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     monitorSettings.m1Decode.setFilterSpeed(0.99);
     m1DecodeChangeInputMode(M1DecodeSpatial_8); // sets type and resizes temp buffers
 
-    transport = new Transport(&m1OrientationClient, &monitorOSC);
-
     // We will assume the folders are properly created during the installation step
     juce::File settingsFile;
     // Using common support files installation location
@@ -149,7 +147,6 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
 {
-    transport = nullptr;
     m1OrientationClient.command_disconnect();
     m1OrientationClient.close();
     jobThreads.addJob(new M1Analytics("M1-Monitor_Exited", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
@@ -713,10 +710,10 @@ void M1MonitorAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
     std::unique_ptr<juce::XmlElement> parameters_xml(parameters.state.createXml());
 
     // Append the Timecode Offset settings
-    parameters_xml->setAttribute("HH", transport->HH);
-    parameters_xml->setAttribute("MM", transport->MM);
-    parameters_xml->setAttribute("SS", transport->SS);
-    parameters_xml->setAttribute("FS", transport->FS);
+    parameters_xml->setAttribute("HH", monitorOSC.HH);
+    parameters_xml->setAttribute("MM", monitorOSC.MM);
+    parameters_xml->setAttribute("SS", monitorOSC.SS);
+    parameters_xml->setAttribute("FS", monitorOSC.FS);
 
     // Append extra plugin settings
     parameters_xml->setAttribute("isActive", monitorOSC.isActiveMonitor());
@@ -745,10 +742,10 @@ void M1MonitorAudioProcessor::setStateInformation(const void* data, int sizeInBy
             }
 
             // Set the timecode offset from the saved plugin data
-            transport->HH = xml->getIntAttribute("HH");
-            transport->MM = xml->getIntAttribute("MM");
-            transport->SS = xml->getIntAttribute("SS");
-            transport->FS = xml->getIntAttribute("FS");
+            monitorOSC.HH = xml->getIntAttribute("HH");
+            monitorOSC.MM = xml->getIntAttribute("MM");
+            monitorOSC.SS = xml->getIntAttribute("SS");
+            monitorOSC.FS = xml->getIntAttribute("FS");
 
             // Append extra plugin settings
             monitorOSC.setActiveState(xml->getIntAttribute("isActive"));
@@ -774,10 +771,10 @@ void M1MonitorAudioProcessor::updateTransportWithPlayhead()
 
     if (play_head_position->getTimeInSeconds().hasValue())
     {
-        transport->setTimeInSeconds(*play_head_position->getTimeInSeconds());
+        monitorOSC.setTimeInSeconds(*play_head_position->getTimeInSeconds());
     }
 
-    transport->setIsPlaying(ph->getPosition()->getIsPlaying());
+    monitorOSC.setIsPlaying(ph->getPosition()->getIsPlaying());
 }
 
 void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
