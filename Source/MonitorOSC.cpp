@@ -307,7 +307,7 @@ void MonitorOSC::setIsPlaying(bool is_playing)
     m_is_playing = is_playing;
 }
 
-void MonitorOSC::command_setPlayerFrameRate(float playerFrameRate)
+bool MonitorOSC::command_setPlayerFrameRate(float playerFrameRate)
 {
     if (is_connected && port > 0)
     {
@@ -318,7 +318,7 @@ void MonitorOSC::command_setPlayerFrameRate(float playerFrameRate)
     return false;
 }
 
-void MonitorOSC::command_setPlayerPositionInSeconds(float playerPlayheadPositionInSeconds)
+bool MonitorOSC::command_setPlayerPositionInSeconds(float playerPlayheadPositionInSeconds)
 {
     if (is_connected && port > 0)
     {
@@ -331,7 +331,7 @@ void MonitorOSC::command_setPlayerPositionInSeconds(float playerPlayheadPosition
     return false;
 }
 
-void MonitorOSC::command_setPlayerIsPlaying(bool playerIsPlaying)
+bool MonitorOSC::command_setPlayerIsPlaying(bool playerIsPlaying)
 {
     if (is_connected && port > 0)
     {
@@ -353,8 +353,10 @@ void MonitorOSC::sendData()
     auto play_head_position = m_correct_time_in_seconds - m_transport_offset / 1000;
     if (play_head_position < 0)
         play_head_position = 0;
-    command_setPlayerPositionInSeconds(play_head_position);
-    command_setPlayerIsPlaying(getIsPlaying());
+    if (!command_setPlayerPositionInSeconds(play_head_position) || !command_setPlayerIsPlaying(getIsPlaying()))
+    {
+        DBG("[OSC] Error sending playhead position to helper.");
+    }
 }
 
 void MonitorOSC::timerCallback()
