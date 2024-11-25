@@ -56,17 +56,17 @@ public:
     /**
      * @brief Send a specific framerate to player
      */
-    void command_setPlayerFrameRate(float playerFrameRate);
+    bool command_setPlayerFrameRate(float playerFrameRate);
 
     /**
      * @brief Send the position in seconds of playhead in DAW to player
      */
-    void command_setPlayerPositionInSeconds(float playerPlayheadPositionInSeconds);
+    bool command_setPlayerPositionInSeconds(float playerPlayheadPositionInSeconds);
 
     /**
      * @brief Send the current playstate of the DAW to the player
      */
-    void command_setPlayerIsPlaying(bool playerIsPlaying);
+    bool command_setPlayerIsPlaying(bool playerIsPlaying);
 
     /**
      * @brief Send over the current state of this Transport via its M1OrientationClient.
