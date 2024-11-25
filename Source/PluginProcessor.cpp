@@ -57,8 +57,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1OrientationClient.initFromSettings(settingsFile.getFullPathName().toStdString());
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 
-    // setup the listener
-    monitorOSC.AddListener([&](juce::OSCMessage msg) {
+    // setup OSC and the listener
+    monitorOSC = std::make_unique<MonitorOSC>();
+    monitorOSC->AddListener([&](juce::OSCMessage msg) {
         if (msg.getAddressPattern() == "/YPR-Offset")
         {
             float yaw = 0.0f;
@@ -338,9 +339,9 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
         monitorSettings.monitor_mode = (int)parameters.getParameter(paramMonitorMode)->convertFrom0to1(parameters.getParameter(paramMonitorMode)->getValue());
 
         // update gui on other plugins
-        if (monitorOSC.isConnected() && monitorOSC.isActiveMonitor())
+        if (monitorOSC->isConnected() && monitorOSC->isActiveMonitor())
         {
-            monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
+            monitorOSC->sendMonitoringMode(monitorSettings.monitor_mode);
         }
     }
     else if (parameterID == paramOutputMode)
@@ -353,11 +354,11 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
     // update the gui on other plugins for any changes to YPR
     if (parameterID == paramYaw || parameterID == paramPitch || parameterID == paramRoll)
     {
-        if (monitorOSC.isConnected() && monitorOSC.isActiveMonitor())
+        if (monitorOSC->isConnected() && monitorOSC->isActiveMonitor())
         {
             // update the server and panners of final calculated orientation
             // sending un-normalized full range values in degrees
-            monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+            monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
         }
     }
 
@@ -651,7 +652,7 @@ void M1MonitorAudioProcessor::processStereoDownmix(juce::AudioBuffer<float>& buf
 void M1MonitorAudioProcessor::timerCallback()
 {
     // Added if we need to move the OSC stuff from the processorblock
-    monitorOSC.update(); // test for connection
+    monitorOSC->update(); // test for connection
 
     // transport
     updateTransportWithPlayhead(); // Updates here for hosts that freeze processBlock()
@@ -682,7 +683,7 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode
         DBG("Current config: " + std::to_string(monitorSettings.m1Decode.getDecodeMode()) + " and new config: " + std::to_string(decodeMode));
         monitorSettings.m1Decode.setDecodeMode(decodeMode);
         // Report change to m1-system-helper for other clients and plugins
-        monitorOSC.sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
+        monitorOSC->sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
     }
 
     auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
@@ -710,13 +711,13 @@ void M1MonitorAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
     std::unique_ptr<juce::XmlElement> parameters_xml(parameters.state.createXml());
 
     // Append the Timecode Offset settings
-    parameters_xml->setAttribute("HH", monitorOSC.HH);
-    parameters_xml->setAttribute("MM", monitorOSC.MM);
-    parameters_xml->setAttribute("SS", monitorOSC.SS);
-    parameters_xml->setAttribute("FS", monitorOSC.FS);
+    parameters_xml->setAttribute("HH", monitorOSC->HH);
+    parameters_xml->setAttribute("MM", monitorOSC->MM);
+    parameters_xml->setAttribute("SS", monitorOSC->SS);
+    parameters_xml->setAttribute("FS", monitorOSC->FS);
 
     // Append extra plugin settings
-    parameters_xml->setAttribute("isActive", monitorOSC.isActiveMonitor());
+    parameters_xml->setAttribute("isActive", monitorOSC->isActiveMonitor());
 
     // Save to output memory
     copyXmlToBinary(*parameters_xml, destData);
@@ -742,13 +743,13 @@ void M1MonitorAudioProcessor::setStateInformation(const void* data, int sizeInBy
             }
 
             // Set the timecode offset from the saved plugin data
-            monitorOSC.HH = xml->getIntAttribute("HH");
-            monitorOSC.MM = xml->getIntAttribute("MM");
-            monitorOSC.SS = xml->getIntAttribute("SS");
-            monitorOSC.FS = xml->getIntAttribute("FS");
+            monitorOSC->HH = xml->getIntAttribute("HH");
+            monitorOSC->MM = xml->getIntAttribute("MM");
+            monitorOSC->SS = xml->getIntAttribute("SS");
+            monitorOSC->FS = xml->getIntAttribute("FS");
 
             // Append extra plugin settings
-            monitorOSC.setActiveState(xml->getIntAttribute("isActive"));
+            monitorOSC->setActiveState(xml->getIntAttribute("isActive"));
         }
     }
 }
@@ -771,16 +772,16 @@ void M1MonitorAudioProcessor::updateTransportWithPlayhead()
 
     if (play_head_position->getTimeInSeconds().hasValue())
     {
-        monitorOSC.setTimeInSeconds(*play_head_position->getTimeInSeconds());
+        monitorOSC->setTimeInSeconds(*play_head_position->getTimeInSeconds());
     }
 
-    monitorOSC.setIsPlaying(ph->getPosition()->getIsPlaying());
+    monitorOSC->setIsPlaying(ph->getPosition()->getIsPlaying());
 }
 
 void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
 {
-    monitorOSC.sendMonitoringMode(monitorSettings.monitor_mode);
-    monitorOSC.sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+    monitorOSC->sendMonitoringMode(monitorSettings.monitor_mode);
+    monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
 
     // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
     auto ex_ori_vec = m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
