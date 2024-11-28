@@ -127,6 +127,11 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
             {
                 setActiveState(false);
             }
+            is_connected = true;
+        }
+        else if (msg.getAddressPattern() == "/m1-response")
+        {
+            is_connected = true; // ping response from m1-status
         }
         else if (msg.getAddressPattern() == "/m1-reconnect-req")
         {
