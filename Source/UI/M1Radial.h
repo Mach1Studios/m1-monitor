@@ -2,6 +2,8 @@
 
 #include "../Config.h"
 #include "MurkaBasicWidgets.h"
+#include "MurkaInputEventsRegister.h"
+#include "TextField.h"
 
 using namespace murka;
 
@@ -14,8 +16,7 @@ public:
         float inputValueNormalised = ((*data - rangeFrom) / (rangeTo - rangeFrom));
         inputValueNormalised -= 0.5f; // rescale so that the median value is upward
 
-        bool isInside = inside()
-                        * (!editingTextNow);
+        bool isInside = inside() * (!editingTextNow);
 
         changed = false;
         isHovered = isInside + draggingNow; // for external views to be highlighted too if needed
@@ -118,10 +119,59 @@ public:
         // draw main line
         m.drawLine(centralLineStart.x, centralLineStart.y, centralLineEnd.x, centralLineEnd.y);
 
+        std::function<void()> deleteTheTextField = [&]() {
+            // Temporary solution to delete the TextField:
+            // Searching for an id to delete the text field widget.
+            // To be redone after the UI library refactoring.
+
+            imIdentifier idToDelete;
+            for (auto childTuple : imChildren)
+            {
+                auto childIdTuple = childTuple.first;
+                if (std::get<1>(childIdTuple) == typeid(TextField).name())
+                {
+                    idToDelete = childIdTuple;
+                }
+            }
+            imChildren.erase(idToDelete);
+        };
+
         // value label
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
-        juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(valueText, 0, 0); // used to find size of text
-        m.prepare<murka::Label>({ shape.size.x / 2 - label_box.width / 2, shape.size.y / 2 - label_box.height / 2, 42, 40 }).withAlignment(TEXT_CENTER).text(valueText).draw();
+        juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(valueText, 0, 0);
+
+        MurkaShape valueTextShape = {
+            shape.size.x / 2 - label_box.width / 2,
+            shape.size.y / 2 - label_box.height / 2,
+            label_box.width + 10,
+            label_box.height
+        };
+
+        if (editingTextNow) {
+            auto& textFieldObject =
+                m.prepare<TextField>({ valueTextShape.x() - 5, valueTextShape.y() - 5, valueTextShape.width() + 10, valueTextShape.height() + 10 })
+                    .controlling(data)
+                    .withPrecision(floatingPointPrecision)
+                    .forcingEditorToSelectAll(shouldForceEditorToSelectAll)
+                    .onlyAllowNumbers(true)
+                    .grabKeyboardFocus()
+                    .draw();
+
+            if (shouldForceEditorToSelectAll) {
+                shouldForceEditorToSelectAll = false;
+            }
+
+            if (textFieldObject.editingFinished) {
+                editingTextNow = false;
+                changed = true;
+                deleteTheTextField();
+            }
+        } else {
+            m.prepare<murka::Label>({ valueTextShape.x(), valueTextShape.y(), valueTextShape.width(), valueTextShape.height() })
+                .withAlignment(TEXT_CENTER)
+                .text(valueText)
+                .draw();
+        }
 
         m.popStyle();
 
@@ -129,6 +179,18 @@ public:
         auto labelPositionY = shape.size.x * 0.8 + 10;
 
         // Action
+
+        if ((mouseDownPressed(0)) && (!isHovered) && (editingTextNow))
+        {
+            // Pressed outside the knob widget while editing text. Aborting the text edit
+            editingTextNow = false;
+            deleteTheTextField();
+        }
+
+        if (valueTextShape.inside(mousePosition()) && doubleClick() && enabled) {
+            editingTextNow = true;
+            shouldForceEditorToSelectAll = true;
+        }
 
         if ((mouseDownPressed(0)) && (inside()) && (mousePosition().y < labelPositionY) && (!draggingNow) && (enabled))
         {
