@@ -88,6 +88,8 @@ private:
     // Transport
     double m_transport_offset = 0;
     double m_correct_time_in_seconds = 0;
+    double m_last_sent_position = -1.0f; // Initialize to invalid value to ensure first send
     bool m_is_playing = false;
+    bool m_last_sent_playing_state = false;
     int lastUpdateToPlayer = 0;
 };

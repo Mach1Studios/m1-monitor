@@ -330,8 +330,9 @@ bool MonitorOSC::command_setPlayerPositionInSeconds(float playerPlayheadPosition
         lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerPosition"));
         m.addInt32(lastUpdateToPlayer);
-        m.addFloat32(playerPlayheadPositionInSeconds); // float of current time in seconds
-        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+        m.addFloat32(playerPlayheadPositionInSeconds);
+        m_last_sent_position = playerPlayheadPositionInSeconds; // Update last sent position
+        return juce::OSCSender::send(m);
     }
     return false;
 }
@@ -343,8 +344,9 @@ bool MonitorOSC::command_setPlayerIsPlaying(bool playerIsPlaying)
         lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerIsPlaying"));
         m.addInt32(lastUpdateToPlayer);
-        m.addInt32(playerIsPlaying); // int of current playstate
-        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+        m.addInt32(playerIsPlaying);
+        m_last_sent_playing_state = playerIsPlaying; // Update last sent state
+        return juce::OSCSender::send(m);
     }
     return false;
 }
@@ -358,9 +360,21 @@ void MonitorOSC::sendData()
     auto play_head_position = m_correct_time_in_seconds - m_transport_offset / 1000;
     if (play_head_position < 0)
         play_head_position = 0;
-    if (!command_setPlayerPositionInSeconds(play_head_position) || !command_setPlayerIsPlaying(getIsPlaying()))
+
+    if (std::abs(play_head_position - m_last_sent_position) > 0.001f)
     {
-        DBG("[OSC] Error sending playhead position to helper.");
+        if (!command_setPlayerPositionInSeconds(play_head_position))
+        {
+            DBG("[OSC] Error sending playhead position to helper.");
+        }
+    }
+
+    if (getIsPlaying() != m_last_sent_playing_state)
+    {
+        if (!command_setPlayerIsPlaying(getIsPlaying()))
+        {
+            DBG("[OSC] Error sending playstate to helper.");
+        }
     }
 }
 
