@@ -107,6 +107,9 @@ void MonitorUIBaseComponent::draw()
         m.reloadFonts(&m);
     }
 
+    // Storing mouse for the curorHide() and cursorShow() functions
+    currentMousePosition = getLocalPoint(nullptr, Desktop::getMousePosition());
+
     if (processor->monitorOSC->isActiveMonitor())
     {
         // Monitor plugin is marked as active, this is used to disable monitor plugin instances when more than 1 is discovered via the OSC messaging
@@ -143,7 +146,7 @@ void MonitorUIBaseComponent::draw()
             /// YPR SLIDERS
             auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
             yawRadial.cursorHide = cursorHide;
-            yawRadial.cursorShow = cursorShow;
+            yawRadial.cursorShow = cursorShowAndTeleportBack;
             yawRadial.rangeFrom = -180.;
             yawRadial.rangeTo = 180.;
             yawRadial.defaultValue = 0.;
