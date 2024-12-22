@@ -157,11 +157,18 @@ public:
                     .grabKeyboardFocus()
                     .draw();
 
+            auto textFieldEditingFinished = textFieldObject.editingFinished;
+            
             if (shouldForceEditorToSelectAll) {
                 shouldForceEditorToSelectAll = false;
             }
 
-            if (textFieldObject.editingFinished) {
+            if (!textFieldEditingFinished) {
+                textFieldObject.activated = true;
+                claimKeyboardFocus();
+            }
+            
+            if (textFieldEditingFinished) {
                 editingTextNow = false;
                 changed = true;
                 deleteTheTextField();
@@ -172,7 +179,29 @@ public:
                 .text(valueText)
                 .draw();
         }
-
+        
+        bool hoveredValueText = false;
+        if (valueTextShape.inside(mousePosition()) && !editingTextNow && enabled)
+        {
+            m.drawRectangle(valueTextShape.x(),
+                valueTextShape.y(),
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                valueTextShape.y(),
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x(),
+                valueTextShape.y() + 12,
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                valueTextShape.y() + 12,
+                2,
+                2);
+            hoveredValueText = true;
+        }
+        
         m.popStyle();
 
         m.setColor(100 + 110 * enabled + A(30 * hoveredLocal), 255);

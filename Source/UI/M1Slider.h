@@ -192,7 +192,7 @@ public:
 
         if (editingTextNow) {
             auto& textFieldObject =
-                m.prepare<TextField>({ valueTextShape.x() - 5, valueTextShape.y() - 5, valueTextShape.width() + 10, valueTextShape.height() + 10 })
+                m.prepare<TextField>({ valueTextShape.x(), valueTextShape.y() - 5, valueTextShape.width() + 4, valueTextShape.height() - 5})
                     .controlling(data)
                     .withPrecision(floatingPointPrecision)
                     .forcingEditorToSelectAll(shouldForceEditorToSelectAll)
@@ -200,11 +200,18 @@ public:
                     .grabKeyboardFocus()
                     .draw();
 
+            auto textFieldEditingFinished = textFieldObject.editingFinished;
+            
             if (shouldForceEditorToSelectAll) {
                 shouldForceEditorToSelectAll = false;
             }
 
-            if (textFieldObject.editingFinished) {
+            if (!textFieldEditingFinished) {
+                textFieldObject.activated = true;
+                claimKeyboardFocus();
+            }
+            
+            if (textFieldEditingFinished) {
                 editingTextNow = false;
                 changed = true;
                 deleteTheTextField();
@@ -214,6 +221,28 @@ public:
                 .withAlignment(TEXT_CENTER)
                 .text(valueText)
                 .draw();
+        }
+        
+        bool hoveredValueText = false;
+        if (valueTextShape.inside(mousePosition()) && !editingTextNow && enabled)
+        {
+            m.drawRectangle(valueTextShape.x(),
+                valueTextShape.y(),
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                valueTextShape.y(),
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x(),
+                valueTextShape.y() + 12,
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                valueTextShape.y() + 12,
+                2,
+                2);
+            hoveredValueText = true;
         }
 
         // Handle double click to edit
