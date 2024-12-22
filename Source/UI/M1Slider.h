@@ -189,6 +189,11 @@ public:
             }
             m.drawCircle(shape.size.x / 2, reticlePositionNorm * (shape.size.y - 2 * ellipseSize) + ellipseSize, ellipseSize);
         }
+        m.popStyle();
+
+        auto labelPositionY = shape.size.x * 0.8 + 10;
+        
+        m.setColor(REF_LABEL_TEXT_COLOR);
 
         if (editingTextNow) {
             auto& textFieldObject =
@@ -255,10 +260,6 @@ public:
             editingTextNow = true;
             shouldForceEditorToSelectAll = true;
         }
-
-        m.popStyle();
-
-        auto labelPositionY = shape.size.x * 0.8 + 10;
 
         // Action
 
