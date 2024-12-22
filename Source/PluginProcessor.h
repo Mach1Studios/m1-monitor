@@ -143,7 +143,7 @@ private:
     std::vector<float> spatialMixerCoeffs;
     std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
 
-    juce::ThreadPool jobThreads{ std::max(4, juce::SystemStats::getNumCpus()) };
+    juce::ThreadPool jobThreads{ (std::max)(4, juce::SystemStats::getNumCpus()) };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(M1MonitorAudioProcessor)
