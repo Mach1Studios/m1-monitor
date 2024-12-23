@@ -90,6 +90,11 @@ public:
         m.pushStyle();
         m.enableFill();
 
+        float labelWidth = 40;
+        float labelHeight = 30;
+
+        MurkaShape valueTextShape;
+
         if (isHorizontal)
         { // draw horizontally
             m.setColor(133 + 20 * A(reticleHover));
@@ -98,8 +103,6 @@ public:
             m.setColor(REF_LABEL_TEXT_COLOR);
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
 
-            float labelWidth = 40;
-            float labelHeight = 30;
             if (movingLabel)
             {
                 float posX = reticlePositionNorm * (shape.size.x - 2 * ellipseSize) + ellipseSize - labelWidth / 2;
@@ -107,11 +110,15 @@ public:
 
                 m.prepare<murka::Label>({ posX + 3, shape.size.y / 2 - 35, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
                 m.prepare<murka::Label>({ posX + 3, shape.size.y / 2 + 22, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
+
+                valueTextShape = { posX + 3, shape.size.y / 2 + 22, labelWidth, labelHeight };
             }
             else
             {
                 m.prepare<murka::Label>({ shape.size.x / 2 - labelWidth / 2, shape.size.y - labelHeight, labelWidth, 30 }).withAlignment(TEXT_CENTER).text(label).draw();
                 m.prepare<murka::Label>({ shape.size.x / 2 - labelWidth / 2, shape.size.y + labelHeight, labelWidth, 30 }).withAlignment(TEXT_CENTER).text(valueText).draw();
+
+                valueTextShape = { shape.size.x / 2 - labelWidth / 2, shape.size.y + labelHeight, labelWidth, labelHeight };
             }
 
             // Draw OC reticle line
@@ -143,8 +150,6 @@ public:
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
             m.setColor(REF_LABEL_TEXT_COLOR);
 
-            float labelWidth = 40;
-            float labelHeight = 30;
             if (movingLabel)
             {
                 float posY = reticlePositionNorm * (shape.size.y - 2 * ellipseSize) + ellipseSize - m.getCurrentFont()->getLineHeight() / 2;
@@ -152,17 +157,15 @@ public:
 
                 m.prepare<murka::Label>({ shape.size.x / 2 - 60, posY, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
                 m.prepare<murka::Label>({ shape.size.x / 2 + 15, posY, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
+
+                valueTextShape = { shape.size.x / 2 + 15, posY, labelWidth, labelHeight };
             }
             else
             {
-                m.prepare<murka::Label>({ shape.size.x / 2 - 60, shape.size.y / 2 - 9, labelWidth, labelHeight })
-                    .withAlignment(TEXT_CENTER)
-                    .text(label)
-                    .draw();
-                m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 9, labelWidth, labelHeight })
-                    .withAlignment(TEXT_CENTER)
-                    .text(valueText)
-                    .draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 - 60, shape.size.y / 2 - 9, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(label).draw();
+                m.prepare<murka::Label>({ shape.size.x / 2 + 15, shape.size.y / 2 - 9, labelWidth, labelHeight }).withAlignment(TEXT_CENTER).text(valueText).draw();
+
+                valueTextShape = { shape.size.x / 2 + 15, shape.size.y / 2 - 9, labelWidth, labelHeight };
             }
 
             // Draw OC reticle line
@@ -189,6 +192,74 @@ public:
         m.popStyle();
 
         auto labelPositionY = shape.size.x * 0.8 + 10;
+        
+        m.setColor(REF_LABEL_TEXT_COLOR);
+
+        if (editingTextNow) {
+            auto& textFieldObject =
+                m.prepare<TextField>({ valueTextShape.x(), valueTextShape.y() - 5, valueTextShape.width() + 4, valueTextShape.height() - 5})
+                    .controlling(data)
+                    .withPrecision(floatingPointPrecision)
+                    .forcingEditorToSelectAll(shouldForceEditorToSelectAll)
+                    .onlyAllowNumbers(true)
+                    .grabKeyboardFocus()
+                    .draw();
+
+            auto textFieldEditingFinished = textFieldObject.editingFinished;
+            
+            if (shouldForceEditorToSelectAll) {
+                shouldForceEditorToSelectAll = false;
+            }
+
+            if (!textFieldEditingFinished) {
+                textFieldObject.activated = true;
+                claimKeyboardFocus();
+            }
+            
+            if (textFieldEditingFinished) {
+                editingTextNow = false;
+                changed = true;
+                deleteTheTextField();
+            }
+        } else {
+            m.prepare<murka::Label>(valueTextShape)
+                .withAlignment(TEXT_CENTER)
+                .text(valueText)
+                .draw();
+        }
+        
+        bool hoveredValueText = false;
+        if (valueTextShape.inside(mousePosition()) && !editingTextNow && enabled)
+        {
+            m.drawRectangle(valueTextShape.x(),
+                valueTextShape.y(),
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                valueTextShape.y(),
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x(),
+                valueTextShape.y() + 12,
+                2,
+                2);
+            m.drawRectangle(valueTextShape.x() + valueTextShape.width() + 2,
+                valueTextShape.y() + 12,
+                2,
+                2);
+            hoveredValueText = true;
+        }
+
+        // Handle double click to edit
+        if ((mouseDownPressed(0)) && (!isHovered) && (editingTextNow)) {
+            editingTextNow = false;
+            deleteTheTextField();
+        }
+
+        if (valueTextShape.inside(mousePosition()) && doubleClick() && enabled) {
+            editingTextNow = true;
+            shouldForceEditorToSelectAll = true;
+        }
 
         // Action
 
