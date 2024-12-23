@@ -138,6 +138,7 @@ public:
 
         // value label
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, fontSize);
+        m.setColor(REF_LABEL_TEXT_COLOR);
         juceFontStash::Rectangle label_box = m.getCurrentFont()->getStringBoundingBox(valueText, 0, 0);
 
         MurkaShape valueTextShape = {
@@ -147,7 +148,8 @@ public:
             label_box.height
         };
 
-        if (editingTextNow) {
+        if (editingTextNow)
+        {
             auto& textFieldObject =
                 m.prepare<TextField>({ valueTextShape.x() - 5, valueTextShape.y() - 5, valueTextShape.width() + 10, valueTextShape.height() + 10 })
                     .controlling(data)
@@ -158,28 +160,33 @@ public:
                     .draw();
 
             auto textFieldEditingFinished = textFieldObject.editingFinished;
-            
-            if (shouldForceEditorToSelectAll) {
+
+            if (shouldForceEditorToSelectAll)
+            {
                 shouldForceEditorToSelectAll = false;
             }
 
-            if (!textFieldEditingFinished) {
+            if (!textFieldEditingFinished)
+            {
                 textFieldObject.activated = true;
                 claimKeyboardFocus();
             }
-            
-            if (textFieldEditingFinished) {
+
+            if (textFieldEditingFinished)
+            {
                 editingTextNow = false;
                 changed = true;
                 deleteTheTextField();
             }
-        } else {
+        }
+        else
+        {
             m.prepare<murka::Label>({ valueTextShape.x(), valueTextShape.y(), valueTextShape.width(), valueTextShape.height() })
                 .withAlignment(TEXT_CENTER)
                 .text(valueText)
                 .draw();
         }
-        
+
         bool hoveredValueText = false;
         if (valueTextShape.inside(mousePosition()) && !editingTextNow && enabled)
         {
@@ -201,7 +208,7 @@ public:
                 2);
             hoveredValueText = true;
         }
-        
+
         m.popStyle();
 
         m.setColor(100 + 110 * enabled + A(30 * hoveredLocal), 255);
@@ -216,7 +223,8 @@ public:
             deleteTheTextField();
         }
 
-        if (valueTextShape.inside(mousePosition()) && doubleClick() && enabled) {
+        if (valueTextShape.inside(mousePosition()) && doubleClick() && enabled)
+        {
             editingTextNow = true;
             shouldForceEditorToSelectAll = true;
         }
