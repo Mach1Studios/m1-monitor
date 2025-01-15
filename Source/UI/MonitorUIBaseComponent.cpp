@@ -494,9 +494,7 @@ void MonitorUIBaseComponent::draw()
                 }
 
                 auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({ m.getSize().width() / 2 + 20,
-                                                                         m.getSize().height() - 28 - output_options.size() * dropdownItemHeight,
-                                                                         120,
-                                                                         output_options.size() * dropdownItemHeight })
+                                                                       m.getSize().height() - 28 - output_options.size() * dropdownItemHeight, 120, output_options.size() * dropdownItemHeight })
                                                .withOptions(output_options);
 
                 // Mach1Decode API has the first index [0] set to Mach1DecodeAlgoSpatial_8

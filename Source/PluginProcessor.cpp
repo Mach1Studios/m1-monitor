@@ -391,6 +391,18 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
             return false;
         }
     }
+    else if (hostType.isJUCEPluginHost())
+    {
+        // JUCE Plugin Host only supports stereo in/out for debug UI builds
+        if (layouts.getMainInputChannels() <= 2 && layouts.getMainOutputChannels() == 2)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
     else if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo() && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo())
     {
         // RETURN TRUE FOR EXTERNAL STREAMING MODE
