@@ -218,8 +218,6 @@ void M1MonitorAudioProcessor::changeProgramName(int index, const juce::String& n
 //==============================================================================
 void M1MonitorAudioProcessor::createLayout()
 {
-    int numInputsFromMonitorSettings = monitorSettings.m1Decode.getFormatChannelCount();
-
     if (external_spatialmixer_active)
     {
         /// EXTERNAL MULTICHANNEL PROCESSING
@@ -257,17 +255,12 @@ void M1MonitorAudioProcessor::createLayout()
                     monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_4);
                     m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_4);
                 }
-                else if (getBus(true, 0)->getCurrentLayout().size() == 8)
+                else if (getBus(true, 0)->getCurrentLayout().size() == 8 || getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() == 2)
                 {
                     monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_8);
                     m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_8);
                 }
-                else if (getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() == 2)
-                { // if an ambisonic 2nd order
-                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_8);
-                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_8);
-                }
-                else if (getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() > 2)
+                else if (getBus(true, 0)->getCurrentLayout().size() == 14 || getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() > 2)
                 { // if an ambisonic bus higher than 2nd order
                     monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_14);
                     m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_14);
@@ -376,18 +369,19 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
         || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::disabled())
         return false;
 
+    // If the host is Reaper always allow all configurations
     if (hostType.isReaper())
     {
         return true;
     }
 
+    // If the host is Pro Tools only allow the standard bus configurations
     if (hostType.isProTools())
     {
         if ((layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic()
                 || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
-                || layouts.getMainInputChannelSet() == juce::AudioChannelSet::ambisonic(3)
-                || layouts.getMainInputChannelSet() == juce::AudioChannelSet::ambisonic(5)
-                || layouts.getMainInputChannelSet() == juce::AudioChannelSet::ambisonic(7))
+                || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1point6()
+                || layouts.getMainInputChannelSet().getAmbisonicOrder() > 1)
             && (layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size()))
         {
             return true;

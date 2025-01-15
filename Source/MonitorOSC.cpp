@@ -116,7 +116,7 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
         }
         else if (msg.getAddressPattern() == "/m1-activate-client")
         {
-            DBG("[OSC] Recieved msg | Activate: " + std::to_string(msg[0].getInt32()));
+            DBG("[OSC] Received msg | Activate: " + std::to_string(msg[0].getInt32()));
             // Capturing monitor active state
             int active = msg[0].getInt32();
             if (active == 1)
