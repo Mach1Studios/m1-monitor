@@ -302,7 +302,7 @@ public:
             }
             if (isKeyReleased(murka::MurkaKey::MURKA_KEY_LEFT))
             {
-                *((float*)dataToControl) = 270.0f;
+                *((float*)dataToControl) = -90.0f;
                 changed = true;
             }
         }
