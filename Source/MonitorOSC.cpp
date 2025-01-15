@@ -180,7 +180,27 @@ void MonitorOSC::AddListener(std::function<void(juce::OSCMessage msg)> messageRe
 
 bool MonitorOSC::Send(const juce::OSCMessage& msg)
 {
-    return (is_connected && juce::OSCSender::send(msg));
+    if (is_connected && port > 0)
+    {
+        // Try to reconnect if needed
+        if (!juce::OSCSender::connect("127.0.0.1", helperPort))
+        {
+            is_connected = false;
+            return false;
+        }
+
+        try
+        {
+            is_connected = juce::OSCSender::send(msg);
+        }
+        catch (...)
+        {
+            is_connected = false;
+            return false;
+        }
+        return is_connected;
+    }
+    return false;
 }
 
 bool MonitorOSC::isConnected()
@@ -202,9 +222,25 @@ bool MonitorOSC::sendRequestToBecomeActive()
 {
     if (is_connected && port > 0)
     {
-        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitorActiveReq"));
-        m.addInt32(port); // int of current monitor port to use for identification
-        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+        // Try to reconnect if needed
+        if (!juce::OSCSender::connect("127.0.0.1", helperPort))
+        {
+            is_connected = false;
+            return false;
+        }
+
+        try
+        {
+            juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitorActiveReq"));
+            m.addInt32(port); // int of current monitor port to use for identification
+            is_connected = juce::OSCSender::send(m);
+        }
+        catch (...)
+        {
+            is_connected = false;
+            return false;
+        }
+        return is_connected;
     }
     return false;
 }
@@ -213,9 +249,25 @@ bool MonitorOSC::sendRequestToChangeChannelConfig(int channel_count_for_config)
 {
     if (is_connected && port > 0)
     {
-        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setChannelConfigReq"));
-        m.addInt32(channel_count_for_config); // int of new layout
-        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+        // Try to reconnect if needed
+        if (!juce::OSCSender::connect("127.0.0.1", helperPort))
+        {
+            is_connected = false;
+            return false;
+        }
+
+        try
+        {
+            juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setChannelConfigReq"));
+            m.addInt32(channel_count_for_config); // int of new layout
+            is_connected = juce::OSCSender::send(m);
+        }
+        catch (...)
+        {
+            is_connected = false;
+            return false;
+        }
+        return is_connected;
     }
     return false;
 }
@@ -249,23 +301,25 @@ bool MonitorOSC::connectToHelper()
     // this first if statement protects against the debugger catching the wrong instance
     if ((this->port > 100 && this->port < 65535) && (this->helperPort > 100 && this->helperPort < 65535))
     {
-        if (juce::OSCSender::connect("127.0.0.1", helperPort))
+        try
         {
-            juce::OSCMessage msg = juce::OSCMessage(juce::OSCAddressPattern("/m1-addClient"));
-            msg.addInt32(port);
-            msg.addString("monitor");
-            DBG("[OSC] Monitor registered as: " + std::to_string(port));
-            return juce::OSCSender::send(msg);
+            if (juce::OSCSender::connect("127.0.0.1", helperPort))
+            {
+                juce::OSCMessage msg = juce::OSCMessage(juce::OSCAddressPattern("/m1-addClient"));
+                msg.addInt32(port);
+                msg.addString("monitor");
+                DBG("[OSC] Monitor registered as: " + std::to_string(port));
+                is_connected = juce::OSCSender::send(msg);
+                return is_connected;
+            }
         }
-        else
+        catch (...)
         {
-            return false;
+            DBG("[OSC] Failed to connect to helper");
+            is_connected = false;
         }
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 bool MonitorOSC::disconnectToHelper()
@@ -273,23 +327,25 @@ bool MonitorOSC::disconnectToHelper()
     // this first if statement protects against the debugger catching the wrong instance
     if ((this->port > 100 && this->port < 65535) && (this->helperPort > 100 && this->helperPort < 65535))
     {
-        if (juce::OSCSender::connect("127.0.0.1", helperPort))
+        try
         {
-            juce::OSCMessage msg = juce::OSCMessage(juce::OSCAddressPattern("/m1-removeClient"));
-            msg.addInt32(port);
-            msg.addString("monitor");
-            DBG("[OSC] Unregistered: " + std::to_string(port));
-            return juce::OSCSender::send(msg);
+            if (juce::OSCSender::connect("127.0.0.1", helperPort))
+            {
+                juce::OSCMessage msg = juce::OSCMessage(juce::OSCAddressPattern("/m1-removeClient"));
+                msg.addInt32(port);
+                msg.addString("monitor");
+                DBG("[OSC] Unregistered: " + std::to_string(port));
+                is_connected = juce::OSCSender::send(msg);
+                return is_connected;
+            }
         }
-        else
+        catch (...)
         {
-            return false;
+            DBG("[OSC] Failed to disconnect from helper");
+            is_connected = false;
         }
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 double MonitorOSC::getTimeInSeconds() const
@@ -316,9 +372,25 @@ bool MonitorOSC::command_setPlayerFrameRate(float playerFrameRate)
 {
     if (is_connected && port > 0)
     {
-        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerFrameRate"));
-        m.addFloat32(playerFrameRate); // float of framerate from DAW side
-        return juce::OSCSender::send(m); // check to update isConnected for error catching;
+        // Try to reconnect if needed
+        if (!juce::OSCSender::connect("127.0.0.1", helperPort))
+        {
+            is_connected = false;
+            return false;
+        }
+
+        try
+        {
+            juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerFrameRate"));
+            m.addFloat32(playerFrameRate);
+            is_connected = juce::OSCSender::send(m);
+        }
+        catch (...)
+        {
+            is_connected = false;
+            return false;
+        }
+        return is_connected;
     }
     return false;
 }
@@ -327,12 +399,28 @@ bool MonitorOSC::command_setPlayerPositionInSeconds(float playerPlayheadPosition
 {
     if (is_connected && port > 0)
     {
-        lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerPosition"));
-        m.addInt32(lastUpdateToPlayer);
-        m.addFloat32(playerPlayheadPositionInSeconds);
-        m_last_sent_position = playerPlayheadPositionInSeconds; // Update last sent position
-        return juce::OSCSender::send(m);
+        // Try to reconnect if needed
+        if (!juce::OSCSender::connect("127.0.0.1", helperPort))
+        {
+            is_connected = false;
+            return false;
+        }
+
+        try
+        {
+            lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerPosition"));
+            m.addInt32(lastUpdateToPlayer);
+            m.addFloat32(playerPlayheadPositionInSeconds);
+            m_last_sent_position = playerPlayheadPositionInSeconds;
+            is_connected = juce::OSCSender::send(m);
+        }
+        catch (...)
+        {
+            is_connected = false;
+            return false;
+        }
+        return is_connected;
     }
     return false;
 }
@@ -341,12 +429,28 @@ bool MonitorOSC::command_setPlayerIsPlaying(bool playerIsPlaying)
 {
     if (is_connected && port > 0)
     {
-        lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-        juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerIsPlaying"));
-        m.addInt32(lastUpdateToPlayer);
-        m.addInt32(playerIsPlaying);
-        m_last_sent_playing_state = playerIsPlaying; // Update last sent state
-        return juce::OSCSender::send(m);
+        // Try to reconnect if needed
+        if (!juce::OSCSender::connect("127.0.0.1", helperPort))
+        {
+            is_connected = false;
+            return false;
+        }
+
+        try
+        {
+            lastUpdateToPlayer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setPlayerIsPlaying"));
+            m.addInt32(lastUpdateToPlayer);
+            m.addInt32(playerIsPlaying);
+            m_last_sent_playing_state = playerIsPlaying;
+            is_connected = juce::OSCSender::send(m);
+        }
+        catch (...)
+        {
+            is_connected = false;
+            return false;
+        }
+        return is_connected;
     }
     return false;
 }
