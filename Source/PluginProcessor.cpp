@@ -361,13 +361,12 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-    juce::PluginHostType hostType;
-    Mach1Decode<float> configTester;
-
-    // block plugin if input or output is disabled on construction
-    if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::disabled()
-        || layouts.getMainOutputChannelSet() == juce::AudioChannelSet::disabled())
+    if (layouts.getMainInputChannelSet().isDisabled() ||
+        layouts.getMainOutputChannelSet().isDisabled())
+    {
+        DBG("Layout REJECTED - Disabled buses");
         return false;
+    }
 
     // If the host is Reaper always allow all configurations
     if (hostType.isReaper())
@@ -375,33 +374,38 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
         return true;
     }
 
+    // For standalone, only allow stereo in/out
+    if (JUCEApplicationBase::isStandaloneApp())
+    {
+        auto inputLayout = layouts.getMainInputChannelSet();
+        auto outputLayout = layouts.getMainOutputChannelSet();
+
+        bool isValid = (inputLayout == juce::AudioChannelSet::mono() ||
+                        inputLayout == juce::AudioChannelSet::stereo() &&
+                       outputLayout == juce::AudioChannelSet::stereo());
+
+        DBG("Standalone Layout " + String(isValid ? "ACCEPTED" : "REJECTED") +
+            " - Input: " + inputLayout.getDescription() +
+            " Output: " + outputLayout.getDescription());
+
+        return isValid;
+    }
+
     // If the host is Pro Tools only allow the standard bus configurations
     if (hostType.isProTools())
     {
-        if ((layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic()
-                || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1()
-                || layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1point6()
-                || layouts.getMainInputChannelSet().getAmbisonicOrder() > 1)
-            && (layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size()))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else if (hostType.isJUCEPluginHost())
-    {
-        // JUCE Plugin Host only supports stereo in/out for debug UI builds
-        if (layouts.getMainInputChannels() <= 2 && layouts.getMainOutputChannels() == 2)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        bool validInput = (layouts.getMainInputChannelSet() == juce::AudioChannelSet::quadraphonic() ||
+                           layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1() ||
+                           layouts.getMainInputChannelSet() == juce::AudioChannelSet::create7point1point6() ||
+                           layouts.getMainInputChannelSet().getAmbisonicOrder() > 1);
+
+        bool validOutput = (layouts.getMainOutputChannelSet().size() == juce::AudioChannelSet::stereo().size());
+
+        DBG("Layout " + String(validInput && validOutput ? "ACCEPTED" : "REJECTED") +
+            " - Input: " + layouts.getMainInputChannelSet().getDescription() +
+            " Output: " + layouts.getMainOutputChannelSet().getDescription());
+
+        return validInput && validOutput;
     }
     else if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo() && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo())
     {
@@ -414,6 +418,7 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
     {
         // Test for all available Mach1Encode configs
         // manually maintained for-loop of first enum element to last enum element
+        Mach1Decode<float> configTester;
         for (int inputEnum = 0; inputEnum != Mach1DecodeMode::M1DecodeSpatial_14; inputEnum++)
         {
             configTester.setDecodeMode(static_cast<Mach1DecodeMode>(inputEnum));
@@ -485,6 +490,13 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     juce::ScopedNoDenormals noDenormals;
     auto numInputChannels = getMainBusNumInputChannels();
     auto numOutputChannels = getMainBusNumOutputChannels();
+
+    // Safety check for buffer configuration
+    if (buffer.getNumChannels() < 2)
+    {
+        DBG("Invalid buffer configuration: needs at least 2 channels");
+        return;
+    }
 
     // if you've got more output channels than input clears extra outputs
     for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)

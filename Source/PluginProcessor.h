@@ -49,7 +49,7 @@ public:
             }
         }
 
-        if (hostType.getPluginLoadedAs() == AudioProcessor::wrapperType_Standalone || hostType.getPluginLoadedAs() == AudioProcessor::wrapperType_Unity)
+        if (hostType.getPluginLoadedAs() == AudioProcessor::wrapperType_Unity)
         {
             return BusesProperties()
                 .withInput("Mach1Spatial In", juce::AudioChannelSet::discreteChannels(8), true)

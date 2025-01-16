@@ -432,7 +432,7 @@ void MonitorUIBaseComponent::draw()
 
             if (!processor->hostType.isProTools() || // is not PT
                 (processor->hostType.isProTools() && // or has an output dropdown in PT
-                    (processor->getMainBusNumInputChannels() == 8 || processor->getMainBusNumInputChannels() == 16 || processor->getMainBusNumInputChannels() == 36 || processor->getMainBusNumInputChannels() == 64)))
+                    processor->getMainBusNumInputChannels() >= 8))
             {
                 // Show bottom bar
                 m.setLineWidth(1);
@@ -471,25 +471,8 @@ void MonitorUIBaseComponent::draw()
                 outputDropdownButton.fontSize = DEFAULT_FONT_SIZE - 5;
                 outputDropdownButton.draw();
                 std::vector<std::string> output_options = { "M1Spatial-4", "M1Spatial-8" };
-                if (processor->hostType.isProTools())
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 14)
                 {
-                    // more selective assignment in PT only
-                    if (processor->getMainBusNumInputChannels() == 16)
-                    {
-                        output_options.push_back("M1Spatial-14");
-                    }
-                    else if (processor->getMainBusNumInputChannels() == 36)
-                    {
-                        output_options.push_back("M1Spatial-14");
-                    }
-                    else if (processor->getMainBusNumInputChannels() == 64)
-                    {
-                        output_options.push_back("M1Spatial-14");
-                    }
-                }
-                else
-                {
-                    if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 14)
                         output_options.push_back("M1Spatial-14");
                 }
 
