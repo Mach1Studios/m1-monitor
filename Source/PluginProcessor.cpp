@@ -58,7 +58,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     m1OrientationClient.setStatusCallback(std::bind(&M1MonitorAudioProcessor::setStatus, this, std::placeholders::_1, std::placeholders::_2));
 
     // setup OSC and the listener
-    monitorOSC = std::make_unique<MonitorOSC>();
+    monitorOSC = std::make_unique<MonitorOSC>(this);
     monitorOSC->AddListener([&](juce::OSCMessage msg) {
         if (msg.getAddressPattern() == "/YPR-Offset")
         {
@@ -690,7 +690,15 @@ bool M1MonitorAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* M1MonitorAudioProcessor::createEditor()
 {
-    return new M1MonitorAudioProcessorEditor(*this);
+    auto* editor = new M1MonitorAudioProcessorEditor(*this);
+
+    // When the processor sees a new alert, tell the editor to display it
+    postAlertToUI = [editor](const Mach1::AlertData& a)
+    {
+        editor->monitorUIBaseComponent->postAlert(a);
+    };
+
+    return editor;
 }
 
 //==============================================================================
@@ -873,4 +881,14 @@ juce::ThreadPool& M1MonitorAudioProcessor::getThreadPool()
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new M1MonitorAudioProcessor();
+}
+
+void M1MonitorAudioProcessor::postAlert(const Mach1::AlertData& alert)
+{
+    if (postAlertToUI) {
+        postAlertToUI(alert);
+    } else {
+        pendingAlerts.push_back(alert); // Store for later
+        DBG("Stored alert for UI. Total pending: " + juce::String(pendingAlerts.size()));
+    }
 }

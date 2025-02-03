@@ -1,4 +1,5 @@
 target_sources(${PLUGIN_NAME} PRIVATE    Config.h
+                                    AlertData.h
                                     TypesForDataExchange.h
                                     PluginEditor.cpp
                                     PluginEditor.h
@@ -13,5 +14,6 @@ target_sources(${PLUGIN_NAME} PRIVATE    Config.h
                                     UI/M1DropdownMenu.h
                                     UI/M1Radial.h
                                     UI/M1Slider.h
+                                    UI/M1AlertComponent.h
                                     UI/MonitorUIBaseComponent.h
                                     UI/MonitorUIBaseComponent.cpp)

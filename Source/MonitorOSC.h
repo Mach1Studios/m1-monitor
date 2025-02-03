@@ -1,16 +1,20 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "AlertData.h"
 
-class MonitorOSC : public juce::Timer, private juce::OSCSender, private juce::OSCReceiver, private juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>
+class M1MonitorAudioProcessor;
+
+class MonitorOSC : public juce::DeletedAtShutdown, public juce::Timer, private juce::OSCSender, private juce::OSCReceiver, private juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>
 {
 public:
-    MonitorOSC();
+    M1MonitorAudioProcessor* processor = nullptr;
+    MonitorOSC(M1MonitorAudioProcessor* processor);
     ~MonitorOSC();
 
     // OSC
     bool init(int helperPort);
-    bool initFromSettings(std::string jsonSettingsFilePath);
+    bool initFromSettings(const std::string& jsonSettingsFilePath);
     int helperPort = 0, port = 0;
     std::function<void(juce::OSCMessage msg)> messageReceived;
     void oscMessageReceived(const juce::OSCMessage& msg) override;

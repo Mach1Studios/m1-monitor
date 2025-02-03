@@ -12,11 +12,25 @@ MonitorUIBaseComponent::MonitorUIBaseComponent(M1MonitorAudioProcessor* processo
     processor = processor_;
     monitorState = &processor->monitorSettings;
 
+    // Set up alert dismiss callback
+    murkaAlert.onDismiss = [this]() {
+        // remove the top alert from our queue
+        if (alertQueue.size() > 0) {
+            alertQueue.remove(0);
+        }
+        murkaAlert.alertActive = false;
+    };
+
+    processor->postAlertToUI = [this](const Mach1::AlertData& alert) {
+        this->postAlert(alert);
+    };
+
     startTimerHz(60); // Starts the timer to call the timerCallback method at 60 Hz.
 }
 
 MonitorUIBaseComponent::~MonitorUIBaseComponent()
 {
+    murkaAlert.onDismiss();
     juce::Thread::sleep(1000);
 }
 
@@ -651,6 +665,22 @@ void MonitorUIBaseComponent::draw()
 #else
     m.drawImage(m1logo, 25, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
+
+    // Draw the alert if active
+    if (hasActiveAlert)
+    {
+        auto& alertModal = m.prepare<M1AlertComponent>(MurkaShape(30, 0, 400, 310)); // center of yaw dial
+        alertModal.alertActive = murkaAlert.alertActive;
+        alertModal.alert = murkaAlert.alert;
+        alertModal.alertWidth = 400;
+        alertModal.alertHeight = 250;
+        alertModal.onDismiss = [this]()
+        {
+            murkaAlert.alertActive = false;
+            hasActiveAlert = false;
+        };
+        alertModal.draw();
+    }
 }
 
 //==============================================================================
@@ -662,4 +692,14 @@ void MonitorUIBaseComponent::paint(juce::Graphics& g)
 void MonitorUIBaseComponent::resized()
 {
     // This is called when the MonitorUIBaseComponent is resized.
+}
+
+void MonitorUIBaseComponent::postAlert(const Mach1::AlertData& alert)
+{
+    currentAlert = alert;
+    murkaAlert.alertActive = true;
+    murkaAlert.alert.title = currentAlert.title;
+    murkaAlert.alert.message = currentAlert.message;
+    murkaAlert.alert.buttonText = currentAlert.buttonText;
+    hasActiveAlert = true;
 }

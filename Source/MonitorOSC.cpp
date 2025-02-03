@@ -1,7 +1,12 @@
 #include "MonitorOSC.h"
 
-MonitorOSC::MonitorOSC()
+#include "PluginProcessor.h"
+
+MonitorOSC::MonitorOSC(M1MonitorAudioProcessor* processor_)
 {
+    processor = processor_;
+    is_connected = false;
+
     // We will assume the folders are properly created during the installation step
     juce::File settingsFile;
     // Using common support files installation location
@@ -68,20 +73,17 @@ bool MonitorOSC::init(int helperPort)
 }
 
 // finds the server port via the settings json file
-bool MonitorOSC::initFromSettings(std::string jsonSettingsFilePath)
+bool MonitorOSC::initFromSettings(const std::string& jsonSettingsFilePath)
 {
-    juce::File settingsFile = juce::File(jsonSettingsFilePath);
+    juce::File settingsFile(jsonSettingsFilePath);
+
     if (!settingsFile.exists())
     {
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::AlertWindow::NoIcon,
-            "Warning",
-            "Settings file doesn't exist",
-            "",
-            nullptr,
-            juce::ModalCallbackFunction::create(([&](int result) {
-                //juce::JUCEApplicationBase::quit();
-            })));
+        if (processor)
+        {
+            Mach1::AlertData data { "Warning", "The settings.json file doesn't exist in Mach1's Application Support directory!\nPlease reinstall the Mach1 Spatial System.", "OK" };
+            processor->postAlert(data);
+        }
         return false;
     }
     else
@@ -91,16 +93,11 @@ bool MonitorOSC::initFromSettings(std::string jsonSettingsFilePath)
 
         if (!init(helperPort))
         {
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::AlertWindow::WarningIcon,
-                "Warning",
-                "Conflict is happening and you need to choose a new port",
-                "",
-                nullptr,
-                juce::ModalCallbackFunction::create(([&](int result) {
-                    // juce::JUCEApplicationBase::quit();
-                })));
-            return false;
+            if (processor)
+            {
+                Mach1::AlertData data { "Warning", "There is a port conflict, please choose a new port", "OK" };
+                processor->postAlert(data);
+            }
         }
     }
     return true;

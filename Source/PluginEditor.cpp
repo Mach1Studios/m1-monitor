@@ -10,11 +10,25 @@ M1MonitorAudioProcessorEditor::M1MonitorAudioProcessorEditor(M1MonitorAudioProce
 
     processor = &p;
 
+    // Whenever the processor wants to post an alert, it calls postAlertToUI
+    // which we forward to our pannerUIBaseComponent:
+    processor->postAlertToUI = [this](const Mach1::AlertData& alert)
+    {
+        if (monitorUIBaseComponent)
+            monitorUIBaseComponent->postAlert(alert);
+    };
+
     monitorUIBaseComponent = new MonitorUIBaseComponent(processor);
     monitorUIBaseComponent->setSize(getWidth(), getHeight());
 
     addAndMakeVisible(monitorUIBaseComponent);
     monitorUIBaseComponent->editor = this;
+
+    // Add this to flush stored alerts:
+    for (auto& alert : processor->pendingAlerts) {
+        monitorUIBaseComponent->postAlert(alert);
+    }
+    processor->pendingAlerts.clear();
 }
 
 M1MonitorAudioProcessorEditor::~M1MonitorAudioProcessorEditor()

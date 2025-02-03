@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Config.h"
+#include "AlertData.h"
 #include "M1Analytics.h"
 #include "MonitorOSC.h"
 #include "TypesForDataExchange.h"
@@ -10,6 +11,8 @@
 //==============================================================================
 /**
 */
+
+class MonitorOSC; // forward declaration for MonitorOSC
 class M1MonitorAudioProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener, public juce::Timer
 {
 public:
@@ -133,6 +136,11 @@ public:
     void addJob(juce::ThreadPoolJob* job, bool deleteJobWhenFinished);
     void cancelJob(juce::ThreadPoolJob* job);
     juce::ThreadPool& getThreadPool();
+
+    // This will be set by the UI or editor so we can notify it of alerts
+    std::function<void(const Mach1::AlertData&)> postAlertToUI;
+    void postAlert(const Mach1::AlertData& alert);
+    std::vector<Mach1::AlertData> pendingAlerts;
 
 private:
     void updateTransportWithPlayhead();

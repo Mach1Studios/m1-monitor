@@ -17,6 +17,9 @@
 #include "../PluginProcessor.h"
 #include "../TypesForDataExchange.h"
 
+#include "../AlertData.h"
+#include "M1AlertComponent.h"
+
 #include "M1Checkbox.h"
 #include "M1DropdownButton.h"
 #include "M1DropdownMenu.h"
@@ -49,6 +52,9 @@ public:
     //==============================================================================
     void paint(juce::Graphics& g) override;
     void resized() override;
+
+    void showAlert(const std::string& title, const std::string& message, const std::string& buttonText = "OK");
+    void postAlert(const Mach1::AlertData& alert); // Adds a new alert to the queue
 
     bool shouldResizeComponent = false;
     MurkaPoint targetSize;
@@ -97,6 +103,11 @@ private:
     bool isAnyTextfieldActived = false;
 
     void draw_orientation_client(murka::Murka& m, M1OrientationClient& m1OrientationClient);
+
+    M1AlertComponent murkaAlert;
+    juce::OwnedArray<Mach1::AlertData> alertQueue; // queue for alerts
+    Mach1::AlertData currentAlert;
+    bool hasActiveAlert = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MonitorUIBaseComponent)
 };
