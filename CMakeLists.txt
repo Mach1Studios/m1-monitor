@@ -47,7 +47,7 @@ set(RBRACKET_LITERAL "}")
 
 # DYNAMIC_IO_PLUGIN_MODE or STREAMING_PANNER_PLUGIN or AAX/RTAS
 set(PLUGIN_NAME "${CMAKE_PROJECT_NAME}")
-set(CUSTOM_BUNDLE_ID "com.mach1.monitor")
+set(CUSTOM_BUNDLE_ID "com.mach1.spatial.monitor")
 set(CUSTOM_PLUGIN_CODE "M1Mt")
 
 # check which formats we want to build
