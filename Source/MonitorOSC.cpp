@@ -60,7 +60,7 @@ bool MonitorOSC::init(int helperPort)
     {
         if (socket.bindToPort(port))
         {
-            socket.shutdown();
+            socket.shutdown(); // shutdown port to not block the juce::OSCReceiver::connect return
             juce::OSCReceiver::connect(port);
             break; // stops the incrementing on the first available port
         }
@@ -134,6 +134,21 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
         {
             disconnectToHelper();
             is_connected = false;
+        }
+        else if (msg.getAddressPattern() == "/m1-helper-port-changed") {
+            if (msg.size() >= 1 && msg[0].isInt32()) {
+                int newHelperPort = msg[0].getInt32();
+                DBG("[OSC] Helper port changed to: " + std::to_string(newHelperPort));
+
+                // Update our stored helper port
+                helperPort = newHelperPort;
+
+                // Disconnect and reconnect with the new port
+                disconnectToHelper();
+                is_connected = false;
+
+                // Don't reconnect immediately - let the update() method handle it
+            }
         }
         else
         {
