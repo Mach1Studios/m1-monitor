@@ -14,7 +14,6 @@ env:
   BUILD_DIR: build
   DISPLAY: :0 # linux pluginval needs this
   HOMEBREW_NO_INSTALL_CLEANUP: 1
-  SCCACHE_GHA_ENABLED: true
 
 defaults:
   run:
@@ -35,7 +34,7 @@ jobs:
           - name: macOS
             os: macos-14
             pluginval-binary: pluginval.app/Contents/MacOS/pluginval
-            extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+            extra-flags: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DENABLE_VST2_COMPATIBILITY=OFF
             extra-build-flags: --parallel 4
           - name: Windows
             os: windows-latest
@@ -62,21 +61,37 @@ jobs:
       - name: Checkout entire project
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
           lfs: true
           fetch-depth: 1
 
-      - name: Cache the build
-        if: ${{ matrix.name != 'Windows' }}
-        uses: mozilla-actions/sccache-action@v0.0.4
+      - name: Configure Git to use HTTPS instead of SSH
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://".insteadOf "git://"
+
+      - name: Initialize essential submodules
+        run: |
+          # Initialize top-level submodules required for build
+          git submodule update --init --recursive JUCE
+          git submodule update --init --recursive Modules/juce_murka
+          git submodule update --init Modules/m1-sdk
+
+          # Initialize only core m1-sdk dependencies (skip all examples)
+          cd Modules/m1-sdk
+          git submodule update --init --recursive libmach1spatial/deps/glm
+          git submodule update --init --recursive libmach1spatial/deps/pugixml
+          git submodule update --init --recursive libmach1spatial/deps/yaml
+          git submodule update --init --recursive libmach1spatial/deps/acutest
+          git submodule update --init --recursive libmach1spatial/deps/nlohmann
+          cd ../..
 
       - name: Configure
         if: ${{ matrix.name != 'Windows' }}
-        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_VST3=ON -DBUILD_AAX=ON -DBUILD_STANDALONE=ON -DBUILD_AU=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ${{ matrix.extra-flags }} .
+        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_VST3=ON -DBUILD_AU=ON -DBUILD_STANDALONE=OFF -DBUILD_VST=OFF -DBUILD_AAX=ON ${{ matrix.extra-flags }} .
 
       - name: Configure (Windows)
         if: ${{ matrix.name == 'Windows' }}
-        run: cmake -B ${{ env.BUILD_DIR }} -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_VST3=ON -DBUILD_AAX=ON -DBUILD_STANDALONE=ON ${{ matrix.extra-flags }} .
+        run: cmake -B ${{ env.BUILD_DIR }} -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_VST3=ON -DBUILD_STANDALONE=OFF -DBUILD_VST=OFF -DBUILD_AAX=ON ${{ matrix.extra-flags }} .
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} ${{ matrix.extra-build-flags }}
