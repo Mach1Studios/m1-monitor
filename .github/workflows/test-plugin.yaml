@@ -74,6 +74,7 @@ jobs:
           # Initialize top-level submodules required for build
           git submodule update --init --recursive JUCE
           git submodule update --init --recursive Modules/juce_murka
+          git submodule update --init --recursive Modules/m1_orientation_client
           git submodule update --init Modules/m1-sdk
 
           # Initialize only core m1-sdk dependencies (skip all examples)
