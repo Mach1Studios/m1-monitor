@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include <juce_core/juce_core.h>
 #include <juce_data_structures/juce_data_structures.h>
+#include <cstdlib>
 
 class M1Analytics : public juce::ThreadPoolJob
 {
@@ -22,6 +23,6 @@ private:
     int sampleRate = 0;
     int m1Mode = 0;
     bool hasHelper = false;
-    
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(M1Analytics)
 };

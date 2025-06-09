@@ -9,7 +9,7 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
         const auto daw_path = juce::File::getSpecialLocation(juce::File::hostApplicationPath).getParentDirectory().getParentDirectory().getParentDirectory();
         daw_version = daw_path.getVersion();
     }
-    
+
     // HTTP POST endpoint
     juce::URL endpointURL;
     if (isUsingProxy) {
@@ -61,7 +61,7 @@ void M1Analytics::createUsageData(const juce::String& eventName, const juce::var
     baseProps->setProperty("language", juce::SystemStats::getUserLanguage());
     baseProps->setProperty("cpu", juce::SystemStats::getCpuVendor());
     baseProps->setProperty("cpu-model", juce::SystemStats::getCpuModel());
-  
+
     // TODO: implement this safely (this is not in a mesage thread and therefore not thread safe)
     /*
     juce::String res = "Unknown";
@@ -126,7 +126,7 @@ juce::String M1Analytics::getMixpanelToken()
     }
     configFile = configFile.getChildFile("settings.json");
     DBG("Opening settings file: " + configFile.getFullPathName().quoted());
-    
+
     if (configFile.existsAsFile()) {
         juce::String jsonString = configFile.loadFileAsString();
         juce::var jsonData = juce::JSON::parse(jsonString);
@@ -137,7 +137,7 @@ juce::String M1Analytics::getMixpanelToken()
             // Token not found
             return juce::String();
         }
-    
+
         if (jsonData.isObject())
         {
             juce::var apiKeyVar = jsonData.getProperty("mp_api_key", var());
@@ -171,7 +171,24 @@ M1Analytics::M1Analytics(const juce::String& _eventName, int _sampleRate, int _m
 
 juce::ThreadPoolJob::JobStatus M1Analytics::runJob()
 {
-    if (!isAnalyticsEnabled)
+#ifdef M1_BUILD_AUTOMATION
+    // Skip analytics in automated builds
+    return juce::ThreadPoolJob::jobHasFinished;
+#endif
+
+    // Subtle runtime detection for additional coverage
+    bool is_automated_environment = false;
+
+    // Check for CI environment variables
+    const char* ci_markers[] = {"CI", "GITHUB_ACTIONS", "RUNNER_OS"};
+    for (const char* marker : ci_markers) {
+        if (std::getenv(marker)) {
+            is_automated_environment = true;
+            break;
+        }
+    }
+
+    if (!isAnalyticsEnabled || is_automated_environment)
         return juce::ThreadPoolJob::jobHasFinished;
 
     // grab the hardcoded api_key first, otherwise look for an installed key
