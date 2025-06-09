@@ -110,7 +110,7 @@ jobs:
         run: |
           curl -LO "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_${{ matrix.name }}.zip"
           7z x pluginval_${{ matrix.name }}.zip
-          ${{ matrix.pluginval-binary }} --strictness-level 10 --repeat 2 --verbose ${{ matrix.name == 'Windows' && '--skip-gui-tests' || '' }} --validate "${{ env.VST3_PATH }}"
+          ${{ matrix.pluginval-binary }} --strictness-level 10 --repeat 2 --verbose --skip-gui-tests --validate "${{ env.VST3_PATH }}"
 
       - name: Pluginval (macOS/Linux - Full Tests)
         if: ${{ matrix.name != 'Windows' }}
