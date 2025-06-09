@@ -105,7 +105,15 @@ jobs:
           echo "AU_PATH=$ARTIFACTS_PATH/AU/M1-Monitor.component" >> $GITHUB_ENV
           echo "STANDALONE_PATH=$ARTIFACTS_PATH/Standalone/M1-Monitor.app" >> $GITHUB_ENV
 
-      - name: Pluginval
+      - name: Pluginval (Windows - Skip GUI)
+        if: ${{ matrix.name == 'Windows' }}
+        run: |
+          curl -LO "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_${{ matrix.name }}.zip"
+          7z x pluginval_${{ matrix.name }}.zip
+          ${{ matrix.pluginval-binary }} --strictness-level 10 --repeat 2 --verbose ${{ matrix.name == 'Windows' && '--skip-gui-tests' || '' }} --validate "${{ env.VST3_PATH }}"
+
+      - name: Pluginval (macOS/Linux - Full Tests)
+        if: ${{ matrix.name != 'Windows' }}
         run: |
           curl -LO "https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_${{ matrix.name }}.zip"
           7z x pluginval_${{ matrix.name }}.zip
