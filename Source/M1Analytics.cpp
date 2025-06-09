@@ -171,24 +171,12 @@ M1Analytics::M1Analytics(const juce::String& _eventName, int _sampleRate, int _m
 
 juce::ThreadPoolJob::JobStatus M1Analytics::runJob()
 {
-#ifdef M1_BUILD_AUTOMATION
-    // Skip analytics in automated builds
-    return juce::ThreadPoolJob::jobHasFinished;
-#endif
+    // Skip analytics when running under pluginval testing
+    juce::PluginHostType hostType;
+    if (hostType.isPluginval())
+        return juce::ThreadPoolJob::jobHasFinished;
 
-    // Subtle runtime detection for additional coverage
-    bool is_automated_environment = false;
-
-    // Check for CI environment variables
-    const char* ci_markers[] = {"CI", "GITHUB_ACTIONS", "RUNNER_OS"};
-    for (const char* marker : ci_markers) {
-        if (std::getenv(marker)) {
-            is_automated_environment = true;
-            break;
-        }
-    }
-
-    if (!isAnalyticsEnabled || is_automated_environment)
+    if (!isAnalyticsEnabled)
         return juce::ThreadPoolJob::jobHasFinished;
 
     // grab the hardcoded api_key first, otherwise look for an installed key
