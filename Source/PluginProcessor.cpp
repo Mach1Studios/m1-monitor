@@ -429,7 +429,7 @@ bool M1MonitorAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
         // Test for all available Mach1Encode configs
         // manually maintained for-loop of first enum element to last enum element
         Mach1Decode<float> configTester;
-        for (int inputEnum = 0; inputEnum != Mach1DecodeMode::M1DecodeSpatial_14; inputEnum++)
+        for (int inputEnum = 0; inputEnum != Mach1DecodeMode::M1DecodeSpatial_38; inputEnum++)
         {
             configTester.setDecodeMode(static_cast<Mach1DecodeMode>(inputEnum));
             // test each input, if the input has the number of channels as the input testing layout has move on to output testing

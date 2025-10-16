@@ -489,6 +489,14 @@ void MonitorUIBaseComponent::draw()
                 {
                         output_options.push_back("M1Spatial-14");
                 }
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 26)
+                {
+                        output_options.push_back("M1Spatial-26");
+                }
+                if (processor->external_spatialmixer_active || processor->getMainBusNumInputChannels() >= 38)
+                {
+                        output_options.push_back("M1Spatial-38");
+                }
 
                 auto& outputDropdownMenu = m.prepare<M1DropdownMenu>({ m.getSize().width() / 2 + 20,
                                                                        m.getSize().height() - 28 - output_options.size() * dropdownItemHeight, 120, output_options.size() * dropdownItemHeight })
@@ -528,6 +536,14 @@ void MonitorUIBaseComponent::draw()
                     else if (outputDropdownMenu.selectedOption == 2)
                     {
                         processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_14));
+                    }
+                    else if (outputDropdownMenu.selectedOption == 3)
+                    {
+                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_26));
+                    }
+                    else if (outputDropdownMenu.selectedOption == 4)
+                    {
+                        processor->parameters.getParameter(processor->paramOutputMode)->setValueNotifyingHost(processor->parameters.getParameter(processor->paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_38));
                     }
                 }
             }
