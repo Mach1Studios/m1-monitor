@@ -16,7 +16,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramRoll, 1), TRANS("Roll"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
                                                                            // Note: Change init output to max bus size when new formats are introduced
-                                                                           std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeMode::M1DecodeSpatial_14, (int)Mach1DecodeMode::M1DecodeSpatial_8),
+                                                                           std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeMode::M1DecodeSpatial_38, (int)Mach1DecodeMode::M1DecodeSpatial_8),
                                                                        })
 {
     parameters.addParameterListener(paramYaw, this);
@@ -108,6 +108,14 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                 else if (channel_count == 14)
                 {
                     parameters.getParameter(paramOutputMode)->setValueNotifyingHost(parameters.getParameter(paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_14));
+                }
+                else if (channel_count == 26)
+                {
+                    parameters.getParameter(paramOutputMode)->setValueNotifyingHost(parameters.getParameter(paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_26));
+                }
+                else if (channel_count == 38)
+                {
+                    parameters.getParameter(paramOutputMode)->setValueNotifyingHost(parameters.getParameter(paramOutputMode)->convertTo0to1(Mach1DecodeMode::M1DecodeSpatial_38));
                 }
                 else
                 {
