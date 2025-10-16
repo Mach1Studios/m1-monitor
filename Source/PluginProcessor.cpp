@@ -260,10 +260,20 @@ void M1MonitorAudioProcessor::createLayout()
                     monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_8);
                     m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_8);
                 }
-                else if (getBus(true, 0)->getCurrentLayout().size() == 14 || getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() > 2)
+                else if (getBus(true, 0)->getCurrentLayout().size() == 14 || getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() == 3)
                 { // if an ambisonic bus higher than 2nd order
                     monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_14);
                     m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_14);
+                }
+                else if (getBus(true, 0)->getCurrentLayout().size() == 26 || getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() == 5)
+                {
+                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_26);
+                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_26);
+                }
+                else if (getBus(true, 0)->getCurrentLayout().size() == 38 || getBus(true, 0)->getCurrentLayout().getAmbisonicOrder() >= 6)
+                {
+                    monitorSettings.m1Decode.setDecodeMode(Mach1DecodeMode::M1DecodeSpatial_38);
+                    m1DecodeChangeInputMode(Mach1DecodeMode::M1DecodeSpatial_38);
                 }
                 else
                 {
