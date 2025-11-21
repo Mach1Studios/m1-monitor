@@ -158,7 +158,7 @@ void MonitorUIBaseComponent::draw()
             Mach1::Float3 current_ext_orientation = processor->m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
 
             /// YPR SLIDERS
-            auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW");
+            auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW").withFieldOfHearing(monitorState->fieldOfHearing);
             yawRadial.cursorHide = cursorHide;
             yawRadial.cursorShow = cursorShowAndTeleportBack;
             yawRadial.rangeFrom = -180.;
@@ -231,6 +231,25 @@ void MonitorUIBaseComponent::draw()
             {
                 double normalisedValue = (processor->parameters.getParameter(processor->paramRoll)->convertTo0to1(monitorState->roll));
                 processor->parameters.getParameter(processor->paramRoll)->setValueNotifyingHost((float)normalisedValue);
+            }
+
+            // Field of Hearing slider
+            // Positioned to the left of Pitch/Roll sliders and to the right of Yaw Radial
+            auto& fieldOfHearingSlider = m.prepare<M1Slider>({ 340, 45, 100, 140 }).withLabel("FoH").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
+            fieldOfHearingSlider.cursorHide = cursorHide;
+            fieldOfHearingSlider.cursorShow = cursorShow;
+            fieldOfHearingSlider.rangeFrom = 0.;
+            fieldOfHearingSlider.rangeTo = 180.;
+            fieldOfHearingSlider.defaultValue = 45.0;
+            fieldOfHearingSlider.postfix = "º";
+            fieldOfHearingSlider.dataToControl = &monitorState->fieldOfHearing;
+            fieldOfHearingSlider.enabled = true;
+            fieldOfHearingSlider.draw();
+
+            if (fieldOfHearingSlider.changed)
+            {
+                double normalisedValue = (processor->parameters.getParameter(processor->paramFieldOfHearing)->convertTo0to1(monitorState->fieldOfHearing));
+                processor->parameters.getParameter(processor->paramFieldOfHearing)->setValueNotifyingHost((float)normalisedValue);
             }
         }
 

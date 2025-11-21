@@ -4,6 +4,7 @@
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
 juce::String M1MonitorAudioProcessor::paramRoll("roll");
+juce::String M1MonitorAudioProcessor::paramFieldOfHearing("fieldOfHearing");
 juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
 juce::String M1MonitorAudioProcessor::paramOutputMode("outputMode");
 
@@ -14,6 +15,7 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramYaw, 1), TRANS("Yaw"), juce::NormalisableRange<float>(-180.0f, 180.0f, 0.01f), monitorSettings.yaw, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramPitch, 1), TRANS("Pitch"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.pitch, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramRoll, 1), TRANS("Roll"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                                                                           std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramFieldOfHearing, 1), TRANS("Field of Hearing"), juce::NormalisableRange<float>(0.0f, 180.0f, 0.1f), monitorSettings.fieldOfHearing, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
                                                                            // Note: Change init output to max bus size when new formats are introduced
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeMode::M1DecodeSpatial_38, (int)Mach1DecodeMode::M1DecodeSpatial_8),
@@ -22,12 +24,14 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     parameters.addParameterListener(paramYaw, this);
     parameters.addParameterListener(paramPitch, this);
     parameters.addParameterListener(paramRoll, this);
+    parameters.addParameterListener(paramFieldOfHearing, this);
     parameters.addParameterListener(paramMonitorMode, this);
     parameters.addParameterListener(paramOutputMode, this);
 
     // Setup for Mach1Decode API
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
+    monitorSettings.m1Decode.setFieldOfHearingDegrees(monitorSettings.fieldOfHearing);
     m1DecodeChangeInputMode(M1DecodeSpatial_8); // sets type and resizes temp buffers
 
     // We will assume the folders are properly created during the installation step
@@ -344,6 +348,11 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
     else if (parameterID == paramRoll)
     {
         monitorSettings.roll = parameters.getParameter(paramRoll)->convertFrom0to1(parameters.getParameter(paramRoll)->getValue());
+    }
+    else if (parameterID == paramFieldOfHearing)
+    {
+        monitorSettings.fieldOfHearing = parameters.getParameter(paramFieldOfHearing)->convertFrom0to1(parameters.getParameter(paramFieldOfHearing)->getValue());
+        monitorSettings.m1Decode.setFieldOfHearingDegrees(monitorSettings.fieldOfHearing);
     }
     else if (parameterID == paramMonitorMode)
     {

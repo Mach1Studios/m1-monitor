@@ -71,6 +71,26 @@ public:
             m.drawLine(start.x, start.y, end.x, end.y);
         }
 
+        // Draw Field of Hearing lines
+        if (enabled)
+        {
+             m.setColor(M1_ACTION_YELLOW, 128); // 50% alpha
+             float fohRad = juce::degreesToRadians(fieldOfHearing);
+             float angle = juce::MathConstants<float>::twoPi * (inputValueNormalised - 0.25f);
+
+             float angleL = angle - fohRad;
+             float angleR = angle + fohRad;
+
+             // Draw lines
+             juce::Point<float> lineLStart = center + juce::Point<float>(cos(angleL) * 25, sin(angleL) * 25);
+             juce::Point<float> lineLEnd = center + juce::Point<float>(cos(angleL) * (shape.size.x / 2 - 7), sin(angleL) * (shape.size.x / 2 - 7));
+             m.drawLine(lineLStart.x, lineLStart.y, lineLEnd.x, lineLEnd.y);
+
+             juce::Point<float> lineRStart = center + juce::Point<float>(cos(angleR) * 25, sin(angleR) * 25);
+             juce::Point<float> lineREnd = center + juce::Point<float>(cos(angleR) * (shape.size.x / 2 - 7), sin(angleR) * (shape.size.x / 2 - 7));
+             m.drawLine(lineRStart.x, lineRStart.y, lineREnd.x, lineREnd.y);
+        }
+
         // Draw OC line
         if (orientationClientConnected)
         {
@@ -97,7 +117,7 @@ public:
         }
 
         float angle = juce::MathConstants<float>::twoPi * (inputValueNormalised - 0.25f);
-        float angleSize = juce::MathConstants<float>::halfPi;
+        float angleSize = juce::degreesToRadians(fieldOfHearing * 2.0f);
 
         int numsteps = 60;
         for (int i = 0; i < numsteps; i++)
@@ -338,6 +358,8 @@ public:
     float rangeTo = 1;
     int floatingPointPrecision = 1;
 
+    float fieldOfHearing = 45.0f;
+
     bool orientationClientConnected = false;
     float orientationClientValue = 0;
 
@@ -346,6 +368,12 @@ public:
     M1Radial& controlling(float* dataPointer)
     {
         dataToControl = dataPointer;
+        return *this;
+    }
+
+    M1Radial& withFieldOfHearing(float foh)
+    {
+        fieldOfHearing = foh;
         return *this;
     }
 

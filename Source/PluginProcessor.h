@@ -106,6 +106,7 @@ public:
     static juce::String paramYaw;
     static juce::String paramPitch;
     static juce::String paramRoll;
+    static juce::String paramFieldOfHearing;
     static juce::String paramMonitorMode;
     static juce::String paramOutputMode;
 

@@ -191,7 +191,13 @@ public:
         }
         m.popStyle();
 
-        auto labelPositionY = shape.size.x * 0.8 + 10;
+        // Adjust labelPositionY logic to support vertical sliders and moving labels
+        // Previous logic (width * 0.8 + 10) was biased towards wide/square knobs
+        float labelPositionY = shape.size.y;
+        if (!movingLabel)
+        {
+             labelPositionY -= 30; // Reserve space for static label at bottom
+        }
         
         m.setColor(REF_LABEL_TEXT_COLOR);
 
