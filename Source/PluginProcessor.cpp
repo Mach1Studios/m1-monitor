@@ -5,6 +5,8 @@ juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
 juce::String M1MonitorAudioProcessor::paramRoll("roll");
 juce::String M1MonitorAudioProcessor::paramFieldOfHearing("fieldOfHearing");
+juce::String M1MonitorAudioProcessor::paramFieldOfHearing2("fieldOfHearing2");
+juce::String M1MonitorAudioProcessor::paramFoHRatio("fohRatio");
 juce::String M1MonitorAudioProcessor::paramMonitorMode("monitorMode");
 juce::String M1MonitorAudioProcessor::paramOutputMode("outputMode");
 
@@ -16,6 +18,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramPitch, 1), TRANS("Pitch"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.pitch, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramRoll, 1), TRANS("Roll"), juce::NormalisableRange<float>(-90.0f, 90.0f, 0.01f), monitorSettings.roll, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramFieldOfHearing, 1), TRANS("Field of Hearing"), juce::NormalisableRange<float>(0.0f, 180.0f, 0.1f), monitorSettings.fieldOfHearing, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                                                                           std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramFieldOfHearing2, 1), TRANS("Field of Hearing 2"), juce::NormalisableRange<float>(0.0f, 180.0f, 0.1f), monitorSettings.fieldOfHearing2, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 1) + "°"; }, [](const juce::String& t) { return t.dropLastCharacters(3).getFloatValue(); }),
+                                                                           std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(paramFoHRatio, 1), TRANS("FoH Ratio"), juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f), monitorSettings.fohRatio, "", juce::AudioProcessorParameter::genericParameter, [](float v, int) { return juce::String(v, 2); }, [](const juce::String& t) { return t.getFloatValue(); }),
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramMonitorMode, 1), TRANS("Monitor Mode"), 0, 2, monitorSettings.monitor_mode),
                                                                            // Note: Change init output to max bus size when new formats are introduced
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeMode::M1DecodeSpatial_38, (int)Mach1DecodeMode::M1DecodeSpatial_8),
@@ -25,6 +29,8 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     parameters.addParameterListener(paramPitch, this);
     parameters.addParameterListener(paramRoll, this);
     parameters.addParameterListener(paramFieldOfHearing, this);
+    parameters.addParameterListener(paramFieldOfHearing2, this);
+    parameters.addParameterListener(paramFoHRatio, this);
     parameters.addParameterListener(paramMonitorMode, this);
     parameters.addParameterListener(paramOutputMode, this);
 
@@ -32,6 +38,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     monitorSettings.m1Decode.setPlatformType(Mach1PlatformDefault);
     monitorSettings.m1Decode.setFilterSpeed(0.99);
     monitorSettings.m1Decode.setFieldOfHearingDegrees(monitorSettings.fieldOfHearing);
+    monitorSettings.m1Decode2.setPlatformType(Mach1PlatformDefault);
+    monitorSettings.m1Decode2.setFilterSpeed(0.99);
+    monitorSettings.m1Decode2.setFieldOfHearingDegrees(monitorSettings.fieldOfHearing2);
     m1DecodeChangeInputMode(M1DecodeSpatial_8); // sets type and resizes temp buffers
 
     // We will assume the folders are properly created during the installation step
@@ -354,6 +363,15 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
         monitorSettings.fieldOfHearing = parameters.getParameter(paramFieldOfHearing)->convertFrom0to1(parameters.getParameter(paramFieldOfHearing)->getValue());
         monitorSettings.m1Decode.setFieldOfHearingDegrees(monitorSettings.fieldOfHearing);
     }
+    else if (parameterID == paramFieldOfHearing2)
+    {
+        monitorSettings.fieldOfHearing2 = parameters.getParameter(paramFieldOfHearing2)->convertFrom0to1(parameters.getParameter(paramFieldOfHearing2)->getValue());
+        monitorSettings.m1Decode2.setFieldOfHearingDegrees(monitorSettings.fieldOfHearing2);
+    }
+    else if (parameterID == paramFoHRatio)
+    {
+        monitorSettings.fohRatio = parameters.getParameter(paramFoHRatio)->convertFrom0to1(parameters.getParameter(paramFoHRatio)->getValue());
+    }
     else if (parameterID == paramMonitorMode)
     {
         monitorSettings.monitor_mode = (int)parameters.getParameter(paramMonitorMode)->convertFrom0to1(parameters.getParameter(paramMonitorMode)->getValue());
@@ -537,13 +555,17 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     // Mach1Decode processing loop
     monitorSettings.m1Decode.setRotationDegrees({ monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll });
+    monitorSettings.m1Decode2.setRotationDegrees({ monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll });
     spatialMixerCoeffs = monitorSettings.m1Decode.decodeCoeffs();
+    spatialMixerCoeffs2 = monitorSettings.m1Decode2.decodeCoeffs();
 
     // Update spatial mixer coeffs from Mach1Decode for a smoothed value
     for (int channel = 0; channel < monitorSettings.m1Decode.getFormatChannelCount(); ++channel)
     {
         smoothedChannelCoeffs[channel][0].setTargetValue(spatialMixerCoeffs[channel * 2]); // Left output coeffs
         smoothedChannelCoeffs[channel][1].setTargetValue(spatialMixerCoeffs[channel * 2 + 1]); // Right output coeffs
+        smoothedChannelCoeffs2[channel][0].setTargetValue(spatialMixerCoeffs2[channel * 2]); // Left output coeffs
+        smoothedChannelCoeffs2[channel][1].setTargetValue(spatialMixerCoeffs2[channel * 2 + 1]); // Right output coeffs
     }
 
     juce::AudioBuffer<float> tempBuffer((std::max)(buffer.getNumChannels() * 2, monitorSettings.m1Decode.getFormatCoeffCount()), buffer.getNumSamples());
@@ -586,8 +608,16 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
                 // Input channel reordering from fillChannelOrder()
                 int input_channel_reordered = input_channel_indices[input_channel];
 
-                outBufferL[sample] += tempBuffer.getReadPointer(input_channel_reordered * 2)[sample] * smoothedChannelCoeffs[input_channel][0].getNextValue(); // all the even tempBuffer indices are for the left output
-                outBufferR[sample] += tempBuffer.getReadPointer(input_channel_reordered * 2 + 1)[sample] * smoothedChannelCoeffs[input_channel][1].getNextValue(); // all the odd tempBuffer indices are for the right output
+                float coeffL = smoothedChannelCoeffs[input_channel][0].getNextValue();
+                float coeffR = smoothedChannelCoeffs[input_channel][1].getNextValue();
+                float coeffL2 = smoothedChannelCoeffs2[input_channel][0].getNextValue();
+                float coeffR2 = smoothedChannelCoeffs2[input_channel][1].getNextValue();
+
+                float mixedCoeffL = coeffL * monitorSettings.fohRatio + coeffL2 * (1.0f - monitorSettings.fohRatio);
+                float mixedCoeffR = coeffR * monitorSettings.fohRatio + coeffR2 * (1.0f - monitorSettings.fohRatio);
+
+                outBufferL[sample] += tempBuffer.getReadPointer(input_channel_reordered * 2)[sample] * mixedCoeffL; // all the even tempBuffer indices are for the left output
+                outBufferR[sample] += tempBuffer.getReadPointer(input_channel_reordered * 2 + 1)[sample] * mixedCoeffR; // all the odd tempBuffer indices are for the right output
             }
         }
     }
@@ -735,12 +765,14 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode
     {
         DBG("Current config: " + std::to_string(monitorSettings.m1Decode.getDecodeMode()) + " and new config: " + std::to_string(decodeMode));
         monitorSettings.m1Decode.setDecodeMode(decodeMode);
+        monitorSettings.m1Decode2.setDecodeMode(decodeMode);
         // Report change to m1-system-helper for other clients and plugins
         monitorOSC->sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
     }
 
     auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
     smoothedChannelCoeffs.resize(inputChannelsCount);
+    smoothedChannelCoeffs2.resize(inputChannelsCount);
 
     // Checks if input bus is non DISCRETE layout and fixes host specific channel ordering issues
     fillChannelOrderArray(monitorSettings.m1Decode.getFormatChannelCount());
@@ -748,9 +780,11 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode
     for (int input_channel = 0; input_channel < inputChannelsCount; input_channel++)
     {
         smoothedChannelCoeffs[input_channel].resize(2);
+        smoothedChannelCoeffs2[input_channel].resize(2);
         for (int output_channel = 0; output_channel < 2; output_channel++)
         {
             smoothedChannelCoeffs[input_channel][output_channel].reset(processorSampleRate, (double)0.01);
+            smoothedChannelCoeffs2[input_channel][output_channel].reset(processorSampleRate, (double)0.01);
         }
     }
 }

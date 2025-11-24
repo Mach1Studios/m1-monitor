@@ -89,6 +89,22 @@ public:
              juce::Point<float> lineRStart = center + juce::Point<float>(cos(angleR) * 25, sin(angleR) * 25);
              juce::Point<float> lineREnd = center + juce::Point<float>(cos(angleR) * (shape.size.x / 2 - 7), sin(angleR) * (shape.size.x / 2 - 7));
              m.drawLine(lineRStart.x, lineRStart.y, lineREnd.x, lineREnd.y);
+
+             // Draw Field of Hearing 2 lines
+             m.setColor(ORIENTATION_ACTIVE_COLOR, 128); // 50% alpha
+             float fohRad2 = juce::degreesToRadians(fieldOfHearing2);
+             
+             float angleL2 = angle - fohRad2;
+             float angleR2 = angle + fohRad2;
+
+             // Draw lines
+             juce::Point<float> lineLStart2 = center + juce::Point<float>(cos(angleL2) * 25, sin(angleL2) * 25);
+             juce::Point<float> lineLEnd2 = center + juce::Point<float>(cos(angleL2) * (shape.size.x / 2 - 7), sin(angleL2) * (shape.size.x / 2 - 7));
+             m.drawLine(lineLStart2.x, lineLStart2.y, lineLEnd2.x, lineLEnd2.y);
+
+             juce::Point<float> lineRStart2 = center + juce::Point<float>(cos(angleR2) * 25, sin(angleR2) * 25);
+             juce::Point<float> lineREnd2 = center + juce::Point<float>(cos(angleR2) * (shape.size.x / 2 - 7), sin(angleR2) * (shape.size.x / 2 - 7));
+             m.drawLine(lineRStart2.x, lineRStart2.y, lineREnd2.x, lineREnd2.y);
         }
 
         // Draw OC line
@@ -359,6 +375,7 @@ public:
     int floatingPointPrecision = 1;
 
     float fieldOfHearing = 45.0f;
+    float fieldOfHearing2 = 0.0f;
 
     bool orientationClientConnected = false;
     float orientationClientValue = 0;
@@ -374,6 +391,12 @@ public:
     M1Radial& withFieldOfHearing(float foh)
     {
         fieldOfHearing = foh;
+        return *this;
+    }
+
+    M1Radial& withFieldOfHearing2(float foh)
+    {
+        fieldOfHearing2 = foh;
         return *this;
     }
 

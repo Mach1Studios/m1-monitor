@@ -107,6 +107,8 @@ public:
     static juce::String paramPitch;
     static juce::String paramRoll;
     static juce::String paramFieldOfHearing;
+    static juce::String paramFieldOfHearing2;
+    static juce::String paramFoHRatio;
     static juce::String paramMonitorMode;
     static juce::String paramOutputMode;
 
@@ -150,7 +152,9 @@ private:
 
     std::vector<std::vector<float>> audioDataIn;
     std::vector<float> spatialMixerCoeffs;
+    std::vector<float> spatialMixerCoeffs2;
     std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
+    std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs2;
 
     juce::ThreadPool jobThreads{ (std::max)(4, juce::SystemStats::getNumCpus()) };
 

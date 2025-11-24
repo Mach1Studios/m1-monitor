@@ -158,7 +158,7 @@ void MonitorUIBaseComponent::draw()
             Mach1::Float3 current_ext_orientation = processor->m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
 
             /// YPR SLIDERS
-            auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW").withFieldOfHearing(monitorState->fieldOfHearing);
+            auto& yawRadial = m.prepare<M1Radial>({ 50, 33, 270, 270 }).withLabel("YAW").withFieldOfHearing(monitorState->fieldOfHearing).withFieldOfHearing2(monitorState->fieldOfHearing2);
             yawRadial.cursorHide = cursorHide;
             yawRadial.cursorShow = cursorShowAndTeleportBack;
             yawRadial.rangeFrom = -180.;
@@ -179,7 +179,7 @@ void MonitorUIBaseComponent::draw()
                 processor->parameters.getParameter(processor->paramYaw)->setValueNotifyingHost((float)normalisedValue);
             }
 
-            auto& pitchSlider = m.prepare<M1Slider>({ 465, 45, 160, 140 }).withLabel("PITCH").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
+            auto& pitchSlider = m.prepare<M1Slider>({ 550, 45, 160, 140 }).withLabel("PITCH").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
             pitchSlider.cursorHide = cursorHide;
             pitchSlider.cursorShow = cursorShow;
             pitchSlider.rangeFrom = -90.;
@@ -206,7 +206,7 @@ void MonitorUIBaseComponent::draw()
                 processor->parameters.getParameter(processor->paramPitch)->setValueNotifyingHost((float)normalisedValue);
             }
 
-            auto& rollSlider = m.prepare<M1Slider>({ 465, 180, 160, 160 }).withLabel("ROLL").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(true);
+            auto& rollSlider = m.prepare<M1Slider>({ 550, 180, 160, 160 }).withLabel("ROLL").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(true);
             rollSlider.cursorHide = cursorHide;
             rollSlider.cursorShow = cursorShow;
             rollSlider.rangeFrom = -90.;
@@ -235,7 +235,7 @@ void MonitorUIBaseComponent::draw()
 
             // Field of Hearing slider
             // Positioned to the left of Pitch/Roll sliders and to the right of Yaw Radial
-            auto& fieldOfHearingSlider = m.prepare<M1Slider>({ 340, 45, 100, 140 }).withLabel("FoH").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
+            auto& fieldOfHearingSlider = m.prepare<M1Slider>({ 320, 45, 120, 140 }).withLabel("FoH").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
             fieldOfHearingSlider.cursorHide = cursorHide;
             fieldOfHearingSlider.cursorShow = cursorShow;
             fieldOfHearingSlider.rangeFrom = 0.;
@@ -250,6 +250,44 @@ void MonitorUIBaseComponent::draw()
             {
                 double normalisedValue = (processor->parameters.getParameter(processor->paramFieldOfHearing)->convertTo0to1(monitorState->fieldOfHearing));
                 processor->parameters.getParameter(processor->paramFieldOfHearing)->setValueNotifyingHost((float)normalisedValue);
+            }
+
+            // Field of Hearing 2 slider
+            auto& fieldOfHearing2Slider = m.prepare<M1Slider>({ 430, 45, 120, 140 }).withLabel("FoH2").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(false);
+            fieldOfHearing2Slider.cursorHide = cursorHide;
+            fieldOfHearing2Slider.cursorShow = cursorShow;
+            fieldOfHearing2Slider.rangeFrom = 0.;
+            fieldOfHearing2Slider.rangeTo = 180.;
+            fieldOfHearing2Slider.defaultValue = 0.0;
+            fieldOfHearing2Slider.postfix = "º";
+            fieldOfHearing2Slider.dataToControl = &monitorState->fieldOfHearing2;
+            fieldOfHearing2Slider.enabled = true;
+            fieldOfHearing2Slider.draw();
+
+            if (fieldOfHearing2Slider.changed)
+            {
+                double normalisedValue = (processor->parameters.getParameter(processor->paramFieldOfHearing2)->convertTo0to1(monitorState->fieldOfHearing2));
+                processor->parameters.getParameter(processor->paramFieldOfHearing2)->setValueNotifyingHost((float)normalisedValue);
+            }
+
+            // FoH Ratio slider
+            float fohRatioPercent = monitorState->fohRatio * 100.0f;
+            auto& fohRatioSlider = m.prepare<M1Slider>({ 340, 180, 160, 160 }).withLabel("Mix").hasMovingLabel(true).withFontSize(DEFAULT_FONT_SIZE - 3).drawHorizontal(true);
+            fohRatioSlider.cursorHide = cursorHide;
+            fohRatioSlider.cursorShow = cursorShow;
+            fohRatioSlider.rangeFrom = 0.;
+            fohRatioSlider.rangeTo = 100.;
+            fohRatioSlider.defaultValue = 100.0;
+            fohRatioSlider.postfix = "%";
+            fohRatioSlider.dataToControl = &fohRatioPercent;
+            fohRatioSlider.enabled = true;
+            fohRatioSlider.draw();
+
+            if (fohRatioSlider.changed)
+            {
+                monitorState->fohRatio = fohRatioPercent / 100.0f;
+                double normalisedValue = (processor->parameters.getParameter(processor->paramFoHRatio)->convertTo0to1(monitorState->fohRatio));
+                processor->parameters.getParameter(processor->paramFoHRatio)->setValueNotifyingHost((float)normalisedValue);
             }
         }
 
