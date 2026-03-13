@@ -119,6 +119,8 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
             if (active == 1)
             {
                 setActiveState(true);
+                if (processor)
+                    processor->sendCurrentMonitorSettingsToHelper();
             }
             else if (active == 0)
             {
@@ -271,6 +273,7 @@ bool MonitorOSC::sendRequestToChangeChannelConfig(int channel_count_for_config)
         try
         {
             juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setChannelConfigReq"));
+            m.addInt32(port); // identify which monitor owns this config
             m.addInt32(channel_count_for_config); // int of new layout
             is_connected = juce::OSCSender::send(m);
         }
@@ -289,6 +292,7 @@ bool MonitorOSC::sendMonitoringMode(int mode)
     if (is_connected && port > 0)
     {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMonitoringMode"));
+        m.addInt32(port); // identify the sending monitor
         m.addInt32(mode); // int of monitor mode
         return juce::OSCSender::send(m); // check to update isConnected for error catching;
     }
@@ -300,6 +304,7 @@ bool MonitorOSC::sendMasterYPR(float yaw, float pitch, float roll)
     if (is_connected && port > 0)
     {
         juce::OSCMessage m = juce::OSCMessage(juce::OSCAddressPattern("/setMasterYPR"));
+        m.addInt32(port); // identify the sending monitor
         m.addFloat32(yaw); // expected degrees -180->180
         m.addFloat32(pitch); // expected degrees -90->90
         m.addFloat32(roll); // expected degrees -90->90
