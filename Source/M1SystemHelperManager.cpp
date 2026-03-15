@@ -1,6 +1,5 @@
 #include "M1SystemHelperManager.h"
 #include <iostream>
-#include <sstream>
 #include <cstdlib>
 #include <thread>
 #include <chrono>
@@ -12,6 +11,7 @@
     #include <unistd.h>
 #elif defined(_WIN32)
     #include <windows.h>
+    #include <TlHelp32.h>
     #include <winsvc.h>
     #include <tchar.h>
 #else
@@ -64,6 +64,33 @@ bool launchHelperApplicationDirectly()
     return false;
 }
 #elif defined(_WIN32)
+bool isHelperProcessRunning()
+{
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return false;
+
+    PROCESSENTRY32W entry{};
+    entry.dwSize = sizeof(entry);
+
+    bool running = false;
+    if (Process32FirstW(snapshot, &entry))
+    {
+        do
+        {
+            if (lstrcmpiW(entry.szExeFile, L"m1-system-helper.exe") == 0)
+            {
+                running = true;
+                break;
+            }
+        }
+        while (Process32NextW(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return running;
+}
+
 bool launchHelperApplicationDirectly()
 {
     constexpr const wchar_t* executableCandidates[] = {
@@ -324,31 +351,7 @@ bool M1SystemHelperManager::isServiceInstalled() const
 
 bool M1SystemHelperManager::triggerNamedPipeActivation() const
 {
-    HANDLE pipe = CreateFile(
-        PIPE_NAME,
-        GENERIC_READ | GENERIC_WRITE,
-        0,
-        NULL,
-        OPEN_EXISTING,
-        0,
-        NULL);
-
-    if (pipe == INVALID_HANDLE_VALUE) {
-        return false;
-    }
-
-    const char* message = "PING";
-    DWORD bytesWritten = 0;
-    const bool success = WriteFile(pipe, message, static_cast<DWORD>(strlen(message)), &bytesWritten, NULL);
-
-    if (success) {
-        char buffer[256];
-        DWORD bytesRead = 0;
-        ReadFile(pipe, buffer, sizeof(buffer) - 1, &bytesRead, NULL);
-    }
-
-    CloseHandle(pipe);
-    return success;
+    return isHelperProcessRunning();
 }
 
 #endif
