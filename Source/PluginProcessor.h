@@ -125,6 +125,7 @@ public:
     void timerCallback() override;
     std::unique_ptr<MonitorOSC> monitorOSC;
     void sendCurrentMonitorSettingsToHelper();
+    bool openSystemHelperGui();
 
     // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer

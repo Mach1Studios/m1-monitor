@@ -704,6 +704,16 @@ void M1MonitorAudioProcessor::timerCallback()
     updateTransportWithPlayhead(); // Updates here for hosts that freeze processBlock()
 }
 
+bool M1MonitorAudioProcessor::openSystemHelperGui()
+{
+    auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
+    if (helperManager.openHelperWindow("M1-Monitor"))
+        return true;
+
+    postAlert({ "Warning", "Could not open m1-system-helper.\nPlease reinstall Mach1 Spatial System", "OK" });
+    return false;
+}
+
 void M1MonitorAudioProcessor::sendCurrentMonitorSettingsToHelper()
 {
     if (!monitorOSC || !monitorOSC->isConnected() || !monitorOSC->isActiveMonitor())

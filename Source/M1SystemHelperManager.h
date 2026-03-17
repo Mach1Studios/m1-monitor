@@ -21,6 +21,7 @@ public:
     bool requestHelperService(const std::string& appName);
     void releaseHelperService(const std::string& appName);
     bool isHelperServiceRunning() const;
+    bool openHelperWindow(const std::string& appName);
     bool startHelperService();
     bool stopHelperService();
 

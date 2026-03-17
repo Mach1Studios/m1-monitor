@@ -34,7 +34,6 @@ bool launchHelperApplicationDirectly()
 {
     constexpr const char* appCandidates[] = {
         "/Library/Application Support/Mach1/m1-system-helper.app",
-        "/Applications/Mach1 Spatial System/m1-system-helper.app",
     };
 
     for (const auto* path : appCandidates)
@@ -56,6 +55,41 @@ bool launchHelperApplicationDirectly()
         if (pathExists(path))
         {
             const std::string command = "\"" + std::string(path) + "\" >/dev/null 2>&1 &";
+            if (std::system(command.c_str()) == 0)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+bool openHelperWindowDirectly()
+{
+    constexpr const char* binaryCandidates[] = {
+        "/Library/Application Support/Mach1/m1-system-helper.app/Contents/MacOS/m1-system-helper",
+        "/Library/Application Support/Mach1/m1-system-helper",
+    };
+
+    for (const auto* path : binaryCandidates)
+    {
+        if (pathExists(path))
+        {
+            const std::string command = "\"" + std::string(path) + "\" --keep-alive --show-window >/dev/null 2>&1 &";
+            if (std::system(command.c_str()) == 0)
+                return true;
+        }
+    }
+
+    constexpr const char* appCandidates[] = {
+        "/Library/Application Support/Mach1/m1-system-helper.app",
+    };
+
+    for (const auto* path : appCandidates)
+    {
+        if (pathExists(path))
+        {
+            const std::string command = "open \"" + std::string(path)
+                                        + "\" --args --keep-alive --show-window >/dev/null 2>&1";
             if (std::system(command.c_str()) == 0)
                 return true;
         }
@@ -198,6 +232,19 @@ bool M1SystemHelperManager::isHelperServiceRunning() const
 #else
     return triggerSocketActivation();
 #endif
+}
+
+bool M1SystemHelperManager::openHelperWindow(const std::string& appName)
+{
+#if defined(__APPLE__) || defined(_WIN32)
+    if (openHelperWindowDirectly())
+        return true;
+#endif
+
+    if (!requestHelperService(appName))
+        return false;
+
+    return isHelperServiceRunning();
 }
 
 bool M1SystemHelperManager::startHelperService()
