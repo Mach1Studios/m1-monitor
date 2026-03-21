@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "M1SystemHelperManager.h"
 
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
@@ -90,6 +91,19 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
             parameters.getParameter(paramPitch)->setValueNotifyingHost(pitch);
             //parameters.getParameter(paramRoll)->setValueNotifyingHost(roll);
         }
+        else if (msg.getAddressPattern() == "/m1-set-monitor-ypr")
+        {
+            if (msg.size() >= 3)
+            {
+                auto* yawParameter = parameters.getParameter(paramYaw);
+                auto* pitchParameter = parameters.getParameter(paramPitch);
+                auto* rollParameter = parameters.getParameter(paramRoll);
+
+                yawParameter->setValueNotifyingHost(yawParameter->convertTo0to1(msg[0].getFloat32()));
+                pitchParameter->setValueNotifyingHost(pitchParameter->convertTo0to1(msg[1].getFloat32()));
+                rollParameter->setValueNotifyingHost(rollParameter->convertTo0to1(msg[2].getFloat32()));
+            }
+        }
         else if (msg.getAddressPattern() == "/m1-channel-config")
         {
             DBG("[OSC] Recieved msg | Channel Config: " + std::to_string(msg[0].getInt32()));
@@ -142,12 +156,17 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     juce::String time(__TIME__);
     DBG("[MONITOR] Build date: " + date + " | Build time: " + time);
 
+    auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
+    if (!helperManager.requestHelperService("M1-Monitor"))
+        DBG("[M1-Monitor] Warning: Failed to request helper service");
+
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
 }
 
 M1MonitorAudioProcessor::~M1MonitorAudioProcessor()
 {
+    Mach1::M1SystemHelperManager::getInstance().releaseHelperService("M1-Monitor");
     m1OrientationClient.command_disconnect();
     m1OrientationClient.close();
     jobThreads.addJob(new M1Analytics("M1-Monitor_Exited", (int)getSampleRate(), (int)monitorSettings.m1Decode.getFormatChannelCount(), m1OrientationClient.isConnectedToServer()), true);
@@ -672,8 +691,37 @@ void M1MonitorAudioProcessor::timerCallback()
     // Added if we need to move the OSC stuff from the processorblock
     monitorOSC->update(); // test for connection
 
+    static int healthCheckCounter = 0;
+    if (++healthCheckCounter >= 50)
+    {
+        healthCheckCounter = 0;
+        auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
+        if (!helperManager.isHelperServiceRunning())
+            helperManager.requestHelperService("M1-Monitor");
+    }
+
     // transport
     updateTransportWithPlayhead(); // Updates here for hosts that freeze processBlock()
+}
+
+bool M1MonitorAudioProcessor::openSystemHelperGui()
+{
+    auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
+    if (helperManager.openHelperWindow("M1-Monitor"))
+        return true;
+
+    postAlert({ "Warning", "Could not open m1-system-helper.\nPlease reinstall Mach1 Spatial System", "OK" });
+    return false;
+}
+
+void M1MonitorAudioProcessor::sendCurrentMonitorSettingsToHelper()
+{
+    if (!monitorOSC || !monitorOSC->isConnected() || !monitorOSC->isActiveMonitor())
+        return;
+
+    monitorOSC->sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
+    monitorOSC->sendMonitoringMode(monitorSettings.monitor_mode);
+    monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
 }
 
 //==============================================================================
@@ -709,7 +757,8 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode
         DBG("Current config: " + std::to_string(monitorSettings.m1Decode.getDecodeMode()) + " and new config: " + std::to_string(decodeMode));
         monitorSettings.m1Decode.setDecodeMode(decodeMode);
         // Report change to m1-system-helper for other clients and plugins
-        monitorOSC->sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
+        if (monitorOSC->isConnected() && monitorOSC->isActiveMonitor())
+            monitorOSC->sendRequestToChangeChannelConfig(monitorSettings.m1Decode.getFormatChannelCount());
     }
 
     auto inputChannelsCount = monitorSettings.m1Decode.getFormatChannelCount();
@@ -806,9 +855,6 @@ void M1MonitorAudioProcessor::updateTransportWithPlayhead()
 
 void M1MonitorAudioProcessor::syncParametersWithExternalOrientation()
 {
-    monitorOSC->sendMonitoringMode(monitorSettings.monitor_mode);
-    monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
-
     // Get the change in the orientation, provided by the external device, in degrees. (ex_ori_delta_deg)
     auto ex_ori_vec = m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
     auto ext_ori_delta_vec = ex_ori_vec - m_last_external_ori_degrees;

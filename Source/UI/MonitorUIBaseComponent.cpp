@@ -433,6 +433,18 @@ void MonitorUIBaseComponent::draw()
 
             isAnyTextfieldActived = hhfield.activated || mmfield.activated || ssfield.activated || fsfield.activated;
 
+            bool openHelperWindow = false;
+            auto& openHelperWindowButton = m.prepare<M1Checkbox>({ leftSide_LeftBound_x + 10, bottomSettings_topBound_y + 152, 310, 20 })
+                                             .controlling(&openHelperWindow)
+                                             .withLabel("OPEN SESSION UI")
+                                             .withFontSize(DEFAULT_FONT_SIZE - 2)
+                                             .buttonMode(true);
+            openHelperWindowButton.enabled = true;
+            openHelperWindowButton.draw();
+
+            if (openHelperWindowButton.changed)
+                processor->openSystemHelperGui();
+
             /// RIGHT SIDE
 
             // orientation client window
