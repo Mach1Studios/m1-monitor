@@ -161,6 +161,45 @@ bool launchHelperApplicationDirectly()
 
     return false;
 }
+
+bool openHelperWindowDirectly()
+{
+    constexpr const wchar_t* executableCandidates[] = {
+        L"C:\\Program Files\\Mach1\\m1-system-helper.exe",
+        L"C:\\ProgramData\\Mach1\\m1-system-helper.exe",
+    };
+
+    for (const auto* path : executableCandidates)
+    {
+        if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES)
+            continue;
+
+        STARTUPINFOW startupInfo{};
+        startupInfo.cb = sizeof(startupInfo);
+        startupInfo.dwFlags = STARTF_USESHOWWINDOW;
+        startupInfo.wShowWindow = SW_SHOWNORMAL;
+
+        PROCESS_INFORMATION processInfo{};
+        std::wstring commandLine = std::wstring(L"\"") + path + L"\" --keep-alive --show-window";
+        if (CreateProcessW(path,
+                           commandLine.data(),
+                           NULL,
+                           NULL,
+                           FALSE,
+                           0,
+                           NULL,
+                           NULL,
+                           &startupInfo,
+                           &processInfo))
+        {
+            CloseHandle(processInfo.hProcess);
+            CloseHandle(processInfo.hThread);
+            return true;
+        }
+    }
+
+    return false;
+}
 #endif
 }
 
