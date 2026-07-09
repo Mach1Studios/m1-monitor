@@ -366,6 +366,16 @@ bool M1SystemHelperManager::triggerSocketActivation() const
         return false;
     }
 
+#ifdef __APPLE__
+    // Pro Tools can terminate the host process on SIGPIPE if the helper socket
+    // closes while we probe it. Keep the protection per-socket.
+    int noSigPipe = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, sizeof(noSigPipe)) != 0) {
+        close(sockfd);
+        return false;
+    }
+#endif
+
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
@@ -373,9 +383,9 @@ bool M1SystemHelperManager::triggerSocketActivation() const
 
     bool success = false;
     if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
-        success = true;
         const char* ping = "PING\n";
         if (send(sockfd, ping, strlen(ping), 0) > 0) {
+            success = true;
             char buffer[256] = {0};
             recv(sockfd, buffer, sizeof(buffer) - 1, 0);
         }
