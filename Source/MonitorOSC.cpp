@@ -56,20 +56,23 @@ bool MonitorOSC::init(int helperPort)
     this->helperPort = helperPort;
 
     // find available port
+    bool receiverConnected = false;
     for (port = 10201; port < 10300; port++)
     {
         if (socket.bindToPort(port))
         {
             socket.shutdown(); // shutdown port to not block the juce::OSCReceiver::connect return
-            juce::OSCReceiver::connect(port);
+            receiverConnected = juce::OSCReceiver::connect(port);
             break; // stops the incrementing on the first available port
         }
     }
 
-    if (port > 10200)
-    {
-        return true;
-    }
+    // Previously this returned true whenever the loop finished, even when no
+    // port was bound (and fell off the end without a return at all), leaving
+    // the monitor silently unable to receive helper messages.
+    if (!receiverConnected)
+        port = 0;
+    return receiverConnected;
 }
 
 // finds the server port via the settings json file

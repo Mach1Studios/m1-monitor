@@ -31,7 +31,6 @@ MonitorUIBaseComponent::MonitorUIBaseComponent(M1MonitorAudioProcessor* processo
 MonitorUIBaseComponent::~MonitorUIBaseComponent()
 {
     murkaAlert.onDismiss();
-    juce::Thread::sleep(1000);
 }
 
 //==============================================================================

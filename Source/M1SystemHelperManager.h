@@ -18,7 +18,16 @@ class M1SystemHelperManager
 public:
     static M1SystemHelperManager& getInstance();
 
+    // WARNING: requestHelperService can block for several seconds (launchctl +
+    // startup waits). Do not call it from the message thread; prefer
+    // ensureHelperServiceAsync() from UI/timer code.
     bool requestHelperService(const std::string& appName);
+
+    // Non-blocking check/start of the helper service. Registers the app as an
+    // active instance and performs the running-check and (if needed) service
+    // start on a background thread. Concurrent calls collapse into one worker.
+    void ensureHelperServiceAsync(const std::string& appName);
+
     void releaseHelperService(const std::string& appName);
     bool isHelperServiceRunning() const;
     bool openHelperWindow(const std::string& appName);
@@ -63,6 +72,7 @@ private:
 
     mutable std::mutex m_mutex;
     std::set<std::string> m_activeInstances;
+    std::atomic<bool> m_ensureInProgress { false };  // Collapses concurrent async checks
 };
 
 } // namespace Mach1

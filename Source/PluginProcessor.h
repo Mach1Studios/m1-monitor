@@ -153,6 +153,9 @@ private:
     std::vector<float> spatialMixerCoeffs;
     std::vector<std::vector<juce::LinearSmoothedValue<float>>> smoothedChannelCoeffs;
 
+    // Per-instance counter for the periodic helper-service health check
+    int helperHealthCheckCounter = 0;
+
     juce::ThreadPool jobThreads{ (std::max)(4, juce::SystemStats::getNumCpus()) };
 
     //==============================================================================

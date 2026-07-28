@@ -156,9 +156,10 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
     juce::String time(__TIME__);
     DBG("[MONITOR] Build date: " + date + " | Build time: " + time);
 
-    auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
-    if (!helperManager.requestHelperService("M1-Monitor"))
-        DBG("[M1-Monitor] Warning: Failed to request helper service");
+    // Non-blocking: the running-check and any service start happen on a
+    // background thread. A synchronous request here previously blocked plugin
+    // construction for seconds while the helper started.
+    Mach1::M1SystemHelperManager::getInstance().ensureHelperServiceAsync("M1-Monitor");
 
     // monitorOSC update timer loop (only used for checking the connection)
     startTimer(200);
@@ -691,13 +692,13 @@ void M1MonitorAudioProcessor::timerCallback()
     // Added if we need to move the OSC stuff from the processorblock
     monitorOSC->update(); // test for connection
 
-    static int healthCheckCounter = 0;
-    if (++healthCheckCounter >= 50)
+    // Periodic health check: ensure helper is running (every ~10s at 200ms timer).
+    // The counter is per-instance (not static) and the check/start runs on a
+    // background thread so the message thread is never blocked.
+    if (++helperHealthCheckCounter >= 50)
     {
-        healthCheckCounter = 0;
-        auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
-        if (!helperManager.isHelperServiceRunning())
-            helperManager.requestHelperService("M1-Monitor");
+        helperHealthCheckCounter = 0;
+        Mach1::M1SystemHelperManager::getInstance().ensureHelperServiceAsync("M1-Monitor");
     }
 
     // transport
