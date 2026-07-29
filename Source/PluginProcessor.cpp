@@ -369,9 +369,23 @@ void M1MonitorAudioProcessor::parameterChanged(const juce::String& parameterID, 
     {
         if (monitorOSC->isConnected() && monitorOSC->isActiveMonitor())
         {
-            // update the server and panners of final calculated orientation
-            // sending un-normalized full range values in degrees
-            monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+            // Coalesce master-YPR sends: with a streaming head-tracker this
+            // fires for every yaw/pitch/roll change (up to several hundred
+            // times per second), and the helper re-broadcasts each message to
+            // every panner instance. Send at most one message per interval;
+            // timerCallback() flushes the final pending value.
+            const juce::int64 now = juce::Time::currentTimeMillis();
+            if (now - lastMasterYprSendMs.load() >= MASTER_YPR_SEND_INTERVAL_MS)
+            {
+                lastMasterYprSendMs.store(now);
+                masterYprSendPending.store(false);
+                // sending un-normalized full range values in degrees
+                monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+            }
+            else
+            {
+                masterYprSendPending.store(true);
+            }
         }
     }
 
@@ -699,6 +713,17 @@ void M1MonitorAudioProcessor::timerCallback()
     {
         helperHealthCheckCounter = 0;
         Mach1::M1SystemHelperManager::getInstance().ensureHelperServiceAsync("M1-Monitor");
+    }
+
+    // Flush the newest master-YPR value if a send was suppressed by the rate
+    // limit in parameterChanged(), so the final orientation always lands.
+    if (masterYprSendPending.exchange(false))
+    {
+        if (monitorOSC->isConnected() && monitorOSC->isActiveMonitor())
+        {
+            lastMasterYprSendMs.store(juce::Time::currentTimeMillis());
+            monitorOSC->sendMasterYPR(monitorSettings.yaw, monitorSettings.pitch, monitorSettings.roll);
+        }
     }
 
     // transport

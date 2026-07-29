@@ -156,6 +156,13 @@ private:
     // Per-instance counter for the periodic helper-service health check
     int helperHealthCheckCounter = 0;
 
+    // Rate limiting for master-YPR sends to the helper (see parameterChanged):
+    // a streaming head-tracker changes yaw/pitch/roll continuously and every
+    // send is re-broadcast by the helper to all panner instances.
+    static constexpr juce::int64 MASTER_YPR_SEND_INTERVAL_MS = 50;
+    std::atomic<juce::int64> lastMasterYprSendMs { 0 };
+    std::atomic<bool> masterYprSendPending { false };
+
     juce::ThreadPool jobThreads{ (std::max)(4, juce::SystemStats::getNumCpus()) };
 
     //==============================================================================
