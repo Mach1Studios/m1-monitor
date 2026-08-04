@@ -140,6 +140,17 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
             disconnectToHelper();
             is_connected = false;
         }
+        else if (msg.getAddressPattern() == "/m1-streaming-panners")
+        {
+            // Helper heartbeat carrying the count of panners currently
+            // streaming audio into the helper (memory-share based).
+            if (msg.size() >= 1 && msg[0].isInt32() && processor != nullptr)
+            {
+                processor->streamingPannerCount.store(msg[0].getInt32());
+                processor->lastStreamingStatusTimeMs.store(juce::Time::currentTimeMillis());
+            }
+            is_connected = true;
+        }
         else if (msg.getAddressPattern() == "/m1-helper-port-changed") {
             if (msg.size() >= 1 && msg[0].isInt32()) {
                 int newHelperPort = msg[0].getInt32();

@@ -677,6 +677,21 @@ void MonitorUIBaseComponent::draw()
     m.drawImage(m1logo, 25, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
 
+    // Streaming-mode indicator: shown while the m1-system-helper reports panner
+    // instances actively streaming audio into it (external render mode).
+    if (processor->isStreamingMixActive())
+    {
+        const int count = processor->streamingPannerCount.load();
+        m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE - 5);
+        auto& streamingLabel = m.prepare<M1Label>(MurkaShape(90, m.getSize().height() - 25, 240, 20));
+        streamingLabel.label = "STREAMING: " + std::to_string(count) + (count == 1 ? " PANNER" : " PANNERS");
+        streamingLabel.alignment = TEXT_LEFT;
+        streamingLabel.withForegroundColor(MurkaColor(0.35f, 0.85f, 0.45f));
+        streamingLabel.enabled = true;
+        streamingLabel.highlighted = false;
+        streamingLabel.draw();
+    }
+
     // Draw the alert if active
     if (hasActiveAlert)
     {

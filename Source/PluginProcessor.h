@@ -130,6 +130,17 @@ public:
     // TODO: change this when implmenting external mixer
     bool external_spatialmixer_active = false; // global detect spatialmixer
 
+    // Streaming-mode status reported by m1-system-helper: number of panner
+    // instances currently streaming audio into the helper via memory share.
+    // Refreshed every helper keepalive tick; treated as stale after 4s.
+    std::atomic<int> streamingPannerCount { 0 };
+    std::atomic<juce::int64> lastStreamingStatusTimeMs { 0 };
+    bool isStreamingMixActive() const
+    {
+        return streamingPannerCount.load() > 0
+            && (juce::Time::currentTimeMillis() - lastStreamingStatusTimeMs.load()) < 4000;
+    }
+
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
 
