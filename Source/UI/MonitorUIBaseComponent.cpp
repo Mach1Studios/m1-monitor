@@ -37,6 +37,9 @@ MonitorUIBaseComponent::~MonitorUIBaseComponent()
 void MonitorUIBaseComponent::initialise()
 {
     JuceMurkaBaseComponent::initialise();
+    // MurImage needs the GL context before load: allocate() silently no-ops
+    // without it and drawImage() then skips unallocated images entirely.
+    m1logo.setOpenGLContext(&openGLContext);
     m1logo.loadFromRawData(BinaryData::mach1logo_png, BinaryData::mach1logo_pngSize);
 }
 
@@ -686,7 +689,7 @@ void MonitorUIBaseComponent::draw()
         auto& streamingLabel = m.prepare<M1Label>(MurkaShape(90, m.getSize().height() - 25, 240, 20));
         streamingLabel.label = "STREAMING: " + std::to_string(count) + (count == 1 ? " PANNER" : " PANNERS");
         streamingLabel.alignment = TEXT_LEFT;
-        streamingLabel.withForegroundColor(MurkaColor(0.35f, 0.85f, 0.45f));
+        streamingLabel.withForegroundColor(MurkaColor(90, 217, 115));
         streamingLabel.enabled = true;
         streamingLabel.highlighted = false;
         streamingLabel.draw();
