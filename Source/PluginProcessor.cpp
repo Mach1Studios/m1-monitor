@@ -323,6 +323,16 @@ void M1MonitorAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 
     // Checks if output bus is non DISCRETE layout and fixes host specific channel ordering issues
     fillChannelOrderArray(monitorSettings.m1Decode.getFormatChannelCount());
+
+    // External renderer support: when the host bus can't carry the spatial mix
+    // (mono/stereo-only DAWs), the helper publishes it via shared memory and
+    // we decode from there. The reader connects lazily on its own timer.
+    if (mixBusReader == nullptr)
+        mixBusReader = std::make_unique<MixBusReader>();
+
+    externalMixScratch.setSize(MixBusReader::MAX_BUS_CHANNELS,
+                               juce::jmax(samplesPerBlock, 512));
+    externalMixScratch.clear();
 }
 
 void M1MonitorAudioProcessor::releaseResources()
@@ -559,10 +569,18 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     float* outBufferL = buffer.getWritePointer(0);
     float* outBufferR = buffer.getWritePointer(1);
 
+    // External renderer mode: the host bus can't carry the spatial mix, so
+    // decode the helper's shared-memory MixBus instead of the input bus.
+    // Requires the helper heartbeat (streaming panners exist) so a leftover
+    // segment file can never hijack a normal multichannel session.
+    const bool hostBusTooSmall = getMainBusNumInputChannels() < monitorSettings.m1Decode.getFormatChannelCount();
+    external_spatialmixer_active = hostBusTooSmall
+        && isStreamingMixActive()
+        && mixBusReader != nullptr
+        && mixBusReader->isConnected();
+
     if (getMainBusNumInputChannels() >= monitorSettings.m1Decode.getFormatChannelCount())
     {
-        // TODO: Setup an else case for streaming input or error message
-
         // Internally downmix a stereo output stream and end the processBlock()
         if (monitorSettings.monitor_mode == 2)
         {
@@ -598,17 +616,66 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
             }
         }
     }
+    else if (external_spatialmixer_active)
+    {
+        // Streamed input: decode the live MixBus published by m1-system-helper
+        processExternalMixerBlock(buffer);
+    }
     else
     {
-        //        // Invalid Decode I/O; clear buffers
-        //        // TODO: Prepare for input streamed case when needed here
-        //        for (int channel = getTotalNumInputChannels(); channel <= getTotalNumOutputChannels(); ++channel)
-        //            buffer.clear(channel, 0, buffer.getNumSamples());
+        // Invalid decode I/O and no external mix available: output silence so
+        // stale input content is never passed through unprocessed.
+        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+            buffer.clear(channel, 0, buffer.getNumSamples());
     }
 
     // clear remaining input channels
     for (auto channel = 2; channel < getTotalNumInputChannels(); ++channel)
         buffer.clear(channel, 0, buffer.getNumSamples());
+}
+
+//==============================================================================
+bool M1MonitorAudioProcessor::processExternalMixerBlock(juce::AudioBuffer<float>& buffer)
+{
+    const int numSamples = buffer.getNumSamples();
+
+    if (mixBusReader == nullptr || buffer.getNumChannels() < 2)
+        return false;
+
+    if (externalMixScratch.getNumChannels() < MixBusReader::MAX_BUS_CHANNELS
+        || externalMixScratch.getNumSamples() < numSamples)
+    {
+        // Host delivered a larger block than prepareToPlay announced
+        externalMixScratch.setSize(MixBusReader::MAX_BUS_CHANNELS, numSamples, false, true, true);
+    }
+
+    const int busChannels = mixBusReader->read(externalMixScratch, numSamples);
+
+    // The input bus content is irrelevant in external mode; we own the output.
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+        buffer.clear(channel, 0, numSamples);
+
+    if (busChannels <= 0)
+        return true; // priming or under-run: intentional silence
+
+    float* outBufferL = buffer.getWritePointer(0);
+    float* outBufferR = buffer.getWritePointer(1);
+
+    // Same coefficient decode as the host-bus path, but the MixBus arrives in
+    // discrete Mach1 channel order straight from Mach1Encode, so no host
+    // channel reordering is applied.
+    const int decodeChannels = juce::jmin(busChannels, monitorSettings.m1Decode.getFormatChannelCount());
+    for (int sample = 0; sample < numSamples; ++sample)
+    {
+        for (int channel = 0; channel < decodeChannels; ++channel)
+        {
+            const float busSample = externalMixScratch.getSample(channel, sample);
+            outBufferL[sample] += busSample * smoothedChannelCoeffs[channel][0].getNextValue();
+            outBufferR[sample] += busSample * smoothedChannelCoeffs[channel][1].getNextValue();
+        }
+    }
+
+    return true;
 }
 
 //==============================================================================

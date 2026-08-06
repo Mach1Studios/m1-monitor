@@ -3,6 +3,7 @@
 #include "Config.h"
 #include "AlertData.h"
 #include "M1Analytics.h"
+#include "MixBusReader.h"
 #include "MonitorOSC.h"
 #include "TypesForDataExchange.h"
 #include <JuceHeader.h>
@@ -127,8 +128,10 @@ public:
     void sendCurrentMonitorSettingsToHelper();
     bool openSystemHelperGui();
 
-    // TODO: change this when implmenting external mixer
-    bool external_spatialmixer_active = false; // global detect spatialmixer
+    // True while this instance is decoding the helper's shared-memory MixBus
+    // instead of its host input bus (mono/stereo-only DAWs). Set per block in
+    // processBlock from the activation predicate below.
+    bool external_spatialmixer_active = false;
 
     // Streaming-mode status reported by m1-system-helper: number of panner
     // instances currently streaming audio into the helper via memory share.
@@ -140,6 +143,13 @@ public:
         return streamingPannerCount.load() > 0
             && (juce::Time::currentTimeMillis() - lastStreamingStatusTimeMs.load()) < 4000;
     }
+
+    // External mixer handshake reported by the helper (/m1-external-mixer-state)
+    std::atomic<int> externalMixerBusActive { 0 };
+    std::atomic<int> externalMixerBusChannels { 0 };
+
+    // Live MixBus reader (shared memory, written by m1-system-helper)
+    std::unique_ptr<MixBusReader> mixBusReader;
 
     juce::UndoManager mUndoManager;
     juce::AudioProcessorValueTreeState parameters;
@@ -159,6 +169,12 @@ private:
     void updateTransportWithPlayhead();
     void syncParametersWithExternalOrientation();
     void createLayout();
+
+    // Decode one block from the shared-memory MixBus (external renderer mode).
+    // Returns true when the block was handled (buffer contains the decoded
+    // stereo mix, or silence while the bus is priming/under-running).
+    bool processExternalMixerBlock(juce::AudioBuffer<float>& buffer);
+    juce::AudioBuffer<float> externalMixScratch;
 
     std::vector<std::vector<float>> audioDataIn;
     std::vector<float> spatialMixerCoeffs;

@@ -151,6 +151,20 @@ void MonitorOSC::oscMessageReceived(const juce::OSCMessage& msg)
             }
             is_connected = true;
         }
+        else if (msg.getAddressPattern() == "/m1-external-mixer-state")
+        {
+            // Extended handshake: [busActive, busChannels, streamingPanners].
+            // Confirms the helper's MixEngine is writing the shared-memory
+            // MixBus and in which spatial format.
+            if (msg.size() >= 3 && msg[0].isInt32() && msg[1].isInt32() && msg[2].isInt32() && processor != nullptr)
+            {
+                processor->externalMixerBusActive.store(msg[0].getInt32());
+                processor->externalMixerBusChannels.store(msg[1].getInt32());
+                processor->streamingPannerCount.store(msg[2].getInt32());
+                processor->lastStreamingStatusTimeMs.store(juce::Time::currentTimeMillis());
+            }
+            is_connected = true;
+        }
         else if (msg.getAddressPattern() == "/m1-helper-port-changed") {
             if (msg.size() >= 1 && msg[0].isInt32()) {
                 int newHelperPort = msg[0].getInt32();

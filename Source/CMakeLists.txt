@@ -7,6 +7,12 @@ target_sources(${PLUGIN_NAME} PRIVATE    Config.h
                                     PluginProcessor.h
                                     M1SystemHelperManager.cpp
                                     M1SystemHelperManager.h
+                                    M1MemoryShare.h
+                                    M1MemoryShare.cpp
+                                    M1MemoryShareTypes.h
+                                    MixBusReader.h
+                                    Utility/SharedMemoryPaths.h
+                                    Utility/SharedMemoryPaths.cpp
                                     MonitorOSC.h
                                     MonitorOSC.cpp
                                     M1Analytics.h
@@ -19,3 +25,7 @@ target_sources(${PLUGIN_NAME} PRIVATE    Config.h
                                     UI/M1AlertComponent.h
                                     UI/MonitorUIBaseComponent.h
                                     UI/MonitorUIBaseComponent.cpp)
+
+if(APPLE)
+    target_sources(${PLUGIN_NAME} PRIVATE Utility/SharedMemoryPaths.mm)
+endif(APPLE)

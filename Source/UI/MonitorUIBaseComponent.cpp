@@ -130,32 +130,12 @@ void MonitorUIBaseComponent::draw()
     {
         // Monitor plugin is marked as active, this is used to disable monitor plugin instances when more than 1 is discovered via the OSC messaging
 
-        if (processor->external_spatialmixer_active)
+        // Note (P2): external mixer mode no longer deactivates this monitor.
+        // When the host bus is stereo-only, the plugin decodes the helper's
+        // shared-memory MixBus locally with full head-tracking, so the normal
+        // controls stay live. Streaming health is shown by the badge near the
+        // logo at the bottom of the UI.
         {
-            // External Mixer detected!
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE + 2);
-
-            auto& monitorStateLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() / 2, m.getSize().height() / 2, 200, 80));
-            monitorStateLabel.label = "M1-MONITOR DEACTIVATED";
-            monitorStateLabel.alignment = TEXT_CENTER;
-            monitorStateLabel.enabled = false;
-            monitorStateLabel.highlighted = false;
-            monitorStateLabel.draw();
-
-            m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE - 2);
-
-            // TODO: Add more state messages if needed
-            auto& monitorStateDescLabel = m.prepare<M1Label>(MurkaShape(m.getSize().width() / 2, m.getSize().height() / 2 - 80, 200, 80));
-            monitorStateDescLabel.label = "EXTERNAL MIXER DETECTED";
-            monitorStateDescLabel.alignment = TEXT_CENTER;
-            monitorStateDescLabel.enabled = false;
-            monitorStateDescLabel.highlighted = false;
-            monitorStateDescLabel.draw();
-        }
-        else
-        {
-            // External Mixer not detected!
-
             m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE);
             Mach1::Float3 current_ext_orientation = processor->m1OrientationClient.getOrientation().GetGlobalRotationAsEulerDegrees();
 
@@ -685,11 +665,27 @@ void MonitorUIBaseComponent::draw()
     if (processor->isStreamingMixActive())
     {
         const int count = processor->streamingPannerCount.load();
+        const bool decodingSharedMix = processor->external_spatialmixer_active;
+        const bool busReceiving = processor->mixBusReader != nullptr && processor->mixBusReader->isReceiving();
+        const int busChannels = processor->mixBusReader != nullptr ? processor->mixBusReader->getBusChannels() : 0;
+
+        std::string label = "STREAMING: " + std::to_string(count) + (count == 1 ? " PANNER" : " PANNERS");
+        MurkaColor color(90, 217, 115);
+        if (decodingSharedMix && busReceiving && busChannels > 0)
+        {
+            label += " | EXTERNAL MIX " + std::to_string(busChannels) + "CH";
+        }
+        else if (decodingSharedMix)
+        {
+            label += " | WAITING FOR MIX BUS";
+            color = MurkaColor(255, 153, 64);
+        }
+
         m.setFontFromRawData(PLUGIN_FONT, BINARYDATA_FONT, BINARYDATA_FONT_SIZE, DEFAULT_FONT_SIZE - 5);
-        auto& streamingLabel = m.prepare<M1Label>(MurkaShape(90, m.getSize().height() - 25, 240, 20));
-        streamingLabel.label = "STREAMING: " + std::to_string(count) + (count == 1 ? " PANNER" : " PANNERS");
+        auto& streamingLabel = m.prepare<M1Label>(MurkaShape(90, m.getSize().height() - 25, 340, 20));
+        streamingLabel.label = label;
         streamingLabel.alignment = TEXT_LEFT;
-        streamingLabel.withForegroundColor(MurkaColor(90, 217, 115));
+        streamingLabel.withForegroundColor(color);
         streamingLabel.enabled = true;
         streamingLabel.highlighted = false;
         streamingLabel.draw();
