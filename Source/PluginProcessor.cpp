@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "M1SystemHelperManager.h"
+#include "MonitorHostModePolicy.h"
 
 juce::String M1MonitorAudioProcessor::paramYaw("yaw");
 juce::String M1MonitorAudioProcessor::paramPitch("pitch");
@@ -573,13 +574,15 @@ void M1MonitorAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     // decode the helper's shared-memory MixBus instead of the input bus.
     // Requires the helper heartbeat (streaming panners exist) so a leftover
     // segment file can never hijack a normal multichannel session.
-    const bool hostBusTooSmall = getMainBusNumInputChannels() < monitorSettings.m1Decode.getFormatChannelCount();
-    external_spatialmixer_active = hostBusTooSmall
-        && isStreamingMixActive()
-        && mixBusReader != nullptr
-        && mixBusReader->isConnected();
+    const auto audioSource = Mach1::MonitorHostModePolicy::selectAudioSource(
+        getMainBusNumInputChannels(),
+        monitorSettings.m1Decode.getFormatChannelCount(),
+        isStreamingMixActive(),
+        mixBusReader != nullptr && mixBusReader->isConnected());
+    external_spatialmixer_active =
+        audioSource == Mach1::MonitorHostModePolicy::AudioSource::ExternalMixBus;
 
-    if (getMainBusNumInputChannels() >= monitorSettings.m1Decode.getFormatChannelCount())
+    if (audioSource == Mach1::MonitorHostModePolicy::AudioSource::HostMultichannel)
     {
         // Internally downmix a stereo output stream and end the processBlock()
         if (monitorSettings.monitor_mode == 2)

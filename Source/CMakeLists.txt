@@ -11,6 +11,7 @@ target_sources(${PLUGIN_NAME} PRIVATE    Config.h
                                     M1MemoryShare.cpp
                                     M1MemoryShareTypes.h
                                     MixBusReader.h
+                                    MonitorHostModePolicy.h
                                     Utility/SharedMemoryPaths.h
                                     Utility/SharedMemoryPaths.cpp
                                     MonitorOSC.h

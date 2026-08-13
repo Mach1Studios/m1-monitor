@@ -92,14 +92,17 @@ jobs:
 
       - name: Configure
         if: ${{ matrix.name != 'Windows' }}
-        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_VST3=ON -DBUILD_AU=ON -DBUILD_STANDALONE=OFF -DBUILD_VST=OFF -DBUILD_AAX=ON ${{ matrix.extra-flags }} .
+        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_UNIT_TESTS=ON -DBUILD_VST3=ON -DBUILD_AU=ON -DBUILD_STANDALONE=OFF -DBUILD_VST=OFF -DBUILD_AAX=ON ${{ matrix.extra-flags }} .
 
       - name: Configure (Windows)
         if: ${{ matrix.name == 'Windows' }}
-        run: cmake -B ${{ env.BUILD_DIR }} -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_VST3=ON -DBUILD_STANDALONE=OFF -DBUILD_VST=OFF -DBUILD_AAX=ON ${{ matrix.extra-flags }} .
+        run: cmake -B ${{ env.BUILD_DIR }} -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DBUILD_UNIT_TESTS=ON -DBUILD_VST3=ON -DBUILD_STANDALONE=OFF -DBUILD_VST=OFF -DBUILD_AAX=ON ${{ matrix.extra-flags }} .
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} ${{ matrix.extra-build-flags }}
+
+      - name: Test host-mode selection
+        run: ctest --test-dir ${{ env.BUILD_DIR }} -C ${{ env.BUILD_TYPE }} --output-on-failure -R m1-monitor-mode
 
       - name: Set additional env vars for next step
         run: |
