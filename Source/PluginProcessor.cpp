@@ -799,6 +799,18 @@ void M1MonitorAudioProcessor::timerCallback()
 
 bool M1MonitorAudioProcessor::openSystemHelperGui()
 {
+    // Preferred path: the helper is already running and we hold a live OSC
+    // link to it - just ask it to reveal its status window. The launch-based
+    // fallback below only works from the installed location and relies on
+    // single-instance forwarding, so it fails on dev builds and adds latency.
+    if (monitorOSC != nullptr && monitorOSC->isConnected())
+    {
+        juce::OSCMessage msg { juce::OSCAddressPattern("/m1-show-helper-ui") };
+        msg.addInt32(monitorOSC->port); // identifies the requesting plugin
+        if (monitorOSC->Send(msg))
+            return true;
+    }
+
     auto& helperManager = Mach1::M1SystemHelperManager::getInstance();
     if (helperManager.openHelperWindow("M1-Monitor"))
         return true;

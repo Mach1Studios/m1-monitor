@@ -65,6 +65,8 @@ public:
      */
     int read(juce::AudioBuffer<float>& dest, int numSamples)
     {
+        m_lastReadWallMs.store(juce::Time::currentTimeMillis());
+
         // Never block the audio thread on the connection-management lock
         const juce::SpinLock::ScopedTryLockType lock(m_shareLock);
         if (!lock.isLocked() || m_share == nullptr || !m_share->isValid())
@@ -112,6 +114,9 @@ private:
     static constexpr int FIFO_CAPACITY = 16384;
     static constexpr int MAX_QUEUED_SAMPLES = 4096; // latency cap
     static constexpr int PRIME_MARGIN_SAMPLES = 512;
+    // An active bus publishes at least silence keepalives every block period;
+    // several seconds without traffic means the mapping is orphaned.
+    static constexpr juce::int64 STALE_MAPPING_TIMEOUT_MS = 4000;
 
     void timerCallback() override
     {
@@ -121,7 +126,31 @@ private:
         }();
 
         if (valid)
-            return;
+        {
+            // Staleness check: an active helper always publishes blocks (real
+            // mix or silence keepalives), so a mapping with no traffic means
+            // the helper deleted and recreated the segment behind us (helper
+            // restart, streaming toggle). The old mapping still LOOKS valid -
+            // it points at the orphaned inode - so without this check the
+            // monitor would silently decode nothing forever.
+            const juce::int64 nowMs = juce::Time::currentTimeMillis();
+            const juce::int64 lastActivityMs = juce::jmax(m_lastBlockWallMs.load(), m_connectedAtMs.load());
+            if (nowMs - lastActivityMs <= STALE_MAPPING_TIMEOUT_MS)
+                return;
+
+            // Only recycle the mapping while the audio thread is actually
+            // consuming (external decode engaged); an idle reader gains
+            // nothing from reconnect churn.
+            if (nowMs - m_lastReadWallMs.load() > 2000)
+                return;
+
+            DBG("[MixBusReader] No MixBus traffic - dropping mapping to reconnect");
+            const juce::SpinLock::ScopedLockType lock(m_shareLock);
+            m_share.reset();
+            m_connected.store(false);
+            m_primed = false;
+            // fall through to the reconnect attempt below
+        }
 
         // (Re)connect: open the existing segment read-side and register our
         // sequential consumer cursor.
@@ -142,6 +171,7 @@ private:
         const juce::SpinLock::ScopedLockType lock(m_shareLock);
         m_share = std::move(share);
         m_connected.store(true);
+        m_connectedAtMs.store(juce::Time::currentTimeMillis());
         m_primed = false;
         m_writePos = 0;
         m_readPos = 0;
@@ -198,6 +228,8 @@ private:
     std::atomic<int> m_busChannels { 0 };
     std::atomic<uint32_t> m_busSampleRate { 0 };
     std::atomic<juce::int64> m_lastBlockWallMs { 0 };
+    std::atomic<juce::int64> m_connectedAtMs { 0 };
+    std::atomic<juce::int64> m_lastReadWallMs { 0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MixBusReader)
 };

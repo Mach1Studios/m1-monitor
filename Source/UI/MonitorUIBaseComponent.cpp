@@ -660,9 +660,13 @@ void MonitorUIBaseComponent::draw()
     m.drawImage(m1logo, 25, m.getSize().height() - labelYOffset, 161 / 3, 39 / 3);
 #endif
 
-    // Streaming-mode indicator: shown while the m1-system-helper reports panner
-    // instances actively streaming audio into it (external render mode).
-    if (processor->isStreamingMixActive())
+    // Streaming-mode indicator: only relevant when THIS instance's host bus is
+    // too small to carry the spatial mix (external render mode). On a full
+    // multichannel bus the monitor processes natively and streaming status
+    // would just be confusing noise.
+    const bool hostBusTooSmall = processor->getMainBusNumInputChannels()
+        < processor->monitorSettings.m1Decode.getFormatChannelCount();
+    if (hostBusTooSmall && processor->isStreamingMixActive())
     {
         const int count = processor->streamingPannerCount.load();
         const bool decodingSharedMix = processor->external_spatialmixer_active;
