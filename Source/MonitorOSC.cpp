@@ -2,6 +2,23 @@
 
 #include "PluginProcessor.h"
 
+#if JUCE_WINDOWS
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
+
+namespace {
+int currentHostProcessId()
+{
+#if JUCE_WINDOWS
+    return static_cast<int>(GetCurrentProcessId());
+#else
+    return static_cast<int>(getpid());
+#endif
+}
+} // namespace
+
 MonitorOSC::MonitorOSC(M1MonitorAudioProcessor* processor_)
 {
     processor = processor_;
@@ -350,11 +367,8 @@ bool MonitorOSC::connectToHelper()
         {
             if (juce::OSCSender::connect("127.0.0.1", helperPort))
             {
-                juce::OSCMessage msg = juce::OSCMessage(juce::OSCAddressPattern("/m1-addClient"));
-                msg.addInt32(port);
-                msg.addString("monitor");
                 DBG("[OSC] Monitor registered as: " + std::to_string(port));
-                is_connected = juce::OSCSender::send(msg);
+                is_connected = sendProjectBindingClaim();
                 return is_connected;
             }
         }
@@ -365,6 +379,32 @@ bool MonitorOSC::connectToHelper()
         }
     }
     return false;
+}
+
+bool MonitorOSC::sendProjectBindingClaim()
+{
+    if (port <= 0 || helperPort <= 0)
+        return false;
+
+    juce::OSCMessage message("/m1-addClient");
+    message.addInt32(port);
+    message.addString("monitor");
+    message.addInt32(currentHostProcessId());
+
+    const auto identity = processor != nullptr
+        ? processor->getProjectIdentity()
+        : M1MonitorAudioProcessor::ProjectIdentity{};
+    message.addString(identity.bindingId);
+    message.addString(identity.displayName);
+    message.addString(identity.pluginInstanceId);
+
+    // VST3 hosts may restore state before connectToHelper() has established
+    // the inherited sender's socket. JUCE asserts in OSCSender::send() when
+    // called in that state. Registration is infrequent, so use an independent
+    // connected sender and leave the long-lived transport untouched.
+    juce::OSCSender registrationSender;
+    return registrationSender.connect("127.0.0.1", helperPort)
+        && registrationSender.send(message);
 }
 
 bool MonitorOSC::disconnectToHelper()

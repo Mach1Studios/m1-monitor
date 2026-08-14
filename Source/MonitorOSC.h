@@ -35,6 +35,7 @@ public:
 
     bool connectToHelper();
     bool disconnectToHelper();
+    bool sendProjectBindingClaim();
 
     // Transport
     /**

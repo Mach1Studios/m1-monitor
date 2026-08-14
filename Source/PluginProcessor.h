@@ -128,6 +128,16 @@ public:
     void sendCurrentMonitorSettingsToHelper();
     bool openSystemHelperGui();
 
+    struct ProjectIdentity
+    {
+        juce::String bindingId;
+        juce::String displayName;
+        juce::String pluginInstanceId;
+    };
+    ProjectIdentity getProjectIdentity() const;
+    void applyProjectBinding(const juce::String& bindingId,
+                             const juce::String& displayName);
+
     // True while this instance is decoding the helper's shared-memory MixBus
     // instead of its host input bus (mono/stereo-only DAWs). Set per block in
     // processBlock from the activation predicate below.
@@ -189,6 +199,11 @@ private:
     static constexpr juce::int64 MASTER_YPR_SEND_INTERVAL_MS = 50;
     std::atomic<juce::int64> lastMasterYprSendMs { 0 };
     std::atomic<bool> masterYprSendPending { false };
+
+    mutable juce::CriticalSection projectIdentityLock;
+    juce::String projectBindingId;
+    juce::String projectDisplayName;
+    juce::String pluginInstanceId;
 
     juce::ThreadPool jobThreads{ (std::max)(4, juce::SystemStats::getNumCpus()) };
 

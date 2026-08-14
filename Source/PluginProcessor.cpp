@@ -21,6 +21,9 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                                                                            std::make_unique<juce::AudioParameterInt>(juce::ParameterID(paramOutputMode, 1), TRANS("Output Mode"), 0, (int)Mach1DecodeMode::M1DecodeSpatial_14, (int)Mach1DecodeMode::M1DecodeSpatial_8),
                                                                        })
 {
+    projectBindingId = juce::Uuid().toString().toLowerCase();
+    pluginInstanceId = juce::Uuid().toString().toLowerCase();
+
     parameters.addParameterListener(paramYaw, this);
     parameters.addParameterListener(paramPitch, this);
     parameters.addParameterListener(paramRoll, this);
@@ -129,6 +132,13 @@ M1MonitorAudioProcessor::M1MonitorAudioProcessor()
                     DBG("[OSC] Error with received channel config!");
                 }
             }
+        }
+        else if (msg.getAddressPattern() == "/m1-project-binding")
+        {
+            if (msg.size() >= 1 && msg[0].isString())
+                applyProjectBinding(msg[0].getString(),
+                                    msg.size() >= 2 && msg[1].isString()
+                                        ? msg[1].getString() : juce::String());
         }
         else
         {
@@ -886,6 +896,32 @@ void M1MonitorAudioProcessor::m1DecodeChangeInputMode(Mach1DecodeMode decodeMode
 }
 
 //==============================================================================
+M1MonitorAudioProcessor::ProjectIdentity M1MonitorAudioProcessor::getProjectIdentity() const
+{
+    const juce::ScopedLock lock(projectIdentityLock);
+    return { projectBindingId, projectDisplayName, pluginInstanceId };
+}
+
+void M1MonitorAudioProcessor::applyProjectBinding(const juce::String& bindingId,
+                                                  const juce::String& displayName)
+{
+    const auto normalisedId = bindingId.trim().toLowerCase();
+    if (normalisedId.isEmpty())
+        return;
+
+    bool changed = false;
+    {
+        const juce::ScopedLock lock(projectIdentityLock);
+        const auto cleanName = displayName.trim();
+        changed = projectBindingId != normalisedId || projectDisplayName != cleanName;
+        projectBindingId = normalisedId;
+        projectDisplayName = cleanName;
+    }
+
+    if (changed)
+        updateHostDisplay();
+}
+
 void M1MonitorAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     // This method is used to store your parameters in the memory block.
@@ -901,6 +937,10 @@ void M1MonitorAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 
     // Append extra plugin settings
     parameters_xml->setAttribute("isActive", monitorOSC->isActiveMonitor());
+    const auto projectIdentity = getProjectIdentity();
+    parameters_xml->setAttribute("projectBindingId", projectIdentity.bindingId);
+    parameters_xml->setAttribute("projectDisplayName", projectIdentity.displayName);
+    parameters_xml->setAttribute("pluginInstanceId", projectIdentity.pluginInstanceId);
 
     // Save to output memory
     copyXmlToBinary(*parameters_xml, destData);
@@ -933,6 +973,16 @@ void M1MonitorAudioProcessor::setStateInformation(const void* data, int sizeInBy
 
             // Append extra plugin settings
             monitorOSC->setActiveState(xml->getIntAttribute("isActive"));
+
+            {
+                const juce::ScopedLock lock(projectIdentityLock);
+                projectBindingId = xml->getStringAttribute("projectBindingId", projectBindingId);
+                projectDisplayName = xml->getStringAttribute("projectDisplayName", projectDisplayName);
+                pluginInstanceId = xml->getStringAttribute("pluginInstanceId", pluginInstanceId);
+            }
+
+            if (monitorOSC)
+                monitorOSC->sendProjectBindingClaim();
         }
     }
 }
